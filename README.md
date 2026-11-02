@@ -1,5 +1,7 @@
 # 💡 lumen-x
 
+![Forecast vs actual](docs/forecast.png)
+
 > AI-powered sales forecasting for small businesses. ASP.NET Core + FastAPI + LLM.
 
 *Lumen-X: the future, in plain sight.*
