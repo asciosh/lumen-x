@@ -16,7 +16,7 @@ Upload your sales data, get reliable forecasts, and ask questions like:
 
 ## Why I built this
 
-I'm a .NET developer with about two years of professional experience, and I got hooked on AI. I wanted to learn by building something real: a project that combines classical forecasting with LLMs, written with the stack I know and the one I want to learn. [Add a sentence about your goal here, for example taking it to real-world use with data from a business you know.]
+I'm a .NET developer with about two years of professional experience, and I got hooked on AI. I wanted to learn by building something real: a project that combines classical forecasting with LLMs, written with the stack I know and the one I want to learn.
 
 Small businesses have the data but not a data team. Lumen-X aims to close that gap: solid models under the hood, clear answers on the surface.
 
