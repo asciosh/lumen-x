@@ -56,19 +56,24 @@ CSV / API  →  .NET Backend  →  Forecasting service (Python)
 
 ## Model evaluation
 
-Models are compared against a seasonal naive baseline using expanding-window backtesting (28-day horizon).
+Models are compared against a seasonal naive baseline using expanding-window backtesting with a 28-day horizon, with no data leakage (lags and rolling features only use data at least 28 days old).
 
-**Real data** (Kaggle Store Sales, store 1, GROCERY I):
+![Global model forecast](docs/forecast_global.png)
 
-| model | MAPE | RMSE | MASE |
-|:--|--:|--:|--:|
-| seasonal naive | 21.88 | 621.43 | 1.16 |
-| ETS | 20.42 | 572.92 | 1.02 |
-| LightGBM | 19.34 | 547.60 | 1.02 |
+**Global LightGBM** (Kaggle Store Sales, all 54 stores x 33 product families, 3 backtest windows):
 
-LightGBM is the best model, with about 12% lower MAPE and RMSE than the naive baseline, but the margin over ETS is small. Notebooks: [`/notebooks`](./notebooks).
+| model | WAPE | RMSLE |
+|:--|--:|--:|
+| seasonal naive | 17.1 | 0.550 |
+| LightGBM (global) | 13.5 | 0.413 |
 
-**Next:** a global model trained across all stores and product families.
+The global model beats the baseline in every window, cutting WAPE by about 21% and RMSLE by about 25%.
+
+**Single series** (store 1, GROCERY I): LightGBM (MAPE 19.3) and ETS (20.4) are close, both ahead of the naive baseline (21.9). Learning across series is what makes the difference.
+
+**Limitations:** only 3 recent backtest windows, no hyperparameter tuning, no external features (oil, transactions, local holidays).
+
+Notebooks: [`01`](./notebooks/01_eda_baseline.ipynb) synthetic data baseline, [`02`](./notebooks/02_real_data_lightgbm.ipynb) real single series, [`03`](./notebooks/03_global_lightgbm.ipynb) global model.
 
 ## Quick start
 
