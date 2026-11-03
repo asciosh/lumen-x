@@ -1,8 +1,8 @@
 # 💡 lumen-x
 
-![Real data forecast](docs/forecast_real.png)
-
 > AI-powered sales forecasting for small businesses. ASP.NET Core + FastAPI + LLM.
+
+![Global model forecast](docs/forecast_global.png)
 
 *Lumen-X: the future, in plain sight.*
 
@@ -35,30 +35,37 @@ CSV / API  →  .NET Backend  →  Forecasting service (Python)
               Dashboard
 ```
 
-| Component | Technology |
-|---|---|
-| Backend and API | C# / ASP.NET Core |
-| Forecasting | Python, FastAPI, statsmodels, LightGBM |
-| AI layer | LLM via API |
-| Database | PostgreSQL |
-| Frontend | Blazor |
-| Deployment | Docker Compose |
+| Component | Technology | Status |
+|---|---|---|
+| Forecasting service | Python, FastAPI, statsmodels, LightGBM | ✅ available |
+| Backend and API | C# / ASP.NET Core | planned |
+| AI layer | LLM via API | planned |
+| Database | PostgreSQL | planned |
+| Frontend | Blazor | planned |
+| Deployment | Docker Compose | forecasting service only |
 
 ## Features
 
-- [ ] Sales data import from CSV
 - [x] Baseline models and time-aware backtesting
+- [x] Forecasting API with automatic model selection (naive, ETS, LightGBM)
+- [ ] Sales data import from CSV
 - [ ] Forecasts by product and time period
 - [ ] Natural-language explanations of forecasts
 - [ ] Chat-based questions over your data
 - [ ] Reorder suggestions (safety stock)
 - [ ] Interactive dashboard
 
+## Forecasting service
+
+A FastAPI service that turns a daily sales history into a forecast. It backtests the available models on a holdout, picks the best one and returns the forecast with an approximate 80% interval.
+
+![Forecasting service API](docs/api-docs.png)
+
+Full documentation: [`services/forecasting`](./services/forecasting).
+
 ## Model evaluation
 
 Models are compared against a seasonal naive baseline using expanding-window backtesting with a 28-day horizon, with no data leakage (lags and rolling features only use data at least 28 days old).
-
-![Global model forecast](docs/forecast_global.png)
 
 **Global LightGBM** (Kaggle Store Sales, all 54 stores x 33 product families, 3 backtest windows):
 
@@ -73,26 +80,32 @@ The global model beats the baseline in every window, cutting WAPE by about 21% a
 
 **Limitations:** only 3 recent backtest windows, no hyperparameter tuning, no external features (oil, transactions, local holidays).
 
-Notebooks: [`01`](./notebooks/01_eda_baseline.ipynb) synthetic data baseline, [`02`](./notebooks/02_real_data_lightgbm.ipynb) real single series, [`03`](./notebooks/03_global_lightgbm.ipynb) global model.
+![Single series forecast on real data](docs/forecast_real.png)
 
-## API
+## Run the notebooks
 
-![Forecasting service API](docs/api-docs.png)
+Open them in Google Colab. The Kaggle data needs a free Kaggle account and an API token saved in Colab Secrets as `KAGGLE_API_TOKEN`.
+
+| Notebook | |
+|:--|:--|
+| 01 · Synthetic data baseline | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/asciosh/lumen-x/blob/main/notebooks/01_eda_baseline.ipynb) |
+| 02 · Real data, single series | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/asciosh/lumen-x/blob/main/notebooks/02_real_data_lightgbm.ipynb) |
+| 03 · Global model | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/asciosh/lumen-x/blob/main/notebooks/03_global_lightgbm.ipynb) |
 
 ## Quick start
 
-> 🚧 Coming soon: the `docker-compose.yml` will be available with the first version of the backend.
+Starts the forecasting service on http://localhost:8000 (interactive docs at `/docs`).
 
 ```bash
 git clone https://github.com/asciosh/lumen-x.git
 cd lumen-x
-docker compose up
+docker compose up --build
 ```
 
 ## Roadmap
 
 - [x] **Notebooks**: EDA, baselines, single-series and global LightGBM models with backtesting
-- [ ] **Forecasting service** exposing a `/forecast` endpoint (FastAPI)
+- [x] **Forecasting service** exposing a `/forecast` endpoint (FastAPI)
 - [ ] **.NET backend** and persistence
 - [ ] **LLM layer** for explanations and data Q&A
 - [ ] **Dashboard**, deployment and a trial with real data
