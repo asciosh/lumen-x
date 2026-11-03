@@ -47,7 +47,7 @@ CSV / API  →  .NET Backend  →  Forecasting service (Python)
 ## Features
 
 - [ ] Sales data import from CSV
-- [X] Baseline models and time-aware backtesting
+- [x] Baseline models and time-aware backtesting
 - [ ] Forecasts by product and time period
 - [ ] Natural-language explanations of forecasts
 - [ ] Chat-based questions over your data
@@ -80,18 +80,18 @@ Notebooks: [`01`](./notebooks/01_eda_baseline.ipynb) synthetic data baseline, [`
 > 🚧 Coming soon: the `docker-compose.yml` will be available with the first version of the backend.
 
 ```bash
-git clone https://github.com/<asciosh>/lumen-x.git
+git clone https://github.com/asciosh/lumen-x.git
 cd lumen-x
 docker compose up
 ```
 
 ## Roadmap
 
-1. **Notebook** with EDA, baselines and backtesting
-2. **Forecasting service** exposing a `/forecast` endpoint
-3. **.NET backend** and persistence
-4. **LLM layer** for explanations and data Q&A
-5. **Dashboard**, deployment and a trial with real data
+- [x] **Notebooks**: EDA, baselines, single-series and global LightGBM models with backtesting
+- [ ] **Forecasting service** exposing a `/forecast` endpoint (FastAPI)
+- [ ] **.NET backend** and persistence
+- [ ] **LLM layer** for explanations and data Q&A
+- [ ] **Dashboard**, deployment and a trial with real data
 
 ## Project status
 
