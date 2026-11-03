@@ -75,6 +75,10 @@ The global model beats the baseline in every window, cutting WAPE by about 21% a
 
 Notebooks: [`01`](./notebooks/01_eda_baseline.ipynb) synthetic data baseline, [`02`](./notebooks/02_real_data_lightgbm.ipynb) real single series, [`03`](./notebooks/03_global_lightgbm.ipynb) global model.
 
+## API
+
+![Forecasting service API](docs/api-docs.png)
+
 ## Quick start
 
 > 🚧 Coming soon: the `docker-compose.yml` will be available with the first version of the backend.
