@@ -1,0 +1,5 @@
+services:
+  forecasting:
+    build: ./services/forecasting
+    ports:
+      - "8000:8000"
