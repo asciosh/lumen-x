@@ -1,6 +1,6 @@
 # 💡 lumen-x
 
-![Forecast vs actual](docs/forecast.png)
+![Real data forecast](docs/forecast_real.png)
 
 > AI-powered sales forecasting for small businesses. ASP.NET Core + FastAPI + LLM.
 
@@ -47,7 +47,7 @@ CSV / API  →  .NET Backend  →  Forecasting service (Python)
 ## Features
 
 - [ ] Sales data import from CSV
-- [ ] Baseline models and time-aware backtesting
+- [X] Baseline models and time-aware backtesting
 - [ ] Forecasts by product and time period
 - [ ] Natural-language explanations of forecasts
 - [ ] Chat-based questions over your data
@@ -56,7 +56,19 @@ CSV / API  →  .NET Backend  →  Forecasting service (Python)
 
 ## Model evaluation
 
-Models are compared against a naive baseline using rolling-window backtesting, with no data leakage. Metrics: MAPE, RMSE, MASE. Results and experiments live in [`/notebooks`](./notebooks).
+Models are compared against a seasonal naive baseline using expanding-window backtesting (28-day horizon).
+
+**Real data** (Kaggle Store Sales, store 1, GROCERY I):
+
+| model | MAPE | RMSE | MASE |
+|:--|--:|--:|--:|
+| seasonal naive | 21.88 | 621.43 | 1.16 |
+| ETS | 20.42 | 572.92 | 1.02 |
+| LightGBM | 19.34 | 547.60 | 1.02 |
+
+LightGBM is the best model, with about 12% lower MAPE and RMSE than the naive baseline, but the margin over ETS is small. Notebooks: [`/notebooks`](./notebooks).
+
+**Next:** a global model trained across all stores and product families.
 
 ## Quick start
 
