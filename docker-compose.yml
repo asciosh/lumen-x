@@ -1,5 +1,45 @@
 services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: lumenx
+      POSTGRES_USER: lumenx
+      # Password solo di sviluppo: sovrascrivibile con la variabile d'ambiente POSTGRES_PASSWORD.
+      # Evita ';' e spazi nella password (finisce in una connection string).
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lumenx_dev_password}
+    ports:
+      # Esposta solo su localhost della macchina, non sulla rete.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - lumenx_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lumenx -d lumenx"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
   forecasting:
     build: ./services/forecasting
     ports:
       - "8000:8000"
+
+  backend:
+    build:
+      context: ./backend
+      args:
+        # Stessa versione major di PackagesMajor in backend/Directory.Build.props
+        DOTNET_MAJOR: ${DOTNET_MAJOR:-10}
+    environment:
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=lumenx;Username=lumenx;Password=${POSTGRES_PASSWORD:-lumenx_dev_password}"
+      Forecasting__BaseUrl: "http://forecasting:8000"
+      Database__UseMigrations: "${DB_USE_MIGRATIONS:-false}"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      forecasting:
+        condition: service_started
+
+volumes:
+  lumenx_pgdata:
