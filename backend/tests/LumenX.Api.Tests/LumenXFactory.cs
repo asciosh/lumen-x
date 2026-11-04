@@ -19,6 +19,9 @@ public class LumenXFactory : WebApplicationFactory<Program>
     {
         builder.UseEnvironment("Testing");
 
+        // Nei test Gemini non deve mai essere chiamato, qualunque sia l'ambiente della macchina.
+        builder.UseSetting("Gemini:ApiKey", "");
+
         builder.ConfigureTestServices(services =>
         {
             // 1) Rimuovere Npgsql. Con EF Core 9+ non basta DbContextOptions<T>: va tolta anche

@@ -169,3 +169,27 @@ Un DB creato con `EnsureCreated` **non** può essere migrato in seguito: ricreal
 - Nessuna autenticazione.
 - Nessuna pagina Swagger per ora (evita dipendenze legate alla versione di .NET).
 - Il campo `interval` della risposta Python viene salvato come JSON grezzo (non ne assumo il tipo).
+
+## Spiegazioni del forecast (italiano / inglese)
+
+`GET /products/{id}/forecast/explanation?lang=it|en&useAi=true|false` spiega l'ultimo forecast del prodotto.
+
+1. Il codice calcola i **fatti** (variazione rispetto allo storico recente, giorno più forte, ampiezza dell'intervallo, errore del backtest rispetto al metodo naive, giorni mancanti).
+2. Con `useAi=false` il testo viene composto da modelli di frase: gratis, offline, senza AI.
+3. Con `useAi=true` (default) e una chiave configurata, **Gemini riscrive** gli stessi fatti in modo più naturale. All'AI vanno solo i fatti aggregati, non le vendite grezze, e le è vietato fare nuovi calcoli.
+4. Se la chiave manca o Gemini non risponde (limiti, rete), la risposta contiene il testo a modello e `note` vale `ai_not_configured` o `ai_unavailable`.
+
+```bash
+BASE=http://localhost:8080
+curl "$BASE/products/1/forecast/explanation?lang=it&useAi=false"
+curl "$BASE/products/1/forecast/explanation?lang=en"
+```
+
+### Configurare Gemini (facoltativo)
+
+La chiave non va mai scritta nel codice né in `appsettings.json`: arriva dalla variabile d'ambiente `GEMINI_API_KEY`
+(in un Codespace: *Settings → Codespaces → Secrets*, poi riavvia il Codespace). `docker-compose.yml` la passa al backend.
+Il modello si cambia con `GEMINI_MODEL` (default `gemini-3.5-flash`): i nomi disponibili cambiano, controllali in Google AI Studio.
+
+Nota: con il piano gratuito Google può usare i contenuti inviati per migliorare i propri prodotti, e i limiti di richieste sono bassi.
+Va bene per dati di prova; non usarlo con dati reali di clienti.

@@ -48,3 +48,4 @@ code { background: var(--bg); padding: 1px 5px; border-radius: 4px; }
 .sw-history { background: var(--c-history); }
 .sw-yhat { background: var(--c-yhat); }
 .sw-band { background: var(--c-band); height: 10px; }
+.explanation { white-space: pre-line; background: var(--bg); border-left: 3px solid var(--accent); padding: 10px 12px; border-radius: 6px; margin: 8px 0; }

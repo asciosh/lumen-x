@@ -51,6 +51,13 @@ public sealed class LumenApiClient : ILumenApiClient
     public Task<ApiResult<ForecastRunDto>> GetLatestForecastAsync(int productId, CancellationToken ct = default) =>
         SendAsync<ForecastRunDto>(() => _http.GetAsync($"products/{productId}/forecast", ct), ct);
 
+    public Task<ApiResult<ExplanationDto>> GetExplanationAsync(
+        int productId, string language, bool useAi, CancellationToken ct = default)
+    {
+        var url = $"products/{productId}/forecast/explanation?lang={Uri.EscapeDataString(language)}&useAi={(useAi ? "true" : "false")}";
+        return SendAsync<ExplanationDto>(() => _http.GetAsync(url, ct), ct);
+    }
+
     public Task<ApiResult<ForecastRunDto>> CreateForecastAsync(
         int productId, int? horizon, string? method, CancellationToken ct = default) =>
         SendAsync<ForecastRunDto>(

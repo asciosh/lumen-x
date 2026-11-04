@@ -15,6 +15,10 @@ public interface ILumenApiClient
     /// <summary>Ultimo forecast salvato. Se non esiste, StatusCode e' 404.</summary>
     Task<ApiResult<ForecastRunDto>> GetLatestForecastAsync(int productId, CancellationToken ct = default);
 
+    /// <summary>Spiegazione dell'ultimo forecast. language: "it" o "en". useAi: true = prova Gemini.</summary>
+    Task<ApiResult<ExplanationDto>> GetExplanationAsync(
+        int productId, string language, bool useAi, CancellationToken ct = default);
+
     Task<ApiResult<ForecastRunDto>> CreateForecastAsync(
         int productId, int? horizon, string? method, CancellationToken ct = default);
 }

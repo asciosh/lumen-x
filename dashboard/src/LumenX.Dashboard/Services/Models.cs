@@ -37,6 +37,8 @@ public sealed record ForecastRunDto(
     Dictionary<string, BacktestMetricsDto>? Backtest,
     List<ForecastPointView> Forecast);
 
+public sealed record ExplanationDto(int ForecastRunId, string Language, string Text, string Source, string? Note);
+
 // Body di POST /products e POST /products/{id}/forecast
 public sealed record CreateProductRequest(string Name, string? Sku);
 public sealed record ForecastRequest(int? Horizon, string? Method);

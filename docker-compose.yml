@@ -33,6 +33,10 @@ services:
       ConnectionStrings__Default: "Host=db;Port=5432;Database=lumenx;Username=lumenx;Password=${POSTGRES_PASSWORD:-lumenx_dev_password}"
       Forecasting__BaseUrl: "http://forecasting:8000"
       Database__UseMigrations: "${DB_USE_MIGRATIONS:-false}"
+      # Facoltativi: senza chiave le spiegazioni usano solo il testo a modello.
+      Gemini__ApiKey: "${GEMINI_API_KEY:-}"
+      Gemini__Model: "${GEMINI_MODEL:-gemini-3.6-flash}"
+      Gemini__TimeoutSeconds: "${GEMINI_TIMEOUT_SECONDS:-60}"
     ports:
       - "8080:8080"
     depends_on:

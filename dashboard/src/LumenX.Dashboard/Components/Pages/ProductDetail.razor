@@ -145,6 +145,28 @@ else
             <ForecastChart History="sales" Forecast="forecast" />
             <p class="muted">Il grafico mostra gli ultimi 120 giorni di storico (tra quelli caricati) e la previsione.</p>
 
+            <h3>Spiegazione</h3>
+            <div class="row">
+                <label>Lingua
+                    <select value="@explainLang" @onchange="OnExplainLangChanged">
+                        <option value="it">Italiano</option>
+                        <option value="en">English</option>
+                    </select>
+                </label>
+                <button class="btn btn-secondary" @onclick="RewriteWithAiAsync" disabled="@explaining">
+                    @(explaining ? "Un attimo…" : "Riscrivi con Gemini")
+                </button>
+            </div>
+            @if (explainError is not null)
+            {
+                <div class="alert alert-error">@explainError</div>
+            }
+            @if (explanation is not null)
+            {
+                <div class="explanation">@explanation.Text</div>
+                <p class="muted">Fonte: @SourceLabel(explanation.Source)@NoteText(explanation.Note)</p>
+            }
+
             @if (forecast.Backtest is { Count: > 0 })
             {
                 <h3>Backtest sull'holdout</h3>
@@ -205,6 +227,11 @@ else
     private bool forecasting;
     private int fileInputKey;
 
+    private ExplanationDto? explanation;
+    private string explainLang = "it";
+    private bool explaining;
+    private string? explainError;
+
     private string fromText = "";
     private string toText = "";
     private void OnFromChanged(ChangeEventArgs e) => fromText = e.Value?.ToString() ?? "";
@@ -224,6 +251,7 @@ else
         product = null;
         pageError = null;
         forecast = null;
+        explanation = null;
         importResult = null;
 
         var p = await Api.GetProductAsync(Id);
@@ -244,6 +272,11 @@ else
         else if (f.StatusCode != 404)
         {
             forecastError = f.ErrorText;
+        }
+
+        if (forecast is not null)
+        {
+            await LoadExplanationAsync(false);
         }
     }
 
@@ -340,6 +373,7 @@ else
             if (result.IsSuccess)
             {
                 forecast = result.Value;
+                await LoadExplanationAsync(false);
             }
             else
             {
@@ -351,6 +385,46 @@ else
             forecasting = false;
         }
     }
+
+    private async Task LoadExplanationAsync(bool useAi)
+    {
+        explainError = null;
+        explaining = true;
+        try
+        {
+            var result = await Api.GetExplanationAsync(Id, explainLang, useAi);
+            if (result.IsSuccess)
+            {
+                explanation = result.Value;
+            }
+            else
+            {
+                explainError = result.ErrorText;
+            }
+        }
+        finally
+        {
+            explaining = false;
+        }
+    }
+
+    private async Task OnExplainLangChanged(ChangeEventArgs e)
+    {
+        explainLang = e.Value?.ToString() == "en" ? "en" : "it";
+        await LoadExplanationAsync(false);
+    }
+
+    private Task RewriteWithAiAsync() => LoadExplanationAsync(true);
+
+    private static string SourceLabel(string source) =>
+        source == "gemini" ? "Gemini (riscritta dall'AI a partire dai fatti calcolati)" : "modello a regole (nessuna AI)";
+
+    private static string NoteText(string? note) => note switch
+    {
+        "ai_not_configured" => " · Gemini non è configurato (manca GEMINI_API_KEY): mostro la versione a regole.",
+        "ai_unavailable" => " · Gemini non ha risposto (limiti o errore): mostro la versione a regole.",
+        _ => ""
+    };
 
     private static string IntervalText(JsonElement? e)
     {
