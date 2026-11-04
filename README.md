@@ -106,7 +106,7 @@ docker compose up --build
 
 - [x] **Notebooks**: EDA, baselines, single-series and global LightGBM models with backtesting
 - [x] **Forecasting service** exposing a `/forecast` endpoint (FastAPI)
-- [ ] **.NET backend** and persistence
+- [x] **.NET backend** and persistence
 - [ ] **LLM layer** for explanations and data Q&A
 - [ ] **Dashboard**, deployment and a trial with real data
 
