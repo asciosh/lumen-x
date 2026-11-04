@@ -38,22 +38,22 @@ CSV / API  →  .NET Backend  →  Forecasting service (Python)
 | Component | Technology | Status |
 |---|---|---|
 | Forecasting service | Python, FastAPI, statsmodels, LightGBM | ✅ available |
-| Backend and API | C# / ASP.NET Core | planned |
+| Backend and API | C# / ASP.NET Core | done |
 | AI layer | LLM via API | planned |
 | Database | PostgreSQL | planned |
 | Frontend | Blazor | planned |
-| Deployment | Docker Compose | forecasting service only |
+| Deployment | Docker Compose | forecasting, backend, dashboard, PostgreSQL |
 
 ## Features
 
 - [x] Baseline models and time-aware backtesting
 - [x] Forecasting API with automatic model selection (naive, ETS, LightGBM)
-- [ ] Sales data import from CSV
-- [ ] Forecasts by product and time period
+- [x] Sales data import from CSV
+- [x] Forecasts by product and time period
 - [ ] Natural-language explanations of forecasts
 - [ ] Chat-based questions over your data
 - [ ] Reorder suggestions (safety stock)
-- [ ] Interactive dashboard
+- [x] Interactive dashboard
 
 ## Forecasting service
 
@@ -100,6 +100,7 @@ Starts the forecasting service on http://localhost:8000 (interactive docs at `/d
 git clone https://github.com/asciosh/lumen-x.git
 cd lumen-x
 docker compose up --build
+Then open the dashboard on http://localhost:8081 (in a Codespace: Ports tab, port 8081).
 ```
 
 ## Roadmap
@@ -108,7 +109,8 @@ docker compose up --build
 - [x] **Forecasting service** exposing a `/forecast` endpoint (FastAPI)
 - [x] **.NET backend** and persistence
 - [ ] **LLM layer** for explanations and data Q&A
-- [ ] **Dashboard**, deployment and a trial with real data
+- [x] **Dashboard** (Blazor Server)
+- [ ] Deployment and a trial with real data
 
 ## Project status
 
