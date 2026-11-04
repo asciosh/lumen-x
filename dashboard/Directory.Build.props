@@ -1,0 +1,14 @@
+<Project>
+  <!--
+    UNICO PUNTO in cui cambiare versione di framework (stessa logica di backend/Directory.Build.props).
+    Per .NET 8: PackagesMajor = 8. Tenere allineato con backend/ (il contesto Docker del backend e'
+    ./backend, quindi il file non si puo' condividere senza spostarlo: e' una copia).
+  -->
+  <PropertyGroup>
+    <PackagesMajor Condition="'$(PackagesMajor)' == ''">10</PackagesMajor>
+    <TargetFramework>net$(PackagesMajor).0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,106 @@
+@using System.Globalization
+@using System.Text
+
+@if (svgHtml is null)
+{
+    <p class="muted">Nessun dato da mostrare.</p>
+}
+else
+{
+    <div class="chart-wrap">@((MarkupString)svgHtml)</div>
+    <div class="legend">
+        <span><i class="sw sw-history"></i> Storico</span>
+        <span><i class="sw sw-yhat"></i> Previsione</span>
+        <span><i class="sw sw-band"></i> Intervallo (min–max)</span>
+    </div>
+}
+
+@code {
+    private const double W = 800, H = 320, Left = 60, Right = 16, Top = 16, Bottom = 36;
+
+    [Parameter] public IReadOnlyList<SalePointDto>? History { get; set; }
+    [Parameter] public ForecastRunDto? Forecast { get; set; }
+    [Parameter] public int MaxHistoryDays { get; set; } = 120;
+
+    private string? svgHtml;
+
+    protected override void OnParametersSet()
+    {
+        svgHtml = BuildSvg();
+    }
+
+    // Numeri sempre con il punto decimale, qualunque sia la cultura del server.
+    private static string N(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
+
+    // Il markup viene costruito qui come stringa (solo numeri e date formattate, nessun testo
+    // inserito dall'utente) perche' <text> dentro i blocchi Razor verrebbe interpretato da Razor.
+    private string? BuildSvg()
+    {
+        var hist = (History ?? Array.Empty<SalePointDto>()).OrderBy(p => p.Date).ToList();
+        if (hist.Count > MaxHistoryDays)
+        {
+            hist = hist.Skip(hist.Count - MaxHistoryDays).ToList();
+        }
+
+        IReadOnlyList<ForecastPointView> fc = Forecast?.Forecast ?? new List<ForecastPointView>();
+        if (hist.Count == 0 && fc.Count == 0) return null;
+
+        var dates = hist.Select(p => p.Date).Concat(fc.Select(p => p.Date)).ToList();
+        var xStart = dates.Min();
+        var xEnd = dates.Max();
+        double span = Math.Max(1, xEnd.DayNumber - xStart.DayNumber);
+
+        var values = hist.Select(p => p.Quantity)
+            .Concat(fc.SelectMany(p => new[] { p.Yhat, p.Lower, p.Upper }))
+            .ToList();
+        double yMin = Math.Min(0, values.Min());
+        double yMax = values.Max();
+        if (yMax <= yMin) yMax = yMin + 1;
+        yMax += (yMax - yMin) * 0.05;
+
+        double X(DateOnly d) => Left + (d.DayNumber - xStart.DayNumber) / span * (W - Left - Right);
+        double Y(double v) => Top + (1 - (v - yMin) / (yMax - yMin)) * (H - Top - Bottom);
+        string Pt(DateOnly d, double v) => N(X(d)) + "," + N(Y(v));
+
+        var sb = new StringBuilder();
+        sb.Append($"<svg viewBox='0 0 {N(W)} {N(H)}' class='chart' role='img' aria-label='Storico vendite e previsione'>");
+
+        // Griglia orizzontale e etichette asse Y
+        int decimals = yMax >= 100 ? 0 : 1;
+        for (int i = 0; i <= 4; i++)
+        {
+            double v = yMin + (yMax - yMin) * i / 4.0;
+            double y = Y(v);
+            sb.Append($"<line x1='{N(Left)}' x2='{N(W - Right)}' y1='{N(y)}' y2='{N(y)}' class='grid'/>");
+            sb.Append($"<text x='{N(Left - 6)}' y='{N(y + 4)}' text-anchor='end' class='tick'>{Fmt.Num(v, decimals)}</text>");
+        }
+
+        // Etichette asse X
+        for (int i = 0; i <= 4; i++)
+        {
+            var d = xStart.AddDays((int)Math.Round(span * i / 4.0));
+            sb.Append($"<text x='{N(X(d))}' y='{N(H - 12)}' text-anchor='middle' class='tick'>{Fmt.ShortDate(d)}</text>");
+        }
+
+        // Banda dell'intervallo (upper in avanti, lower all'indietro)
+        if (fc.Count > 0)
+        {
+            var upper = fc.Select(p => Pt(p.Date, p.Upper));
+            var lower = fc.Reverse().Select(p => Pt(p.Date, p.Lower));
+            sb.Append($"<polygon points='{string.Join(" ", upper.Concat(lower))}' class='band'/>");
+        }
+
+        if (hist.Count > 0)
+        {
+            sb.Append($"<polyline points='{string.Join(" ", hist.Select(p => Pt(p.Date, p.Quantity)))}' class='line-history'/>");
+        }
+
+        if (fc.Count > 0)
+        {
+            sb.Append($"<polyline points='{string.Join(" ", fc.Select(p => Pt(p.Date, p.Yhat)))}' class='line-yhat'/>");
+        }
+
+        sb.Append("</svg>");
+        return sb.ToString();
+    }
+}

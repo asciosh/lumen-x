@@ -1,0 +1,123 @@
+@page "/"
+@page "/products"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject ILumenApiClient Api
+
+<PageTitle>Prodotti – Lumen-X</PageTitle>
+
+<h1>Prodotti</h1>
+
+@if (error is not null)
+{
+    <div class="alert alert-error">@error</div>
+}
+
+<section class="card">
+    <h2>Nuovo prodotto</h2>
+    <div class="row">
+        <label>Nome
+            <input @bind="newName" maxlength="200" />
+        </label>
+        <label>SKU (opzionale)
+            <input @bind="newSku" maxlength="100" />
+        </label>
+        <button class="btn" @onclick="CreateAsync" disabled="@busy">Crea</button>
+    </div>
+    @if (createError is not null)
+    {
+        <div class="alert alert-error">@createError</div>
+    }
+</section>
+
+<section class="card">
+    <h2>Elenco</h2>
+    @if (loading)
+    {
+        <p class="muted">Caricamento…</p>
+    }
+    else if (products.Count == 0)
+    {
+        <p class="muted">Nessun prodotto. Creane uno qui sopra, poi importa le vendite da CSV.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr><th>ID</th><th>Nome</th><th>SKU</th><th>Creato</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var p in products)
+                {
+                    <tr>
+                        <td>@p.Id</td>
+                        <td><a href="/products/@p.Id">@p.Name</a></td>
+                        <td>@p.Sku</td>
+                        <td>@Fmt.DateTimeUtc(p.CreatedAtUtc)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@code {
+    private List<ProductDto> products = new();
+    private bool loading = true;
+    private bool busy;
+    private string? error;
+    private string? createError;
+    private string newName = "";
+    private string newSku = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        var result = await Api.GetProductsAsync();
+        if (result.IsSuccess)
+        {
+            products = result.Value!;
+            error = null;
+        }
+        else
+        {
+            error = result.ErrorText;
+        }
+        loading = false;
+    }
+
+    private async Task CreateAsync()
+    {
+        createError = null;
+        if (string.IsNullOrWhiteSpace(newName))
+        {
+            createError = "Inserisci un nome.";
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            var sku = string.IsNullOrWhiteSpace(newSku) ? null : newSku.Trim();
+            var result = await Api.CreateProductAsync(newName.Trim(), sku);
+            if (result.IsSuccess)
+            {
+                newName = "";
+                newSku = "";
+                await LoadAsync();
+            }
+            else
+            {
+                createError = result.ErrorText;
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

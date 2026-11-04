@@ -1,0 +1,362 @@
+@page "/products/{Id:int}"
+@using System.Globalization
+@using System.Text.Json
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject ILumenApiClient Api
+
+<PageTitle>@(product?.Name ?? "Prodotto") – Lumen-X</PageTitle>
+
+<p><a href="/">← Tutti i prodotti</a></p>
+
+@if (pageError is not null)
+{
+    <div class="alert alert-error">@pageError</div>
+}
+else if (product is null)
+{
+    <p class="muted">Caricamento…</p>
+}
+else
+{
+    <h1>@product.Name</h1>
+    @if (!string.IsNullOrEmpty(product.Sku))
+    {
+        <p class="muted">SKU: @product.Sku</p>
+    }
+
+    <section class="card">
+        <h2>Importa vendite da CSV</h2>
+        <p class="muted">Colonne <code>date</code> e <code>quantity</code>. Separatore virgola o punto e virgola; date yyyy-MM-dd o dd/MM/yyyy; decimali con punto o virgola. Le righe già presenti (stessa data) vengono aggiornate.</p>
+        <InputFile OnChange="OnFileSelected" accept=".csv,text/csv" disabled="@importing" @key="fileInputKey" />
+        @if (importing)
+        {
+            <p class="muted">Importazione in corso…</p>
+        }
+        @if (importError is not null)
+        {
+            <div class="alert alert-error">@importError</div>
+        }
+        @if (importResult is not null)
+        {
+            <div class="alert alert-ok">
+                Righe lette: @importResult.TotalRows · valide: @importResult.ValidRows ·
+                inserite: @importResult.Inserted · aggiornate: @importResult.Updated ·
+                duplicate nel file: @importResult.DuplicatesInFile · scartate: @importResult.Rejected
+            </div>
+            @if (importResult.Errors.Count > 0)
+            {
+                <table class="table">
+                    <thead><tr><th>Riga</th><th>Problema</th></tr></thead>
+                    <tbody>
+                        @foreach (var e in importResult.Errors)
+                        {
+                            <tr><td>@e.Line</td><td>@e.Message</td></tr>
+                        }
+                    </tbody>
+                </table>
+                @if (importResult.ErrorsTruncated)
+                {
+                    <p class="muted">Elenco errori troncato: ce ne sono altri.</p>
+                }
+            }
+        }
+    </section>
+
+    <section class="card">
+        <h2>Vendite</h2>
+        <div class="row">
+            <label>Da <input type="date" value="@fromText" @onchange="OnFromChanged" /></label>
+            <label>A <input type="date" value="@toText" @onchange="OnToChanged" /></label>
+            <button class="btn" @onclick="ApplyFilterAsync" disabled="@loadingSales">Applica</button>
+            <button class="btn btn-secondary" @onclick="ClearFilterAsync" disabled="@loadingSales">Azzera</button>
+        </div>
+        @if (salesError is not null)
+        {
+            <div class="alert alert-error">@salesError</div>
+        }
+        @if (loadingSales)
+        {
+            <p class="muted">Caricamento…</p>
+        }
+        else if (sales.Count == 0)
+        {
+            <p class="muted">Nessuna vendita nel periodo. Importa un CSV qui sopra.</p>
+        }
+        else
+        {
+            <p>
+                <strong>@sales.Count</strong> giorni, dal @Fmt.Date(sales.First().Date) al @Fmt.Date(sales.Last().Date) ·
+                totale @Fmt.Num(sales.Sum(s => s.Quantity), 1) · media @Fmt.Num(sales.Average(s => s.Quantity), 1) al giorno
+            </p>
+            <table class="table">
+                <thead><tr><th>Data</th><th class="num">Quantità</th></tr></thead>
+                <tbody>
+                    @foreach (var s in sales.OrderByDescending(x => x.Date).Take(15))
+                    {
+                        <tr><td>@Fmt.Date(s.Date)</td><td class="num">@Fmt.Num(s.Quantity, 1)</td></tr>
+                    }
+                </tbody>
+            </table>
+            @if (sales.Count > 15)
+            {
+                <p class="muted">Mostrate le ultime 15 righe.</p>
+            }
+        }
+    </section>
+
+    <section class="card">
+        <h2>Forecast</h2>
+        <div class="row">
+            <label>Orizzonte (giorni, 1–90)
+                <input type="number" min="1" max="90" @bind="horizon" />
+            </label>
+            <label>Metodo
+                <select @bind="method">
+                    <option value="auto">auto</option>
+                    <option value="naive">naive</option>
+                    <option value="ets">ets</option>
+                    <option value="lightgbm">lightgbm</option>
+                </select>
+            </label>
+            <button class="btn" @onclick="RunForecastAsync" disabled="@forecasting">
+                @(forecasting ? "Calcolo in corso…" : "Calcola forecast")
+            </button>
+        </div>
+        @if (forecastError is not null)
+        {
+            <div class="alert alert-error">@forecastError</div>
+        }
+
+        @if (forecast is null)
+        {
+            <p class="muted">Nessun forecast salvato per questo prodotto.</p>
+        }
+        else
+        {
+            <p class="muted">
+                Calcolato il @Fmt.DateTimeUtc(forecast.CreatedAtUtc) ·
+                metodo usato: <strong>@forecast.MethodUsed</strong> ·
+                orizzonte: @forecast.Horizon giorni ·
+                holdout: @forecast.HoldoutDays giorni ·
+                giorni mancanti interpolati: @forecast.FilledMissingDays ·
+                intervallo: @IntervalText(forecast.Interval)
+            </p>
+
+            <ForecastChart History="sales" Forecast="forecast" />
+            <p class="muted">Il grafico mostra gli ultimi 120 giorni di storico (tra quelli caricati) e la previsione.</p>
+
+            @if (forecast.Backtest is { Count: > 0 })
+            {
+                <h3>Backtest sull'holdout</h3>
+                <table class="table narrow">
+                    <thead><tr><th>Metodo</th><th class="num">MAE</th><th class="num">RMSE</th></tr></thead>
+                    <tbody>
+                        @foreach (var kv in forecast.Backtest)
+                        {
+                            <tr>
+                                <td>@kv.Key</td>
+                                <td class="num">@Fmt.Metric(kv.Value.Mae)</td>
+                                <td class="num">@Fmt.Metric(kv.Value.Rmse)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+            <h3>Punti previsti</h3>
+            <div class="scroll">
+                <table class="table narrow">
+                    <thead><tr><th>Data</th><th class="num">Previsione</th><th class="num">Min</th><th class="num">Max</th></tr></thead>
+                    <tbody>
+                        @foreach (var p in forecast.Forecast)
+                        {
+                            <tr>
+                                <td>@Fmt.Date(p.Date)</td>
+                                <td class="num">@Fmt.Num(p.Yhat, 1)</td>
+                                <td class="num">@Fmt.Num(p.Lower, 1)</td>
+                                <td class="num">@Fmt.Num(p.Upper, 1)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+}
+
+@code {
+    private const long MaxCsvBytes = 10 * 1024 * 1024;
+
+    [Parameter] public int Id { get; set; }
+
+    private int loadedId;
+    private ProductDto? product;
+    private List<SalePointDto> sales = new();
+    private ForecastRunDto? forecast;
+
+    private string? pageError;
+    private string? salesError;
+    private string? importError;
+    private string? forecastError;
+    private ImportResultDto? importResult;
+
+    private bool loadingSales;
+    private bool importing;
+    private bool forecasting;
+    private int fileInputKey;
+
+    private string fromText = "";
+    private string toText = "";
+    private void OnFromChanged(ChangeEventArgs e) => fromText = e.Value?.ToString() ?? "";
+    private void OnToChanged(ChangeEventArgs e) => toText = e.Value?.ToString() ?? "";
+    private int horizon = 28;
+    private string method = "auto";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (loadedId == Id) return;
+        loadedId = Id;
+        await LoadAllAsync();
+    }
+
+    private async Task LoadAllAsync()
+    {
+        product = null;
+        pageError = null;
+        forecast = null;
+        importResult = null;
+
+        var p = await Api.GetProductAsync(Id);
+        if (!p.IsSuccess)
+        {
+            pageError = p.ErrorText;
+            return;
+        }
+        product = p.Value;
+
+        await LoadSalesAsync();
+
+        var f = await Api.GetLatestForecastAsync(Id);
+        if (f.IsSuccess)
+        {
+            forecast = f.Value;
+        }
+        else if (f.StatusCode != 404)
+        {
+            forecastError = f.ErrorText;
+        }
+    }
+
+    private static DateOnly? ParseDate(string text) =>
+        DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d)
+            ? d
+            : null;
+
+    private async Task LoadSalesAsync()
+    {
+        salesError = null;
+        var from = ParseDate(fromText);
+        var to = ParseDate(toText);
+        if (from.HasValue && to.HasValue && from.Value > to.Value)
+        {
+            salesError = "'Da' non può essere successivo ad 'A'.";
+            return;
+        }
+
+        loadingSales = true;
+        try
+        {
+            var result = await Api.GetSalesAsync(Id, from, to);
+            if (result.IsSuccess)
+            {
+                sales = result.Value!;
+            }
+            else
+            {
+                salesError = result.ErrorText;
+            }
+        }
+        finally
+        {
+            loadingSales = false;
+        }
+    }
+
+    private Task ApplyFilterAsync() => LoadSalesAsync();
+
+    private async Task ClearFilterAsync()
+    {
+        fromText = "";
+        toText = "";
+        await LoadSalesAsync();
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        importError = null;
+        importResult = null;
+        var file = e.File;
+        if (file is null) return;
+
+        importing = true;
+        try
+        {
+            await using var stream = file.OpenReadStream(MaxCsvBytes);
+            var result = await Api.ImportSalesAsync(Id, file.Name, stream);
+            if (result.IsSuccess)
+            {
+                importResult = result.Value;
+                await LoadSalesAsync();
+            }
+            else
+            {
+                importError = result.ErrorText;
+            }
+        }
+        catch (IOException)
+        {
+            importError = "File troppo grande (massimo 10 MB).";
+        }
+        finally
+        {
+            importing = false;
+            fileInputKey++; // permette di riselezionare lo stesso file
+        }
+    }
+
+    private async Task RunForecastAsync()
+    {
+        forecastError = null;
+        if (horizon < 1 || horizon > 90)
+        {
+            forecastError = "L'orizzonte deve essere compreso tra 1 e 90 giorni.";
+            return;
+        }
+
+        forecasting = true;
+        try
+        {
+            var result = await Api.CreateForecastAsync(Id, horizon, method);
+            if (result.IsSuccess)
+            {
+                forecast = result.Value;
+            }
+            else
+            {
+                forecastError = result.ErrorText;
+            }
+        }
+        finally
+        {
+            forecasting = false;
+        }
+    }
+
+    private static string IntervalText(JsonElement? e)
+    {
+        if (e is null) return "–";
+        return e.Value.ValueKind == JsonValueKind.String
+            ? (e.Value.GetString() ?? "–")
+            : e.Value.GetRawText();
+    }
+}

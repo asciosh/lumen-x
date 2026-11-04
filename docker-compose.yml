@@ -41,5 +41,19 @@ services:
       forecasting:
         condition: service_started
 
+  dashboard:
+    build:
+      context: ./dashboard
+      args:
+        # Stessa versione major di PackagesMajor in dashboard/Directory.Build.props
+        DOTNET_MAJOR: ${DOTNET_MAJOR:-10}
+    environment:
+      # Dentro la rete di Docker il backend si chiama "backend" (la chiamata parte dal server della dashboard).
+      Backend__BaseUrl: "http://backend:8080"
+    ports:
+      - "8081:8080"
+    depends_on:
+      - backend
+
 volumes:
   lumenx_pgdata:
