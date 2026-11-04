@@ -112,7 +112,7 @@ Then open the dashboard on http://localhost:8081 (in a Codespace: Ports tab, por
 - [x] **Notebooks**: EDA, baselines, single-series and global LightGBM models with backtesting
 - [x] **Forecasting service** exposing a `/forecast` endpoint (FastAPI)
 - [x] **.NET backend** and persistence
-- [ ] **LLM layer** for explanations and data Q&A
+- [x] **LLM layer** for explanations and data Q&A
 - [x] **Dashboard** (Blazor Server)
 - [ ] Deployment and a trial with real data
 
