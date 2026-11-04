@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumen-X · Demo</title>
+<style>
+  :root {
+    --bg:#f6f7f9; --fg:#1f2933; --muted:#6b7785; --card:#ffffff; --border:#dde1e6; --accent:#2563eb;
+    --warn-bg:#fff6dd; --warn-fg:#6b4e00; --err-bg:#fdecec; --err-fg:#8a1f1f;
+    --c-history:#64748b; --c-yhat:#2563eb; --c-band:rgba(37,99,235,.15);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#14181d; --fg:#e6e9ed; --muted:#9aa5b1; --card:#1c222a; --border:#2e3640; --accent:#5b8def;
+      --warn-bg:#3a3118; --warn-fg:#f2dc99; --err-bg:#3a1c1c; --err-fg:#f5b5b5;
+      --c-history:#9aa5b1; --c-yhat:#5b8def; --c-band:rgba(91,141,239,.2);
+    }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--fg); line-height:1.5; }
+  header { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px; padding:12px 24px; background:var(--card); border-bottom:1px solid var(--border); }
+  .brand { font-weight:700; font-size:1.2rem; }
+  .muted { color:var(--muted); }
+  main { max-width:900px; margin:0 auto; padding:20px 16px 64px; }
+  .banner { background:var(--warn-bg); color:var(--warn-fg); padding:10px 12px; border-radius:8px; margin-bottom:16px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:16px; }
+  h1 { font-size:1.5rem; margin:0 0 4px; } h2 { font-size:1.1rem; margin:0 0 10px; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+  .stat { background:var(--bg); border-radius:8px; padding:10px 12px; }
+  .stat b { display:block; font-size:1.25rem; }
+  .chart-wrap { overflow-x:auto; }
+  svg.chart { width:100%; height:auto; min-width:520px; }
+  .grid { stroke:var(--border); stroke-width:1; } .tick { fill:var(--muted); font-size:11px; }
+  .line-history { fill:none; stroke:var(--c-history); stroke-width:1.5; }
+  .line-yhat { fill:none; stroke:var(--c-yhat); stroke-width:2; }
+  .band { fill:var(--c-band); stroke:none; }
+  .legend { display:flex; flex-wrap:wrap; gap:16px; font-size:.85rem; color:var(--muted); margin-top:4px; }
+  .sw { display:inline-block; width:18px; height:3px; margin-right:4px; vertical-align:middle; }
+  .explanation { background:var(--bg); border-left:3px solid var(--accent); padding:10px 12px; border-radius:6px; margin:8px 0; }
+  .toggle button { font:inherit; padding:5px 12px; border:1px solid var(--border); background:transparent; color:var(--fg); cursor:pointer; }
+  .toggle button:first-child { border-radius:6px 0 0 6px; } .toggle button:last-child { border-radius:0 6px 6px 0; border-left:0; }
+  .toggle button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  table { width:100%; border-collapse:collapse; font-size:.92rem; }
+  th,td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); } .num { text-align:right; }
+  .err { background:var(--err-bg); color:var(--err-fg); padding:10px 12px; border-radius:8px; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <span><span class="brand">Lumen-X</span> <span class="muted" id="tagline"></span></span>
+  <span class="toggle" role="group" aria-label="Language">
+    <button id="btn-it" class="on">Italiano</button><button id="btn-en">English</button>
+  </span>
+</header>
+<main>
+  <div class="banner" id="banner"></div>
+  <div id="content"><p class="muted" id="loading"></p></div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var TEXT = {
+    it: {
+      tagline: 'Previsione vendite',
+      banner: 'Demo con dati di esempio, non collegata a nessun server: puoi cambiare lingua ma non caricare file né calcolare nuove previsioni.',
+      loading: 'Caricamento…',
+      loadError: 'Impossibile caricare i dati della demo: ',
+      forecast: 'Previsione',
+      avgDay: 'al giorno', total: 'Totale previsto', days: 'giorni', horizon: 'Orizzonte', method: 'Metodo',
+      history: 'Storico', band: 'Intervallo (min–max)', chartTitle: 'Storico e previsione',
+      explanation: 'Spiegazione', source: 'Fonte', srcGemini: 'Gemini (riscritta dall\'AI a partire dai fatti calcolati)',
+      srcTemplate: 'modello a regole (nessuna AI)', noExplanation: 'Spiegazione non disponibile in questa lingua.',
+      backtest: 'Verifica sullo storico recente (errore medio, più basso = meglio)', metric: 'Metodo',
+      repo: 'Codice e documentazione su GitHub', locale: 'it-IT', last: 'ultimi'
+    },
+    en: {
+      tagline: 'Sales forecasting',
+      banner: 'Demo with sample data, not connected to any server: you can switch language but not upload files or compute new forecasts.',
+      loading: 'Loading…',
+      loadError: 'Could not load the demo data: ',
+      forecast: 'Forecast',
+      avgDay: 'per day', total: 'Forecast total', days: 'days', horizon: 'Horizon', method: 'Method',
+      history: 'History', band: 'Interval (min–max)', chartTitle: 'History and forecast',
+      explanation: 'Explanation', source: 'Source', srcGemini: 'Gemini (rewritten by AI from the computed facts)',
+      srcTemplate: 'rule-based template (no AI)', noExplanation: 'Explanation not available in this language.',
+      backtest: 'Check on recent history (average error, lower = better)', metric: 'Method',
+      repo: 'Code and documentation on GitHub', locale: 'en-GB', last: 'last'
+    }
+  };
+
+  var FILES = ['forecast.json', 'sales.json', 'explanation-it.json', 'explanation-en.json'];
+  var state = { lang: 'it', forecast: null, sales: null, expl: { it: null, en: null } };
+
+  function el(id) { return document.getElementById(id); }
+  function t(key) { return TEXT[state.lang][key]; }
+  function fmt(v, d) {
+    return new Intl.NumberFormat(t('locale'), { maximumFractionDigits: d, minimumFractionDigits: d }).format(v);
+  }
+  function qty(v) { return fmt(v, Math.abs(v) >= 100 ? 0 : 1); }
+  function dayNumber(iso) { var p = iso.split('-'); return Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000); }
+  function shortDate(dayNum) {
+    return new Intl.DateTimeFormat(t('locale'), { day: '2-digit', month: '2-digit', year: '2-digit', timeZone: 'UTC' })
+      .format(new Date(dayNum * 86400000));
+  }
+  function n(v) { return (Math.round(v * 100) / 100).toString(); }
+
+  function chartSvg(sales, fc, maxHist) {
+    var W = 800, H = 320, L = 60, R = 16, T = 16, B = 36;
+    var hist = sales.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    if (hist.length > maxHist) hist = hist.slice(hist.length - maxHist);
+    var days = hist.map(function (p) { return dayNumber(p.date); }).concat(fc.map(function (p) { return dayNumber(p.date); }));
+    if (!days.length) return '';
+    var x0 = Math.min.apply(null, days), x1 = Math.max.apply(null, days), span = Math.max(1, x1 - x0);
+    var vals = hist.map(function (p) { return p.quantity; });
+    fc.forEach(function (p) { vals.push(p.yhat, p.lower, p.upper); });
+    var yMin = Math.min(0, Math.min.apply(null, vals)), yMax = Math.max.apply(null, vals);
+    if (yMax <= yMin) yMax = yMin + 1;
+    yMax += (yMax - yMin) * 0.05;
+    function X(d) { return L + (d - x0) / span * (W - L - R); }
+    function Y(v) { return T + (1 - (v - yMin) / (yMax - yMin)) * (H - T - B); }
+    function pt(iso, v) { return n(X(dayNumber(iso))) + ',' + n(Y(v)); }
+
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="chart" role="img" aria-label="' + t('chartTitle') + '">';
+    for (var i = 0; i <= 4; i++) {
+      var v = yMin + (yMax - yMin) * i / 4, y = Y(v);
+      s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + n(y) + '" y2="' + n(y) + '" class="grid"/>';
+      s += '<text x="' + (L - 6) + '" y="' + n(y + 4) + '" text-anchor="end" class="tick">' + fmt(v, yMax >= 100 ? 0 : 1) + '</text>';
+      var dn = Math.round(x0 + span * i / 4);
+      s += '<text x="' + n(X(dn)) + '" y="' + (H - 12) + '" text-anchor="middle" class="tick">' + shortDate(dn) + '</text>';
+    }
+    if (fc.length) {
+      var up = fc.map(function (p) { return pt(p.date, p.upper); });
+      var lo = fc.slice().reverse().map(function (p) { return pt(p.date, p.lower); });
+      s += '<polygon points="' + up.concat(lo).join(' ') + '" class="band"/>';
+    }
+    if (hist.length) s += '<polyline points="' + hist.map(function (p) { return pt(p.date, p.quantity); }).join(' ') + '" class="line-history"/>';
+    if (fc.length) s += '<polyline points="' + fc.map(function (p) { return pt(p.date, p.yhat); }).join(' ') + '" class="line-yhat"/>';
+    return s + '</svg>';
+  }
+
+  function render() {
+    var f = state.forecast, ex = state.expl[state.lang], root = el('content');
+    document.documentElement.lang = state.lang;
+    el('tagline').textContent = t('tagline');
+    el('banner').textContent = t('banner');
+    el('btn-it').className = state.lang === 'it' ? 'on' : '';
+    el('btn-en').className = state.lang === 'en' ? 'on' : '';
+    if (!f) return;
+
+    var fc = f.forecast || [];
+    var total = fc.reduce(function (a, p) { return a + p.yhat; }, 0);
+    var name = (state.expl.it && state.expl.it.facts && state.expl.it.facts.productName) ||
+               (state.expl.en && state.expl.en.facts && state.expl.en.facts.productName) || 'Lumen-X';
+
+    root.textContent = '';
+    function card(title) {
+      var c = document.createElement('section'); c.className = 'card';
+      if (title) { var h = document.createElement('h2'); h.textContent = title; c.appendChild(h); }
+      root.appendChild(c); return c;
+    }
+
+    var top = card();
+    var h1 = document.createElement('h1'); h1.textContent = name; top.appendChild(h1);
+    var stats = document.createElement('div'); stats.className = 'stats';
+    [[t('total'), qty(total)],
+     [t('forecast') + ' (' + t('avgDay') + ')', fc.length ? qty(total / fc.length) : '–'],
+     [t('horizon'), f.horizon + ' ' + t('days')],
+     [t('method'), f.methodUsed]].forEach(function (pair) {
+      var d = document.createElement('div'); d.className = 'stat';
+      var b = document.createElement('b'); b.textContent = pair[1];
+      var l = document.createElement('span'); l.className = 'muted'; l.textContent = pair[0];
+      d.appendChild(b); d.appendChild(l); stats.appendChild(d);
+    });
+    top.appendChild(stats);
+
+    var chart = card(t('chartTitle'));
+    var wrap = document.createElement('div'); wrap.className = 'chart-wrap';
+    wrap.innerHTML = chartSvg(state.sales || [], fc, 120);   // solo numeri e date formattate dal codice
+    chart.appendChild(wrap);
+    var lg = document.createElement('div'); lg.className = 'legend';
+    [['var(--c-history)', t('history'), '3px'], ['var(--c-yhat)', t('forecast'), '3px'], ['var(--c-band)', t('band'), '10px']]
+      .forEach(function (x) {
+        var sp = document.createElement('span'), sw = document.createElement('i');
+        sw.className = 'sw'; sw.style.background = x[0]; sw.style.height = x[2];
+        sp.appendChild(sw); sp.appendChild(document.createTextNode(x[1])); lg.appendChild(sp);
+      });
+    chart.appendChild(lg);
+
+    var ec = card(t('explanation'));
+    if (ex && ex.text) {
+      var box = document.createElement('div'); box.className = 'explanation'; box.textContent = ex.text; ec.appendChild(box);
+      var src = document.createElement('p'); src.className = 'muted';
+      src.textContent = t('source') + ': ' + (ex.source === 'gemini' ? t('srcGemini') : t('srcTemplate'));
+      ec.appendChild(src);
+    } else {
+      var p = document.createElement('p'); p.className = 'muted'; p.textContent = t('noExplanation'); ec.appendChild(p);
+    }
+
+    var bt = f.backtest ? Object.keys(f.backtest) : [];
+    if (bt.length) {
+      var bc = card(t('backtest')), tb = document.createElement('table');
+      var head = tb.createTHead().insertRow();
+      [t('metric'), 'MAE', 'RMSE'].forEach(function (h, i) {
+        var th = document.createElement('th'); th.textContent = h; if (i) th.className = 'num'; head.appendChild(th);
+      });
+      var body = tb.createTBody();
+      bt.forEach(function (k) {
+        var r = body.insertRow(), m = f.backtest[k] || {};
+        r.insertCell().textContent = k;
+        [m.mae, m.rmse].forEach(function (v) {
+          var c = r.insertCell(); c.className = 'num';
+          c.textContent = (v === null || v === undefined) ? '–' : fmt(v, 2);
+        });
+      });
+      bc.appendChild(tb);
+    }
+
+    var foot = document.createElement('p');
+    var a = document.createElement('a'); a.href = 'https://github.com/asciosh/lumen-x'; a.textContent = t('repo');
+    foot.appendChild(a); root.appendChild(foot);
+  }
+
+  function getJson(file, optional) {
+    return fetch(file).then(function (r) {
+      if (!r.ok) throw new Error(file + ' (HTTP ' + r.status + ')');
+      return r.json();
+    }).catch(function (e) { if (optional) return null; throw e; });
+  }
+
+  el('btn-it').onclick = function () { state.lang = 'it'; render(); };
+  el('btn-en').onclick = function () { state.lang = 'en'; render(); };
+  el('tagline').textContent = t('tagline');
+  el('banner').textContent = t('banner');
+  el('loading').textContent = t('loading');
+
+  Promise.all([getJson(FILES[0]), getJson(FILES[1]), getJson(FILES[2], true), getJson(FILES[3], true)])
+    .then(function (r) { state.forecast = r[0]; state.sales = r[1]; state.expl.it = r[2]; state.expl.en = r[3]; render(); })
+    .catch(function (e) {
+      var d = el('content'); d.textContent = '';
+      var p = document.createElement('p'); p.className = 'err'; p.textContent = t('loadError') + e.message; d.appendChild(p);
+    });
+})();
+</script>
+</body>
+</html>
