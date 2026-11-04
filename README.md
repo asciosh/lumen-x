@@ -44,6 +44,10 @@ CSV / API  →  .NET Backend  →  Forecasting service (Python)
 | Frontend | Blazor | planned |
 | Deployment | Docker Compose | forecasting, backend, dashboard, PostgreSQL |
 
+Dashboard (Blazor Server): products, CSV import and forecasts with chart.
+
+![Dashboard](docs/dashboard.png)
+
 ## Features
 
 - [x] Baseline models and time-aware backtesting
