@@ -130,7 +130,8 @@
       s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + n(y) + '" y2="' + n(y) + '" class="grid"/>';
       s += '<text x="' + (L - 6) + '" y="' + n(y + 4) + '" text-anchor="end" class="tick">' + fmt(v, yMax >= 100 ? 0 : 1) + '</text>';
       var dn = Math.round(x0 + span * i / 4);
-      s += '<text x="' + n(X(dn)) + '" y="' + (H - 12) + '" text-anchor="middle" class="tick">' + shortDate(dn) + '</text>';
+      var anchor = i === 4 ? 'end' : (i === 0 ? 'start' : 'middle');
+      s += '<text x="' + n(X(dn)) + '" y="' + (H - 12) + '" text-anchor="' + anchor + '" class="tick">' + shortDate(dn) + '</text>';
     }
     if (fc.length) {
       var up = fc.map(function (p) { return pt(p.date, p.upper); });
