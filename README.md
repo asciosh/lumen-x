@@ -48,6 +48,8 @@ Dashboard (Blazor Server): products, CSV import and forecasts with chart.
 
 ![Dashboard](docs/dashboard.png)
 
+Live demo (example data): https://asciosh.github.io/lumen-x/demo/
+
 ## Features
 
 - [x] Baseline models and time-aware backtesting
