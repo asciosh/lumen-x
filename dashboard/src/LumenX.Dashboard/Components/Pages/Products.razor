@@ -6,6 +6,7 @@
 <PageTitle>Prodotti – Lumen-X</PageTitle>
 
 <h1>Prodotti</h1>
+<p class="lede">Scegli un prodotto per vedere cosa prevedo e cosa conviene ordinare, oppure creane uno nuovo.</p>
 
 @if (error is not null)
 {
@@ -37,7 +38,7 @@
     }
     else if (products.Count == 0)
     {
-        <p class="muted">Nessun prodotto. Creane uno qui sopra, poi importa le vendite da CSV.</p>
+        <p class="muted">Nessun prodotto per ora. Creane uno qui sopra, poi importa le vendite da CSV.</p>
     }
     else
     {

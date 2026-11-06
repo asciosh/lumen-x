@@ -6,7 +6,7 @@
 
 <PageTitle>@(product?.Name ?? "Prodotto") – Lumen-X</PageTitle>
 
-<p><a href="/">← Tutti i prodotti</a></p>
+<p class="crumb"><a href="/">← Tutti i prodotti</a></p>
 
 @if (pageError is not null)
 {
@@ -18,94 +18,16 @@ else if (product is null)
 }
 else
 {
-    <h1>@product.Name</h1>
-    @if (!string.IsNullOrEmpty(product.Sku))
-    {
-        <p class="muted">SKU: @product.Sku</p>
-    }
+    <div class="title-row">
+        <h1>@product.Name</h1>
+        @if (!string.IsNullOrEmpty(product.Sku))
+        {
+            <p class="muted sku">SKU: @product.Sku</p>
+        }
+    </div>
 
-    <section class="card">
-        <h2>Importa vendite da CSV</h2>
-        <p class="muted">Colonne <code>date</code> e <code>quantity</code>. Separatore virgola o punto e virgola; date yyyy-MM-dd o dd/MM/yyyy; decimali con punto o virgola. Le righe già presenti (stessa data) vengono aggiornate.</p>
-        <InputFile OnChange="OnFileSelected" accept=".csv,text/csv" disabled="@importing" @key="fileInputKey" />
-        @if (importing)
-        {
-            <p class="muted">Importazione in corso…</p>
-        }
-        @if (importError is not null)
-        {
-            <div class="alert alert-error">@importError</div>
-        }
-        @if (importResult is not null)
-        {
-            <div class="alert alert-ok">
-                Righe lette: @importResult.TotalRows · valide: @importResult.ValidRows ·
-                inserite: @importResult.Inserted · aggiornate: @importResult.Updated ·
-                duplicate nel file: @importResult.DuplicatesInFile · scartate: @importResult.Rejected
-            </div>
-            @if (importResult.Errors.Count > 0)
-            {
-                <table class="table">
-                    <thead><tr><th>Riga</th><th>Problema</th></tr></thead>
-                    <tbody>
-                        @foreach (var e in importResult.Errors)
-                        {
-                            <tr><td>@e.Line</td><td>@e.Message</td></tr>
-                        }
-                    </tbody>
-                </table>
-                @if (importResult.ErrorsTruncated)
-                {
-                    <p class="muted">Elenco errori troncato: ce ne sono altri.</p>
-                }
-            }
-        }
-    </section>
-
-    <section class="card">
-        <h2>Vendite</h2>
-        <div class="row">
-            <label>Da <input type="date" value="@fromText" @onchange="OnFromChanged" /></label>
-            <label>A <input type="date" value="@toText" @onchange="OnToChanged" /></label>
-            <button class="btn" @onclick="ApplyFilterAsync" disabled="@loadingSales">Applica</button>
-            <button class="btn btn-secondary" @onclick="ClearFilterAsync" disabled="@loadingSales">Azzera</button>
-        </div>
-        @if (salesError is not null)
-        {
-            <div class="alert alert-error">@salesError</div>
-        }
-        @if (loadingSales)
-        {
-            <p class="muted">Caricamento…</p>
-        }
-        else if (sales.Count == 0)
-        {
-            <p class="muted">Nessuna vendita nel periodo. Importa un CSV qui sopra.</p>
-        }
-        else
-        {
-            <p>
-                <strong>@sales.Count</strong> giorni, dal @Fmt.Date(sales.First().Date) al @Fmt.Date(sales.Last().Date) ·
-                totale @Fmt.Num(sales.Sum(s => s.Quantity), 1) · media @Fmt.Num(sales.Average(s => s.Quantity), 1) al giorno
-            </p>
-            <table class="table">
-                <thead><tr><th>Data</th><th class="num">Quantità</th></tr></thead>
-                <tbody>
-                    @foreach (var s in sales.OrderByDescending(x => x.Date).Take(15))
-                    {
-                        <tr><td>@Fmt.Date(s.Date)</td><td class="num">@Fmt.Num(s.Quantity, 1)</td></tr>
-                    }
-                </tbody>
-            </table>
-            @if (sales.Count > 15)
-            {
-                <p class="muted">Mostrate le ultime 15 righe.</p>
-            }
-        }
-    </section>
-
-    <section class="card">
-        <h2>Forecast</h2>
+    <section class="card stage">
+        <h2>Previsione</h2>
         <div class="row">
             <label>Orizzonte (giorni, 1–90)
                 <input type="number" min="1" max="90" @bind="horizon" />
@@ -133,17 +55,25 @@ else
         }
         else
         {
-            <p class="muted">
-                Calcolato il @Fmt.DateTimeUtc(forecast.CreatedAtUtc) ·
-                metodo usato: <strong>@forecast.MethodUsed</strong> ·
-                orizzonte: @forecast.Horizon giorni ·
-                holdout: @forecast.HoldoutDays giorni ·
-                giorni mancanti interpolati: @forecast.FilledMissingDays ·
-                intervallo: @IntervalText(forecast.Interval)
-            </p>
+            @if (forecast.Forecast.Count > 0)
+            {
+                <p class="lead">
+                    Prossimi @forecast.Forecast.Count giorni: circa <strong>@Fmt.Num(forecast.Forecast.Sum(p => p.Yhat), 0)</strong> unità,
+                    @Fmt.Num(forecast.Forecast.Average(p => p.Yhat), 0) al giorno.
+                </p>
+            }
 
             <ForecastChart History="sales" Forecast="forecast" />
             <p class="muted">Il grafico mostra gli ultimi 120 giorni di storico (tra quelli caricati) e la previsione.</p>
+
+            <dl class="facts">
+                <div><dt>Metodo</dt><dd><strong title="@(forecast.MethodUsed == "blend" ? "Media di ETS e LightGBM" : null)">@forecast.MethodUsed</strong></dd></div>
+                <div><dt>Orizzonte</dt><dd>@forecast.Horizon giorni</dd></div>
+                <div><dt>Verifica su</dt><dd>@forecast.HoldoutDays giorni</dd></div>
+                <div><dt>Giorni stimati</dt><dd>@forecast.FilledMissingDays</dd></div>
+                <div><dt>Intervallo</dt><dd>@IntervalText(forecast.Interval)</dd></div>
+                <div><dt>Calcolato il</dt><dd>@Fmt.DateTimeUtc(forecast.CreatedAtUtc)</dd></div>
+            </dl>
 
             <h3>Spiegazione</h3>
             <div class="row">
@@ -221,13 +151,14 @@ else
 
             @if (forecast.Backtest is { Count: > 0 })
             {
-                <h3>Backtest sull'holdout</h3>
+                <h3>Quanto è affidabile</h3>
+                <p class="muted">Errore medio su giorni che il modello non aveva visto: più è basso, meglio è.</p>
                 <table class="table narrow">
                     <thead><tr><th>Metodo</th><th class="num">MAE</th><th class="num">RMSE</th></tr></thead>
                     <tbody>
                         @foreach (var kv in forecast.Backtest)
                         {
-                            <tr>
+                            <tr class="@(kv.Key == forecast.MethodUsed ? "is-used" : null)">
                                 <td>@kv.Key</td>
                                 <td class="num">@Fmt.Metric(kv.Value.Mae)</td>
                                 <td class="num">@Fmt.Metric(kv.Value.Rmse)</td>
@@ -237,7 +168,7 @@ else
                 </table>
             }
 
-            <h3>Punti previsti</h3>
+            <h3>Giorno per giorno</h3>
             <div class="scroll">
                 <table class="table narrow">
                     <thead><tr><th>Data</th><th class="num">Previsione</th><th class="num">Min</th><th class="num">Max</th></tr></thead>
@@ -256,6 +187,86 @@ else
             </div>
         }
     </section>
+
+    <details class="card fold" open="@dataOpen">
+        <summary><h2>Vendite</h2></summary>
+        <div class="row">
+            <label>Da <input type="date" value="@fromText" @onchange="OnFromChanged" /></label>
+            <label>A <input type="date" value="@toText" @onchange="OnToChanged" /></label>
+            <button class="btn" @onclick="ApplyFilterAsync" disabled="@loadingSales">Applica</button>
+            <button class="btn btn-secondary" @onclick="ClearFilterAsync" disabled="@loadingSales">Azzera</button>
+        </div>
+        @if (salesError is not null)
+        {
+            <div class="alert alert-error">@salesError</div>
+        }
+        @if (loadingSales)
+        {
+            <p class="muted">Caricamento…</p>
+        }
+        else if (sales.Count == 0)
+        {
+            <p class="muted">Nessuna vendita nel periodo. Importa un CSV qui sopra.</p>
+        }
+        else
+        {
+            <p>
+                <strong>@sales.Count</strong> giorni, dal @Fmt.Date(sales.First().Date) al @Fmt.Date(sales.Last().Date) ·
+                totale @Fmt.Num(sales.Sum(s => s.Quantity), 1) · media @Fmt.Num(sales.Average(s => s.Quantity), 1) al giorno
+            </p>
+            <table class="table">
+                <thead><tr><th>Data</th><th class="num">Quantità</th></tr></thead>
+                <tbody>
+                    @foreach (var s in sales.OrderByDescending(x => x.Date).Take(15))
+                    {
+                        <tr><td>@Fmt.Date(s.Date)</td><td class="num">@Fmt.Num(s.Quantity, 1)</td></tr>
+                    }
+                </tbody>
+            </table>
+            @if (sales.Count > 15)
+            {
+                <p class="muted">Mostrate le ultime 15 righe.</p>
+            }
+        }
+    </details>
+
+    <details class="card fold" open="@dataOpen">
+        <summary><h2>Importa vendite da CSV</h2></summary>
+        <p class="muted">Colonne <code>date</code> e <code>quantity</code>. Separatore virgola o punto e virgola; date yyyy-MM-dd o dd/MM/yyyy; decimali con punto o virgola. Le righe già presenti (stessa data) vengono aggiornate.</p>
+        <InputFile OnChange="OnFileSelected" accept=".csv,text/csv" disabled="@importing" @key="fileInputKey" />
+        @if (importing)
+        {
+            <p class="muted">Importazione in corso…</p>
+        }
+        @if (importError is not null)
+        {
+            <div class="alert alert-error">@importError</div>
+        }
+        @if (importResult is not null)
+        {
+            <div class="alert alert-ok">
+                Righe lette: @importResult.TotalRows · valide: @importResult.ValidRows ·
+                inserite: @importResult.Inserted · aggiornate: @importResult.Updated ·
+                duplicate nel file: @importResult.DuplicatesInFile · scartate: @importResult.Rejected
+            </div>
+            @if (importResult.Errors.Count > 0)
+            {
+                <table class="table">
+                    <thead><tr><th>Riga</th><th>Problema</th></tr></thead>
+                    <tbody>
+                        @foreach (var e in importResult.Errors)
+                        {
+                            <tr><td>@e.Line</td><td>@e.Message</td></tr>
+                        }
+                    </tbody>
+                </table>
+                @if (importResult.ErrorsTruncated)
+                {
+                    <p class="muted">Elenco errori troncato: ce ne sono altri.</p>
+                }
+            }
+        }
+    </details>
 }
 
 @code {
@@ -287,6 +298,7 @@ else
     private string? reorderError;
     private bool computingReorder;
 
+    private bool dataOpen;
     private ExplanationDto? explanation;
     private string explainLang = "it";
     private bool explaining;
@@ -324,6 +336,7 @@ else
         product = p.Value;
 
         await LoadSalesAsync();
+        dataOpen = sales.Count == 0;
 
         var f = await Api.GetLatestForecastAsync(Id);
         if (f.IsSuccess)

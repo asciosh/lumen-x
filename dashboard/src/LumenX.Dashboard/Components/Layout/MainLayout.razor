@@ -1,10 +1,19 @@
 @inherits LayoutComponentBase
 
 <header class="topbar">
-    <a href="/" class="brand">Lumen-X</a>
+    <a href="/" class="brand" aria-label="Lumen-X, torna ai prodotti">
+        <svg class="brand-mark" viewBox="0 0 38 24" aria-hidden="true">
+            <path class="m-line" d="M1.5 17 C5 6 8.5 20 13 12 S20 5 24 11" />
+            <circle class="m-dot" cx="24" cy="11" r="3.2" />
+            <path class="m-dash" d="M29 9 C31 5 33.5 11 36.5 4" />
+        </svg>
+        Lumen-X
+    </a>
     <span class="tagline">Previsione vendite</span>
 </header>
 
 <main class="content">
     @Body
 </main>
+
+<footer class="footer">Lumen-X · il futuro delle tue vendite, in chiaro.</footer>

@@ -92,6 +92,6 @@ public class ForecastChartTests : BunitContext
 
         Assert.Contains("Storico", legend);
         Assert.Contains("Previsione", legend);
-        Assert.Contains("Intervallo", legend);
+        Assert.Contains("Fascia probabile", legend);
     }
 }

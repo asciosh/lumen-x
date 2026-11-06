@@ -90,8 +90,8 @@ public class ProductDetailPageTests : DashboardTestBase
 
         Assert.Contains(cut.FindAll("strong"), s => s.TextContent == "blend");
         var headings = cut.FindAll("h3").Select(h => h.TextContent).ToList();
-        Assert.Contains("Backtest sull'holdout", headings);
-        Assert.Contains("Punti previsti", headings);
+        Assert.Contains("Quanto è affidabile", headings);
+        Assert.Contains("Giorno per giorno", headings);
         Assert.Contains("10,50", cut.Markup);                       // MAE del naive
         Assert.Equal(28, cut.FindAll("div.scroll tbody tr").Count);   // un punto per giorno
         Assert.Single(cut.FindAll("svg.chart"));
@@ -313,5 +313,70 @@ public class ProductDetailPageTests : DashboardTestBase
         ButtonByText(cut, "Calcola forecast").Click();
 
         cut.WaitForAssertion(() => Assert.DoesNotContain("Periodo da coprire", cut.Markup));
+    }
+
+    // ------------------------------------------------------------------ aspetto e struttura
+
+    [Fact]
+    public void Page_opens_with_a_plain_sentence_about_the_next_days()
+    {
+        var cut = RenderWithForecast();
+
+        var lead = cut.Find("p.lead").TextContent;
+
+        Assert.Contains("Prossimi 28 giorni", lead);
+        Assert.Contains("unità", lead);
+        // somma delle previsioni di Samples.Forecast(): 28 giorni, 120 + (i % 7) * 10
+        var expectedTotal = Samples.Forecast().Forecast.Sum(p => p.Yhat);
+        Assert.Contains(Fmt.Num(expectedTotal, 0), lead);
+    }
+
+    [Fact]
+    public void Forecast_comes_before_sales_and_import_in_the_page()
+    {
+        var cut = RenderWithForecast();
+
+        var headings = cut.FindAll("h2").Select(h => h.TextContent).ToList();
+
+        Assert.Equal(new[] { "Previsione", "Vendite", "Importa vendite da CSV" }, headings.ToArray());
+    }
+
+    [Fact]
+    public void Facts_list_the_method_with_a_hint_for_the_blend()
+    {
+        var cut = RenderWithForecast();
+
+        var method = cut.FindAll("dl.facts strong").First(s => s.TextContent == "blend");
+
+        Assert.Equal("Media di ETS e LightGBM", method.GetAttribute("title"));
+        Assert.Contains("Orizzonte", cut.Find("dl.facts").TextContent);
+    }
+
+    [Fact]
+    public void Sales_and_import_start_closed_when_there_is_data_and_open_when_there_is_none()
+    {
+        var withData = RenderWithForecast();
+        Assert.All(withData.FindAll("details.fold"), d => Assert.False(d.HasAttribute("open")));
+
+        Api.Sales = ApiResult<List<SalePointDto>>.Ok(new List<SalePointDto>());
+        var withoutData = RenderDetail();
+        withoutData.WaitForAssertion(() => Assert.NotEmpty(withoutData.FindAll("h1")));
+
+        Assert.All(withoutData.FindAll("details.fold"), d => Assert.True(d.HasAttribute("open")));
+    }
+
+    [Fact]
+    public void Import_section_stays_open_after_the_first_import_adds_sales()
+    {
+        Api.Sales = ApiResult<List<SalePointDto>>.Ok(new List<SalePointDto>());
+        var cut = RenderDetail();
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("h1")));
+
+        Api.Sales = ApiResult<List<SalePointDto>>.Ok(Samples.Sales(60));
+        FieldInLabel(cut, "Da").Change("2025-01-01");
+        ButtonByText(cut, "Applica").Click();
+
+        cut.WaitForAssertion(() => Assert.Contains("giorni, dal 01/01/2025", cut.Markup));
+        Assert.All(cut.FindAll("details.fold"), d => Assert.True(d.HasAttribute("open")));
     }
 }

@@ -46,3 +46,13 @@ I test usano [bUnit](https://bunit.dev) (serie 2.x, supporta .NET 10) per disegn
 Coprono la pagina dei prodotti, la pagina del prodotto (vendite, forecast, spiegazione e relative note, riordino), il grafico, il client HTTP (indirizzi, errori, timeout) e la formattazione.
 Non coprono l'aspetto grafico (colori, posizione degli elementi) né il caricamento di un CSV: per quelli resta la prova a mano.
 
+## Aspetto
+
+Tema scuro "inchiostro e ambra", ripreso dall'immagine di anteprima del repo: sfondo `#0f1117`, testo crema `#fef4e2`, ambra `#fcbb47` come unico colore d'azione e ambra scuro per la fascia d'incertezza.
+Il grafico è l'elemento principale: la linea dello storico è piena e luminosa, la previsione è tratteggiata e la fascia probabile le sta dietro; il pallino segna dove finiscono i dati e comincia la previsione.
+
+- Tutti i colori e i caratteri sono variabili in `wwwroot/app.css` (blocco `:root`): per cambiare tema basta modificare lì.
+- Caratteri incorporati in `wwwroot/fonts` (nessuna richiesta a servizi esterni): **Bricolage Grotesque** per titoli e numeri, **Figtree** per testo e tabelle. Licenza SIL Open Font License 1.1, testi accanto ai file.
+- Il movimento è uno solo: la linea si disegna al primo caricamento. Con "riduci movimento" attivo nel sistema non c'è nessuna animazione.
+- La pagina di demo (`docs/demo`) usa la stessa `app.css` e gli stessi caratteri: se cambi la grafica della dashboard, copia di nuovo `app.css` e la cartella `fonts` anche lì.
+
