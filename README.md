@@ -63,7 +63,7 @@ Live demo (example data): https://asciosh.github.io/lumen-x/demo/
 
 ## Forecasting service
 
-A FastAPI service that turns a daily sales history into a forecast. It backtests the available models on a holdout, picks the best one and returns the forecast with an approximate 80% interval.
+A FastAPI service that turns a daily sales history into a forecast. By default it averages two models (ETS and LightGBM) when there is enough history, otherwise it picks the better of naive and ETS on a backtest, and returns the forecast with an approximate 80% interval.
 
 ![Forecasting service API](docs/api-docs.png)
 
