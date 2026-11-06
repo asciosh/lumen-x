@@ -79,7 +79,9 @@ else
         for (int i = 0; i <= 4; i++)
         {
             var d = xStart.AddDays((int)Math.Round(span * i / 4.0));
-            sb.Append($"<text x='{N(X(d))}' y='{N(H - 12)}' text-anchor='middle' class='tick'>{Fmt.ShortDate(d)}</text>");
+            // Prima etichetta allineata a sinistra e ultima a destra: cosi' non escono dal disegno.
+            var anchor = i == 4 ? "end" : (i == 0 ? "start" : "middle");
+            sb.Append($"<text x='{N(X(d))}' y='{N(H - 12)}' text-anchor='{anchor}' class='tick'>{Fmt.ShortDate(d)}</text>");
         }
 
         // Banda dell'intervallo (upper in avanti, lower all'indietro)

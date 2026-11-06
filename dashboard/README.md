@@ -35,3 +35,14 @@ l'argomento `DOTNET_MAJOR` (compose: variabile `DOTNET_MAJOR`, default 10). Va t
 - `Components/Pages/Products.razor` elenco e creazione prodotti
 - `Components/Pages/ProductDetail.razor` import CSV, vendite con filtro, forecast
 - `Components/ForecastChart.razor` grafico SVG (storico + previsione + intervallo)
+
+## Test
+
+```bash
+dotnet test dashboard/tests/LumenX.Dashboard.Tests
+```
+
+I test usano [bUnit](https://bunit.dev) (serie 2.x, supporta .NET 10) per disegnare le pagine in memoria e controllarne il contenuto, con un finto `ILumenApiClient` al posto del backend: nessuna rete, nessun Docker.
+Coprono la pagina dei prodotti, la pagina del prodotto (vendite, forecast, spiegazione e relative note, riordino), il grafico, il client HTTP (indirizzi, errori, timeout) e la formattazione.
+Non coprono l'aspetto grafico (colori, posizione degli elementi) né il caricamento di un CSV: per quelli resta la prova a mano.
+
