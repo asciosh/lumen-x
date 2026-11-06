@@ -2,7 +2,7 @@
 
 > AI-powered sales forecasting for small businesses. ASP.NET Core + FastAPI + LLM.
 
-![Global model forecast](docs/forecast_global.png)
+![Lumen-X](docs/banner.png);
 
 *Lumen-X: the future, in plain sight.*
 
@@ -46,7 +46,7 @@ CSV / API  →  .NET Backend  →  Forecasting service (Python)
 
 Dashboard (Blazor Server): products, CSV import and forecasts with chart.
 
-![Dashboard](docs/dashboard.png)
+![Live demo](docs/demo.png)
 
 Live demo (example data): https://asciosh.github.io/lumen-x/demo/
 
