@@ -49,6 +49,8 @@ public sealed class GeminiExplainer : IExplainer
             "Use ONLY the facts in the JSON you receive. Do not invent figures and do not compute new ones " +
             "(no new sums, differences or percentages): you may round the numbers you are given. " +
             "If the facts show a wide confidence interval or a method not better than the naive benchmark, say that the forecast is uncertain. " +
+            "The method \"blend\" in MethodUsed means the average of the ETS and LightGBM forecasts. " +
+            "If ZeroDaysPercent is 20 or more, say that the series has many days with zero sales and that the forecast is unreliable. " +
             "Do not give investment or purchasing advice. Do not mention JSON or field names. " +
             $"Write in {languageName}, in 3 to 5 sentences, as plain text with no markdown and no lists.";
 
@@ -88,7 +90,18 @@ public sealed class GeminiExplainer : IExplainer
             }
 
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
-            return new ExplanationResult(ExtractText(json), "gemini");
+            var text = ExtractText(json);
+
+            // L'AI puo' sbagliare i numeri: se scrive cifre che non sono nei fatti, il testo non si usa.
+            var unsupported = NumberGuard.FindUnsupportedNumbers(text, facts, language);
+            if (unsupported.Count > 0)
+            {
+                throw new ExplanationUnavailableException(
+                    "Il testo di Gemini contiene numeri che non sono nei fatti: " + string.Join(", ", unsupported),
+                    note: "ai_rejected");
+            }
+
+            return new ExplanationResult(text, "gemini");
         }
         catch (HttpRequestException ex)
         {

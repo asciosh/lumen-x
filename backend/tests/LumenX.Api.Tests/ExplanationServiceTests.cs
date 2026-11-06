@@ -68,4 +68,18 @@ public class ExplanationServiceTests
         Assert.Equal("ai_unavailable", result.Note);
         Assert.Contains("Caffè", result.Text);
     }
+
+    [Fact]
+    public async Task Gemini_text_with_invented_numbers_falls_back_to_template_with_rejected_note()
+    {
+        var json = "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Le vendite cresceranno del 35% il prossimo mese.\"}]}}]}";
+        var handler = new StubHandler(() => StubHandler.Json(json));
+        var service = Service(handler, "chiave-finta");
+
+        var result = await service.ExplainAsync(ExplanationTestData.Facts(), "it", useAi: true);
+
+        Assert.Equal("template", result.Source);
+        Assert.Equal("ai_rejected", result.Note);
+        Assert.DoesNotContain("35%", result.Text);
+    }
 }

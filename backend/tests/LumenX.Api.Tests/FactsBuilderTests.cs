@@ -118,4 +118,26 @@ public class FactsBuilderTests
 
         Assert.Null(facts.ChangePercent);
     }
+
+    [Fact]
+    public void Zero_days_percent_counts_days_without_sales()
+    {
+        var start = new DateOnly(2025, 1, 1);
+        var sales = Enumerable.Range(0, 60)
+            .Select(i => new SalePointDto(start.AddDays(i), i < 15 ? 0.0 : 100.0))
+            .ToList();
+        var run = Run(Points(28, _ => 100.0));
+
+        var facts = FactsBuilder.Build("Libri", sales, run);
+
+        Assert.Equal(25.0, facts.ZeroDaysPercent, 6);
+    }
+
+    [Fact]
+    public void Zero_days_percent_is_zero_when_every_day_has_sales()
+    {
+        var facts = FactsBuilder.Build("Pane", Sales(60, 100.0), Run(Points(28, _ => 100.0)));
+
+        Assert.Equal(0.0, facts.ZeroDaysPercent, 6);
+    }
 }

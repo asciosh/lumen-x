@@ -64,6 +64,8 @@ public static class FactsBuilder
             improvement = (naive - used) / naive * 100.0;
         }
 
+        var zeroDaysPercent = history.Count(s => s.Quantity == 0) * 100.0 / history.Count;
+
         var name = productName.Length > 100 ? productName[..100] : productName;
 
         return new ExplanationFacts(
@@ -88,7 +90,8 @@ public static class FactsBuilder
             MaeUsed: maeUsed,
             MaeNaive: maeNaive,
             ImprovementVsNaivePercent: improvement,
-            FilledMissingDays: run.FilledMissingDays);
+            FilledMissingDays: run.FilledMissingDays,
+            ZeroDaysPercent: zeroDaysPercent);
     }
 
     private static double? MaeOf(Dictionary<string, BacktestMetrics>? backtest, string method)

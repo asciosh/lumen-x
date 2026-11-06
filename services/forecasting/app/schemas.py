@@ -15,9 +15,12 @@ class ForecastRequest(BaseModel):
         description="Daily history (at least 42 days). Missing days are interpolated.",
     )
     horizon: int = Field(28, ge=1, le=90, description="Days to forecast.")
-    method: Literal["auto", "naive", "ets", "lightgbm"] = Field(
+    method: Literal["auto", "naive", "ets", "lightgbm", "blend"] = Field(
         "auto",
-        description="'auto' backtests the available methods on a holdout and picks the best.",
+        description=(
+            "'auto' uses the mean of ETS and LightGBM ('blend') when there is enough history, "
+            "otherwise the better of naive and ETS on a backtest."
+        ),
     )
 
 

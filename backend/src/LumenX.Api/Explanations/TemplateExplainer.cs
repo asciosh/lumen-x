@@ -5,6 +5,9 @@ namespace LumenX.Api.Explanations;
 /// <summary>Spiegazione scritta dal codice, in italiano o inglese: gratis, offline, senza AI.</summary>
 public sealed class TemplateExplainer : IExplainer
 {
+    // Sopra questa percentuale di giorni a zero la serie e' "intermittente" e la previsione poco affidabile.
+    private const double IntermittentThresholdPercent = 20;
+
     // Formati numerici espliciti: non dipendono dalle culture installate (nei container possono mancare).
     private static readonly NumberFormatInfo ItNumbers = new()
     {
@@ -58,6 +61,10 @@ public sealed class TemplateExplainer : IExplainer
 
     private static string DaysEn(int n) => n == 1 ? "1 day" : $"{n} days";
 
+    // "blend" e' il nome tecnico della media di ETS e LightGBM: nel testo si scrive per esteso.
+    private static string MethodLabel(string method, bool it) =>
+        method == "blend" ? (it ? "media di ETS e LightGBM" : "average of ETS and LightGBM") : method;
+
     private static string WeekdayIt(string englishName) =>
         ItWeekdays.TryGetValue(englishName, out var it) ? it : englishName;
 
@@ -104,7 +111,7 @@ public sealed class TemplateExplainer : IExplainer
         if (f.MaeUsed is double mae)
         {
             var check = f.HoldoutDays > 0 ? $"Nella verifica sugli ultimi {DaysIt(f.HoldoutDays)}" : "Nella verifica";
-            var sentence = $"{check} il metodo scelto ({f.MethodUsed}) ha sbagliato in media di {Qty(mae, true)} unità al giorno";
+            var sentence = $"{check} il metodo scelto ({MethodLabel(f.MethodUsed, true)}) ha sbagliato in media di {Qty(mae, true)} unità al giorno";
             if (f.ImprovementVsNaivePercent is double imp)
             {
                 sentence += imp > 0
@@ -121,6 +128,11 @@ public sealed class TemplateExplainer : IExplainer
         if (f.FilledMissingDays > 0)
         {
             parts.Add($"Nello storico mancavano {DaysIt(f.FilledMissingDays)} di dati, stimati per interpolazione.");
+        }
+
+        if (f.ZeroDaysPercent >= IntermittentThresholdPercent)
+        {
+            parts.Add($"Nello storico il {Pct(f.ZeroDaysPercent, true)}% dei giorni ha vendite pari a zero: con una serie così discontinua la previsione è poco affidabile.");
         }
 
         return string.Join(" ", parts);
@@ -169,7 +181,7 @@ public sealed class TemplateExplainer : IExplainer
         if (f.MaeUsed is double mae)
         {
             var check = f.HoldoutDays > 0 ? $"In the check on the last {DaysEn(f.HoldoutDays)}" : "In the check";
-            var sentence = $"{check}, the chosen method ({f.MethodUsed}) was off by {Qty(mae, false)} units per day on average";
+            var sentence = $"{check}, the chosen method ({MethodLabel(f.MethodUsed, false)}) was off by {Qty(mae, false)} units per day on average";
             if (f.ImprovementVsNaivePercent is double imp)
             {
                 sentence += imp > 0
@@ -186,6 +198,11 @@ public sealed class TemplateExplainer : IExplainer
         if (f.FilledMissingDays > 0)
         {
             parts.Add($"{DaysEn(f.FilledMissingDays)} of history were missing and were estimated by interpolation.");
+        }
+
+        if (f.ZeroDaysPercent >= IntermittentThresholdPercent)
+        {
+            parts.Add($"{Pct(f.ZeroDaysPercent, false)}% of the days in the history have zero sales: with such an intermittent series the forecast is not very reliable.");
         }
 
         return string.Join(" ", parts);

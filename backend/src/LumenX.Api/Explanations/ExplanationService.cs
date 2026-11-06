@@ -45,9 +45,9 @@ public sealed class ExplanationService
         }
         catch (ExplanationUnavailableException ex)
         {
-            _logger.LogWarning("Gemini non disponibile, uso il testo a modello: {Reason}", ex.Message);
+            _logger.LogWarning("Gemini non utilizzabile, uso il testo a modello: {Reason}", ex.Message);
             var plain = await _template.ExplainAsync(facts, language, cancellationToken);
-            return plain with { Note = "ai_unavailable" };
+            return plain with { Note = ex.Note };
         }
     }
 }

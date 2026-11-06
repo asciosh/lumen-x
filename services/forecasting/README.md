@@ -42,9 +42,9 @@ Response (abridged):
 ## How it works
 
 1. The series is sorted, gaps are interpolated.
-2. The last `min(horizon, n/4)` days are held out. Every candidate model is fitted on the rest and scored (MAE, RMSE) on the holdout.
-3. With `method=auto` the lowest RMSE wins; the winner is refitted on the full history and forecasts the horizon.
-4. The prediction interval is `yhat ± 1.28 x holdout RMSE`. It is an approximation, constant across the horizon, not a calibrated probabilistic forecast.
+2. Backtest on up to 3 consecutive, non-overlapping windows of `k = min(horizon, n/4)` days, ending at the end of the history (a window is dropped if it would leave fewer than 28 training days; short series use just one). Every candidate model is fitted on the days before each window and scored (MAE, RMSE) on the window; errors are pooled across windows. A single window can be lucky, so the choice is made on all of them together. `holdout_days` is the size `k` of each window.
+3. With `method=auto` and enough history for LightGBM, the forecast is the **blend**: the simple mean of the ETS and LightGBM forecasts (`method_used` is `blend`). On real series this was never far from the best single method, while choosing between them added noise. With shorter history, `auto` picks the lower pooled RMSE between naive and ETS. Any method can also be requested explicitly (`naive`, `ets`, `lightgbm`, `blend`).
+4. The prediction interval is `yhat ± 1.28 x pooled backtest RMSE` of the method used (for the blend, the RMSE of the mean forecast). It is an approximation, constant across the horizon, not a calibrated probabilistic forecast.
 5. If the history never goes below zero, forecasts and bounds are clipped at zero.
 
 Models: seasonal naive (repeat last week), additive Holt-Winters with damped trend (statsmodels), and LightGBM with calendar and lag features (all lags at least `horizon` days old, so no leakage). LightGBM needs enough history and is skipped by `auto` otherwise.

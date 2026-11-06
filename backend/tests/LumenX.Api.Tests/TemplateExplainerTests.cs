@@ -88,4 +88,41 @@ public class TemplateExplainerTests
 
         Assert.Contains("prevedo", text);
     }
+
+    [Fact]
+    public void Many_zero_days_add_a_reliability_warning()
+    {
+        var facts = ExplanationTestData.Facts() with { ZeroDaysPercent = 25.0 };
+
+        var it = TemplateExplainer.Explain(facts, "it");
+        var en = TemplateExplainer.Explain(facts, "en");
+
+        Assert.Contains("25% dei giorni ha vendite pari a zero", it);
+        Assert.Contains("poco affidabile", it);
+        Assert.Contains("25% of the days", en);
+        Assert.Contains("intermittent", en);
+    }
+
+    [Fact]
+    public void Few_zero_days_add_no_warning()
+    {
+        var facts = ExplanationTestData.Facts() with { ZeroDaysPercent = 5.0 };
+
+        Assert.DoesNotContain("zero", TemplateExplainer.Explain(facts, "it"));
+        Assert.DoesNotContain("zero sales", TemplateExplainer.Explain(facts, "en"));
+    }
+
+    [Fact]
+    public void Blend_method_is_written_in_full()
+    {
+        var facts = ExplanationTestData.Facts() with { MethodUsed = "blend" };
+
+        var it = TemplateExplainer.Explain(facts, "it");
+        var en = TemplateExplainer.Explain(facts, "en");
+
+        Assert.Contains("media di ETS e LightGBM", it);
+        Assert.DoesNotContain("blend", it);
+        Assert.Contains("average of ETS and LightGBM", en);
+        Assert.DoesNotContain("blend", en);
+    }
 }

@@ -26,9 +26,10 @@ public sealed record ExplanationFacts(
     double? MaeUsed,
     double? MaeNaive,
     double? ImprovementVsNaivePercent,
-    int FilledMissingDays);
+    int FilledMissingDays,
+    double ZeroDaysPercent = 0);
 
-/// <summary>Testo finale. Source: "template" o "gemini". Note: null, "ai_not_configured" o "ai_unavailable".</summary>
+/// <summary>Testo finale. Source: "template" o "gemini". Note: null, "ai_not_configured", "ai_unavailable" o "ai_rejected".</summary>
 public sealed record ExplanationResult(string Text, string Source, string? Note = null);
 
 public sealed record ExplanationDto(
@@ -62,7 +63,12 @@ public interface IExplainer
 /// <summary>Il provider AI non ha prodotto un testo utilizzabile (rete, limiti, risposta vuota...).</summary>
 public sealed class ExplanationUnavailableException : Exception
 {
-    public ExplanationUnavailableException(string message, Exception? inner = null) : base(message, inner)
+    public ExplanationUnavailableException(string message, Exception? inner = null, string note = "ai_unavailable")
+        : base(message, inner)
     {
+        Note = note;
     }
+
+    /// <summary>Codice mostrato in dashboard: "ai_unavailable" (errore, limiti) o "ai_rejected" (numeri non verificabili).</summary>
+    public string Note { get; }
 }

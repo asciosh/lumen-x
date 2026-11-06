@@ -177,7 +177,7 @@ Un DB creato con `EnsureCreated` **non** può essere migrato in seguito: ricreal
 1. Il codice calcola i **fatti** (variazione rispetto allo storico recente, giorno più forte, ampiezza dell'intervallo, errore del backtest rispetto al metodo naive, giorni mancanti).
 2. Con `useAi=false` il testo viene composto da modelli di frase: gratis, offline, senza AI.
 3. Con `useAi=true` (default) e una chiave configurata, **Gemini riscrive** gli stessi fatti in modo più naturale. All'AI vanno solo i fatti aggregati, non le vendite grezze, e le è vietato fare nuovi calcoli.
-4. Se la chiave manca o Gemini non risponde (limiti, rete), la risposta contiene il testo a modello e `note` vale `ai_not_configured` o `ai_unavailable`.
+4. Se la chiave manca o Gemini non risponde (limiti, rete), la risposta contiene il testo a modello e `note` vale `ai_not_configured` o `ai_unavailable`. Se il testo di Gemini contiene cifre che non sono tra i fatti calcolati, viene scartato (`ai_rejected`): l'AI racconta i numeri, non li inventa. Se almeno il 20% dei giorni dello storico è a zero, la spiegazione avverte che la previsione è poco affidabile.
 
 ```bash
 BASE=http://localhost:8080

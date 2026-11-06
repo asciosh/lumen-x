@@ -21,7 +21,7 @@ def test_health():
     assert client.get("/health").json() == {"status": "ok"}
 
 
-@pytest.mark.parametrize("method", ["auto", "naive", "ets", "lightgbm"])
+@pytest.mark.parametrize("method", ["auto", "naive", "ets", "lightgbm", "blend"])
 def test_forecast_methods(method):
     series = make_series()
     r = client.post("/forecast", json={"series": series, "horizon": 14, "method": method})

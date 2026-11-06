@@ -85,4 +85,60 @@ public class GeminiExplainerTests
             () => explainer.ExplainAsync(ExplanationTestData.Facts(), "it"));
         Assert.Equal(0, handler.Calls);
     }
+
+    [Fact]
+    public async Task Text_with_invented_numbers_is_rejected()
+    {
+        var json = "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Le vendite cresceranno del 35% il prossimo mese.\"}]}}]}";
+        var handler = new StubHandler(() => StubHandler.Json(json));
+        var explainer = ExplanationTestData.Gemini(handler, "chiave-finta");
+
+        var ex = await Assert.ThrowsAsync<ExplanationUnavailableException>(
+            () => explainer.ExplainAsync(ExplanationTestData.Facts(), "it"));
+
+        Assert.Equal("ai_rejected", ex.Note);
+        Assert.Contains("35", ex.Message);
+    }
+
+    [Fact]
+    public async Task Text_that_only_uses_the_facts_is_accepted()
+    {
+        var json = "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Prevedo circa 3.360 unità in 28 giorni, il 20% in più.\"}]}}]}";
+        var handler = new StubHandler(() => StubHandler.Json(json));
+        var explainer = ExplanationTestData.Gemini(handler, "chiave-finta");
+
+        var result = await explainer.ExplainAsync(ExplanationTestData.Facts(), "it");
+
+        Assert.Equal("gemini", result.Source);
+    }
+
+    [Fact]
+    public async Task Request_contains_the_zero_days_fact_and_the_rule_about_it()
+    {
+        var handler = new StubHandler(() => StubHandler.Json(ExplanationTestData.GeminiOkJson));
+        var explainer = ExplanationTestData.Gemini(handler, "chiave-finta");
+
+        await explainer.ExplainAsync(ExplanationTestData.Facts() with { ZeroDaysPercent = 30.0 }, "it");
+
+        Assert.Contains("zeroDaysPercent", handler.LastBody);
+        Assert.Contains("ZeroDaysPercent is 20 or more", handler.LastBody);
+    }
+
+    [Fact]
+    public void Default_note_of_the_exception_is_ai_unavailable()
+    {
+        Assert.Equal("ai_unavailable", new ExplanationUnavailableException("x").Note);
+    }
+
+    [Fact]
+    public async Task Request_explains_what_the_blend_method_is()
+    {
+        var handler = new StubHandler(() => StubHandler.Json(ExplanationTestData.GeminiOkJson));
+        var explainer = ExplanationTestData.Gemini(handler, "chiave-finta");
+
+        await explainer.ExplainAsync(ExplanationTestData.Facts() with { MethodUsed = "blend" }, "it");
+
+        Assert.Contains("means the average of the ETS and LightGBM forecasts", handler.LastBody);
+        Assert.Contains("blend", handler.LastBody);
+    }
 }
