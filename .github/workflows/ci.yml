@@ -1,0 +1,57 @@
+name: CI
+
+# Fa partire tutti i test a ogni push su main e a ogni pull request.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Se arriva un nuovo push mentre uno precedente e' ancora in corso, quello vecchio viene annullato.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  forecasting:
+    name: Forecasting service (pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/forecasting
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: services/forecasting/requirements-dev.txt
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Run tests
+        run: python -m pytest -q
+
+  dotnet:
+    name: Backend and dashboard (dotnet test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Backend tests
+        run: dotnet test backend/tests/LumenX.Api.Tests --nologo
+      - name: Build dashboard
+        run: dotnet build dashboard/src/LumenX.Dashboard --nologo
+      - name: Dashboard tests (bUnit)
+        run: dotnet test dashboard/tests/LumenX.Dashboard.Tests --nologo
+
+  docker:
+    name: Docker images build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build all images
+        run: docker compose build
