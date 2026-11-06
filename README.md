@@ -58,7 +58,7 @@ Live demo (example data): https://asciosh.github.io/lumen-x/demo/
 - [x] Forecasts by product and time period
 - [x] Natural-language explanations of forecasts
 - [ ] Chat-based questions over your data
-- [ ] Reorder suggestions (safety stock)
+- [x] Reorder suggestions (safety stock)
 - [x] Interactive dashboard
 
 ## Forecasting service
