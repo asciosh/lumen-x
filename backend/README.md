@@ -193,3 +193,30 @@ Il modello si cambia con `GEMINI_MODEL` (default `gemini-3.5-flash`): i nomi dis
 
 Nota: con il piano gratuito Google può usare i contenuti inviati per migliorare i propri prodotti, e i limiti di richieste sono bassi.
 Va bene per dati di prova; non usarlo con dati reali di clienti.
+
+## Suggerimenti di riordino
+
+`GET /products/{id}/reorder?leadTimeDays=7&reviewDays=7&serviceLevel=95&onHand=300` risponde alla domanda "quanto ordinare?" a partire dall'ultimo forecast salvato (tutti i parametri sono facoltativi; i valori indicati sono i default, tranne `onHand`).
+
+- `leadTimeDays`: giorni di consegna del fornitore (1-60)
+- `reviewDays`: giorni tra un ordine e l'altro (0-60)
+- `serviceLevel`: 90, 95, 98 o 99 (probabilità di non restare senza merce nel periodo)
+- `onHand`: scorta attuale; se manca, la risposta non contiene `suggestedOrder`
+
+Il calcolo, con P = `leadTimeDays` + `reviewDays`:
+
+| Voce | Formula |
+| --- | --- |
+| Domanda nel periodo | somma delle previsioni dei primi P giorni |
+| Scorta di sicurezza | z × RMSE giornaliero del backtest × √P |
+| Livello massimo | domanda + scorta di sicurezza |
+| Ordine suggerito | livello massimo − `onHand`, mai negativo, arrotondato per eccesso |
+
+con z = 1,2816 / 1,6449 / 2,0537 / 2,3263 per il 90 / 95 / 98 / 99%.
+
+Limiti: la radice di P presuppone errori indipendenti da un giorno all'altro, quindi se le vendite cambiano livello di colpo la scorta può risultare scarsa. Se il periodo supera l'orizzonte del forecast la risposta è 422 (ricalcola con un orizzonte più lungo). Se almeno il 20% dei giorni dello storico è a zero, la risposta contiene l'avviso `intermittent`.
+
+```bash
+curl "http://localhost:8080/products/1/reorder?leadTimeDays=7&reviewDays=7&serviceLevel=95&onHand=300"
+```
+

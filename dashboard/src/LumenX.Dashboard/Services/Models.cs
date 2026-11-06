@@ -39,6 +39,22 @@ public sealed record ForecastRunDto(
 
 public sealed record ExplanationDto(int ForecastRunId, string Language, string Text, string Source, string? Note);
 
+public sealed record ReorderSuggestionDto(
+    int ForecastRunId,
+    string MethodUsed,
+    int LeadTimeDays,
+    int ReviewDays,
+    int PeriodDays,
+    int ServiceLevelPercent,
+    double ZValue,
+    double DemandInPeriod,
+    double DailyErrorStdDev,
+    double SafetyStock,
+    double OrderUpToLevel,
+    double? OnHand,
+    double? SuggestedOrder,
+    List<string> Warnings);
+
 // Body di POST /products e POST /products/{id}/forecast
 public sealed record CreateProductRequest(string Name, string? Sku);
 public sealed record ForecastRequest(int? Horizon, string? Method);

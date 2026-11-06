@@ -167,6 +167,58 @@ else
                 <p class="muted">Fonte: @SourceLabel(explanation.Source)@NoteText(explanation.Note)</p>
             }
 
+            <h3>Riordino</h3>
+            <p class="muted">Quanto ordinare per non restare senza merce fino al prossimo arrivo, in base alla previsione e al suo errore.</p>
+            <div class="row">
+                <label>Giorni di consegna
+                    <input type="number" min="1" max="60" @bind="leadDays" />
+                </label>
+                <label>Giorni tra un ordine e l'altro
+                    <input type="number" min="0" max="60" @bind="reviewDays" />
+                </label>
+                <label>Livello di servizio
+                    <select @bind="serviceLevel">
+                        <option value="90">90%</option>
+                        <option value="95">95%</option>
+                        <option value="98">98%</option>
+                        <option value="99">99%</option>
+                    </select>
+                </label>
+                <label>Scorta attuale (facoltativa)
+                    <input @bind="onHandText" />
+                </label>
+                <button class="btn btn-secondary" @onclick="CalculateReorderAsync" disabled="@computingReorder">
+                    @(computingReorder ? "Un attimo…" : "Calcola riordino")
+                </button>
+            </div>
+            @if (reorderError is not null)
+            {
+                <div class="alert alert-error">@reorderError</div>
+            }
+            @if (reorder is not null)
+            {
+                <table class="table narrow">
+                    <tbody>
+                        <tr><td>Periodo da coprire</td><td class="num">@reorder.PeriodDays giorni</td></tr>
+                        <tr><td>Domanda prevista nel periodo</td><td class="num">@Fmt.Num(reorder.DemandInPeriod, 0)</td></tr>
+                        <tr><td>Scorta di sicurezza (@reorder.ServiceLevelPercent%)</td><td class="num">@Fmt.Num(reorder.SafetyStock, 0)</td></tr>
+                        <tr><td>Livello massimo</td><td class="num"><strong>@Fmt.Num(reorder.OrderUpToLevel, 0)</strong></td></tr>
+                        @if (reorder.SuggestedOrder is double order)
+                        {
+                            <tr><td>Ordine suggerito (scorta attuale @Fmt.Num(reorder.OnHand ?? 0, 0))</td><td class="num"><strong>@Fmt.Num(order, 0)</strong></td></tr>
+                        }
+                    </tbody>
+                </table>
+                @foreach (var w in reorder.Warnings)
+                {
+                    <div class="alert alert-error">@ReorderWarning(w)</div>
+                }
+                <p class="muted">
+                    Scorta di sicurezza = fattore del livello di servizio × errore giornaliero del metodo (@Fmt.Num(reorder.DailyErrorStdDev, 1)) × radice dei giorni del periodo.
+                    Presuppone errori indipendenti da un giorno all'altro: se le vendite cambiano livello di colpo, la scorta può risultare scarsa.
+                </p>
+            }
+
             @if (forecast.Backtest is { Count: > 0 })
             {
                 <h3>Backtest sull'holdout</h3>
@@ -227,6 +279,14 @@ else
     private bool forecasting;
     private int fileInputKey;
 
+    private int leadDays = 7;
+    private int reviewDays = 7;
+    private int serviceLevel = 95;
+    private string onHandText = "";
+    private ReorderSuggestionDto? reorder;
+    private string? reorderError;
+    private bool computingReorder;
+
     private ExplanationDto? explanation;
     private string explainLang = "it";
     private bool explaining;
@@ -252,6 +312,7 @@ else
         pageError = null;
         forecast = null;
         explanation = null;
+        reorder = null;
         importResult = null;
 
         var p = await Api.GetProductAsync(Id);
@@ -373,6 +434,7 @@ else
             if (result.IsSuccess)
             {
                 forecast = result.Value;
+                reorder = null;
                 await LoadExplanationAsync(false);
             }
             else
@@ -385,6 +447,46 @@ else
             forecasting = false;
         }
     }
+
+    private async Task CalculateReorderAsync()
+    {
+        reorderError = null;
+        double? onHand = null;
+        if (!string.IsNullOrWhiteSpace(onHandText))
+        {
+            if (!double.TryParse(onHandText.Trim().Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
+            {
+                reorderError = "La scorta attuale deve essere un numero (per esempio 300).";
+                return;
+            }
+            onHand = parsed;
+        }
+
+        computingReorder = true;
+        try
+        {
+            var result = await Api.GetReorderAsync(Id, leadDays, reviewDays, serviceLevel, onHand);
+            if (result.IsSuccess)
+            {
+                reorder = result.Value;
+            }
+            else
+            {
+                reorder = null;
+                reorderError = result.ErrorText;
+            }
+        }
+        finally
+        {
+            computingReorder = false;
+        }
+    }
+
+    private static string ReorderWarning(string code) => code switch
+    {
+        "intermittent" => "Molti giorni a zero nello storico: il calcolo presuppone vendite regolari, quindi la scorta suggerita non è affidabile.",
+        _ => code
+    };
 
     private async Task LoadExplanationAsync(bool useAi)
     {

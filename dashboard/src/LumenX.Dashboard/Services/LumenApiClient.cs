@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -56,6 +57,18 @@ public sealed class LumenApiClient : ILumenApiClient
     {
         var url = $"products/{productId}/forecast/explanation?lang={Uri.EscapeDataString(language)}&useAi={(useAi ? "true" : "false")}";
         return SendAsync<ExplanationDto>(() => _http.GetAsync(url, ct), ct);
+    }
+
+    public Task<ApiResult<ReorderSuggestionDto>> GetReorderAsync(
+        int productId, int leadTimeDays, int reviewDays, int serviceLevel, double? onHand, CancellationToken ct = default)
+    {
+        var url = $"products/{productId}/reorder?leadTimeDays={leadTimeDays}&reviewDays={reviewDays}&serviceLevel={serviceLevel}";
+        if (onHand.HasValue)
+        {
+            url += "&onHand=" + onHand.Value.ToString("0.###", CultureInfo.InvariantCulture);
+        }
+
+        return SendAsync<ReorderSuggestionDto>(() => _http.GetAsync(url, ct), ct);
     }
 
     public Task<ApiResult<ForecastRunDto>> CreateForecastAsync(

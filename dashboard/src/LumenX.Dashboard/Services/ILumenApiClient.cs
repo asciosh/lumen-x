@@ -19,6 +19,10 @@ public interface ILumenApiClient
     Task<ApiResult<ExplanationDto>> GetExplanationAsync(
         int productId, string language, bool useAi, CancellationToken ct = default);
 
+    /// <summary>Suggerimento di riordino sull'ultimo forecast. onHand e' facoltativo.</summary>
+    Task<ApiResult<ReorderSuggestionDto>> GetReorderAsync(
+        int productId, int leadTimeDays, int reviewDays, int serviceLevel, double? onHand, CancellationToken ct = default);
+
     Task<ApiResult<ForecastRunDto>> CreateForecastAsync(
         int productId, int? horizon, string? method, CancellationToken ct = default);
 }

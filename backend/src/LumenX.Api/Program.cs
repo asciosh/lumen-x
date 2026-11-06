@@ -44,6 +44,7 @@ app.MapProductEndpoints();
 app.MapSalesEndpoints();
 app.MapForecastEndpoints();
 app.MapExplanationEndpoints();
+app.MapReorderEndpoints();
 
 app.Run();
 
