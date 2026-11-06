@@ -29,7 +29,7 @@ CSV / API  →  .NET Backend  →  Forecasting service (Python)
               PostgreSQL            Statistical / ML models
                   │
                   ▼
-           LLM layer (explanations and data Q&A)
+           LLM layer (forecast explanations; data Q&A planned)
                   │
                   ▼
               Dashboard
@@ -53,10 +53,10 @@ Live demo (example data): https://asciosh.github.io/lumen-x/demo/
 ## Features
 
 - [x] Baseline models and time-aware backtesting
-- [x] Forecasting API with automatic model selection (naive, ETS, LightGBM)
+- [x] Forecasting API (naive, ETS, LightGBM and their blend, used by default)
 - [x] Sales data import from CSV
 - [x] Forecasts by product and time period
-- [ ] Natural-language explanations of forecasts
+- [x] Natural-language explanations of forecasts
 - [ ] Chat-based questions over your data
 - [ ] Reorder suggestions (safety stock)
 - [x] Interactive dashboard
@@ -114,7 +114,7 @@ Then open the dashboard on http://localhost:8081 (in a Codespace: Ports tab, por
 - [x] **Notebooks**: EDA, baselines, single-series and global LightGBM models with backtesting
 - [x] **Forecasting service** exposing a `/forecast` endpoint (FastAPI)
 - [x] **.NET backend** and persistence
-- [x] **LLM layer** for explanations and data Q&A
+- [x] **LLM layer** for forecast explanations (Italian/English, Gemini optional)
 - [x] **Dashboard** (Blazor Server)
 - [ ] Deployment and a trial with real data
 
