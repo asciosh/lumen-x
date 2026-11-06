@@ -4,6 +4,8 @@
 
 ![Lumen-X](docs/banner.png)
 
+[![CI](https://github.com/asciosh/lumen-x/actions/workflows/ci.yml/badge.svg)](https://github.com/asciosh/lumen-x/actions/workflows/ci.yml)
+
 *Lumen-X: the future, in plain sight.*
 
 **Lumen-X** is a sales forecasting system with an AI assistant that explains the numbers in plain language. Built for small businesses: shops, restaurants and small e-commerce stores.
