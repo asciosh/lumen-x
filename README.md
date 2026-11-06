@@ -2,7 +2,7 @@
 
 > AI-powered sales forecasting for small businesses. ASP.NET Core + FastAPI + LLM.
 
-![Lumen-X](docs/banner.png);
+![Lumen-X](docs/banner.png)
 
 *Lumen-X: the future, in plain sight.*
 
@@ -38,10 +38,10 @@ CSV / API  →  .NET Backend  →  Forecasting service (Python)
 | Component | Technology | Status |
 |---|---|---|
 | Forecasting service | Python, FastAPI, statsmodels, LightGBM | ✅ available |
-| Backend and API | C# / ASP.NET Core | done |
-| AI layer | LLM via API | planned |
-| Database | PostgreSQL | planned |
-| Frontend | Blazor | planned |
+| Backend and API | C# / ASP.NET Core | ✅ available |
+| AI layer | Gemini API (optional), rule-based fallback | ✅ available |
+| Database | PostgreSQL | ✅ available |
+| Dashboard | Blazor Server | ✅ available |
 | Deployment | Docker Compose | forecasting, backend, dashboard, PostgreSQL |
 
 Dashboard (Blazor Server): products, CSV import and forecasts with chart.
@@ -100,14 +100,17 @@ Open them in Google Colab. The Kaggle data needs a free Kaggle account and an AP
 
 ## Quick start
 
-Starts the forecasting service on http://localhost:8000 (interactive docs at `/docs`).
+Starts everything: PostgreSQL, the forecasting service (port 8000), the backend (8080) and the dashboard (8081).
 
 ```bash
 git clone https://github.com/asciosh/lumen-x.git
 cd lumen-x
 docker compose up --build
-Then open the dashboard on http://localhost:8081 (in a Codespace: Ports tab, port 8081).
 ```
+
+Then open the dashboard on http://localhost:8081 (in a Codespace: Ports tab, port 8081). Explanations work without any key; to let Gemini rewrite them, set `GEMINI_API_KEY` (see `backend/README.md`).
+
+Tests: `pytest` in `services/forecasting`, `dotnet test backend/tests/LumenX.Api.Tests` and `dotnet test dashboard/tests/LumenX.Dashboard.Tests`.
 
 ## Roadmap
 
@@ -116,7 +119,19 @@ Then open the dashboard on http://localhost:8081 (in a Codespace: Ports tab, por
 - [x] **.NET backend** and persistence
 - [x] **LLM layer** for forecast explanations (Italian/English, Gemini optional)
 - [x] **Dashboard** (Blazor Server)
-- [ ] Deployment and a trial with real data
+- [x] Trial with real data (Kaggle Store Sales, rolling backtest)
+- [ ] Deployment
+
+## Results on real data
+
+Rolling backtest on the Kaggle *Store Sales* dataset: 8 windows of 28 days, error as WAPE (lower is better).
+
+| Series | Seasonal naive | ETS + LightGBM blend (default) |
+|---|---|---|
+| Bread / bakery | 17.7% | 10.6% |
+| School supplies | 68.0% | 57.7% |
+
+Series with many zero-sales days are flagged as unreliable in the explanations and in the reorder suggestions.
 
 ## Project status
 
