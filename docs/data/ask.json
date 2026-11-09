@@ -1,55 +1,55 @@
 {
- "exportedAtUtc": "2026-11-09T14:15:36+00:00",
- "productName": "Pane reale",
+ "exportedAtUtc": "2026-11-09T15:24:07+00:00",
+ "productName": "Bread",
  "questions": {
   "it": [
    {
     "question": "Quanto ho venduto negli ultimi 30 giorni?",
     "intent": "sales_total",
     "understood": true,
-    "answer": "Dal 19/06/2017 al 18/07/2017 (30 giorni) hai venduto 53.974 unità, cioè 1.799 al giorno."
+    "answer": "Dal 17/07/2017 al 15/08/2017 (30 giorni) hai venduto 48.363 unità, cioè 1.612 al giorno."
    },
    {
     "question": "Come vanno le vendite rispetto al mese scorso?",
     "intent": "compare_periods",
     "understood": true,
-    "answer": "Negli ultimi 30 giorni (dal 19/06/2017 al 18/07/2017) hai venduto 53.974 unità, contro 56.113 nei 30 giorni precedenti: il 3,8% in meno."
+    "answer": "Negli ultimi 30 giorni (dal 17/07/2017 al 15/08/2017) hai venduto 48.363 unità, contro 55.605 nei 30 giorni precedenti: il 13% in meno."
    },
    {
     "question": "Qual è il giorno più forte della settimana?",
     "intent": "weekday_pattern",
     "understood": true,
-    "answer": "Guardando gli ultimi 84 giorni di dati, il giorno più forte è domenica (in media 2.455 unità) e il più debole giovedì (1.350)."
+    "answer": "Guardando gli ultimi 84 giorni di dati, il giorno più forte è domenica (in media 2.346 unità) e il più debole giovedì (1.325)."
    },
    {
     "question": "Quanto prevedo di vendere nelle prossime 2 settimane?",
     "intent": "forecast_total",
     "understood": true,
-    "answer": "Per i prossimi 14 giorni (dal 19/07/2017 al 01/08/2017) prevedo circa 24.259 unità, 1.733 al giorno."
+    "answer": "Per i prossimi 14 giorni (dal 16/08/2017 al 29/08/2017) prevedo circa 23.274 unità, 1.662 al giorno."
    },
    {
     "question": "Cosa conviene ordinare?",
     "intent": "reorder",
     "understood": true,
-    "answer": "Per coprire i prossimi 14 giorni (7 di consegna e 7 tra un ordine e l'altro) con un livello di servizio del 95%: domanda prevista 24.259, scorta di sicurezza 1.270, quindi serve un livello massimo di circa 25.529 unità tra magazzino e ordini. Nel riquadro Riordino puoi indicare i tuoi tempi e la scorta attuale."
+    "answer": "Per coprire i prossimi 14 giorni (7 di consegna e 7 tra un ordine e l'altro) con un livello di servizio del 95%: domanda prevista 23.274, scorta di sicurezza 1.049, quindi serve un livello massimo di circa 24.323 unità tra magazzino e ordini. Nel riquadro Riordino puoi indicare i tuoi tempi e la scorta attuale."
    },
    {
     "question": "Quanto è affidabile la previsione?",
     "intent": "reliability",
     "understood": true,
-    "answer": "Il metodo usato è la media di ETS e LightGBM. Nei giorni di verifica ha sbagliato in media di 137 unità al giorno, circa il 7,8% delle vendite previste. La fascia probabile è di circa ±15%. È il 29% in meno del metodo semplice di confronto (naive)."
+    "answer": "Il metodo usato è la media di ETS e LightGBM. Nei giorni di verifica ha sbagliato in media di 124 unità al giorno, circa il 7,3% delle vendite previste. La fascia probabile è di circa ±13%. È il 22% in meno del metodo semplice di confronto (naive)."
    },
    {
     "question": "Spiegami la previsione",
     "intent": "summary",
     "understood": true,
-    "answer": "Per «Pane reale» prevedo circa 49.051 unità su 28 giorni (dal 19/07/2017 al 15/08/2017), cioè 1.752 al giorno. Sono il 3,2% in meno rispetto agli ultimi 28 giorni (1.809 al giorno). Il giorno più forte è domenica (circa 2.358 unità), il più debole giovedì (circa 1.320). L'intervallo di confidenza è di circa ±15% attorno al valore centrale: più è ampio, più la previsione è incerta. Nella verifica sugli ultimi 28 giorni il metodo scelto (media di ETS e LightGBM) ha sbagliato in media di 137 unità al giorno, il 29% in meno del metodo semplice di confronto (naive). Nello storico mancavano 4 giorni di dati, stimati per interpolazione."
+    "answer": "Per «Bread» prevedo circa 47.785 unità su 28 giorni (dal 16/08/2017 al 12/09/2017), cioè 1.707 al giorno. Sono il 5,3% in più rispetto agli ultimi 28 giorni (1.621 al giorno). Il giorno più forte è domenica (circa 2.381 unità), il più debole giovedì (circa 1.207). L'intervallo di confidenza è di circa ±13% attorno al valore centrale: più è ampio, più la previsione è incerta. Nella verifica sugli ultimi 28 giorni il metodo scelto (media di ETS e LightGBM) ha sbagliato in media di 124 unità al giorno, il 22% in meno del metodo semplice di confronto (naive). Nello storico mancavano 4 giorni di dati, stimati per interpolazione."
    },
    {
     "question": "Qual è stato il giorno record?",
     "intent": "peak_day",
     "understood": true,
-    "answer": "Dal 20/04/2017 al 18/07/2017 il giorno migliore è stato 21/05/2017 (domenica) con 2.888 unità; il peggiore 25/05/2017 (giovedì) con 1.268."
+    "answer": "Dal 18/05/2017 al 15/08/2017 il giorno migliore è stato 21/05/2017 (domenica) con 2.888 unità; il peggiore 27/07/2017 (giovedì) con 1.141."
    }
   ],
   "en": [
@@ -57,49 +57,49 @@
     "question": "How much did I sell in the last 30 days?",
     "intent": "sales_total",
     "understood": true,
-    "answer": "From 19 Jun 2017 to 18 Jul 2017 (30 days) you sold 53,974 units, or 1,799 per day."
+    "answer": "From 17 Jul 2017 to 15 Aug 2017 (30 days) you sold 48,363 units, or 1,612 per day."
    },
    {
     "question": "How are sales doing compared to last month?",
     "intent": "compare_periods",
     "understood": true,
-    "answer": "In the last 30 days (from 19 Jun 2017 to 18 Jul 2017) you sold 53,974 units, against 56,113 in the previous 30 days: 3.8% less."
+    "answer": "In the last 30 days (from 17 Jul 2017 to 15 Aug 2017) you sold 48,363 units, against 55,605 in the previous 30 days: 13% less."
    },
    {
     "question": "Which day of the week sells best?",
     "intent": "weekday_pattern",
     "understood": true,
-    "answer": "Looking at the last 84 days of data, the strongest day is Sunday (about 2,455 units on average) and the weakest is Thursday (1,350)."
+    "answer": "Looking at the last 84 days of data, the strongest day is Sunday (about 2,346 units on average) and the weakest is Thursday (1,325)."
    },
    {
     "question": "How much will I sell in the next 2 weeks?",
     "intent": "forecast_total",
     "understood": true,
-    "answer": "For the next 14 days (from 19 Jul 2017 to 1 Aug 2017) I forecast about 24,259 units, 1,733 per day."
+    "answer": "For the next 14 days (from 16 Aug 2017 to 29 Aug 2017) I forecast about 23,274 units, 1,662 per day."
    },
    {
     "question": "What should I order?",
     "intent": "reorder",
     "understood": true,
-    "answer": "To cover the next 14 days (7 of delivery and 7 between orders) at a 95% service level: expected demand 24,259, safety stock 1,270, so you need a maximum level of about 25,529 units between stock and orders. In the Reorder box you can enter your own lead times and current stock."
+    "answer": "To cover the next 14 days (7 of delivery and 7 between orders) at a 95% service level: expected demand 23,274, safety stock 1,049, so you need a maximum level of about 24,323 units between stock and orders. In the Reorder box you can enter your own lead times and current stock."
    },
    {
     "question": "How reliable is the forecast?",
     "intent": "reliability",
     "understood": true,
-    "answer": "The method used is the average of ETS and LightGBM. On the check days it was off by 137 units per day on average, about 7.8% of the forecast sales. The likely range is about ±15%. That is 29% less than the simple benchmark method (naive)."
+    "answer": "The method used is the average of ETS and LightGBM. On the check days it was off by 124 units per day on average, about 7.3% of the forecast sales. The likely range is about ±13%. That is 22% less than the simple benchmark method (naive)."
    },
    {
     "question": "Explain the forecast",
     "intent": "summary",
     "understood": true,
-    "answer": "For “Pane reale” I forecast about 49,051 units over 28 days (from 19 Jul 2017 to 15 Aug 2017), or 1,752 per day. That is 3.2% lower than the last 28 days (1,809 per day). The strongest day is Sunday (about 2,358 units) and the weakest is Thursday (about 1,320). The confidence interval is about ±15% around the central value: the wider it is, the more uncertain the forecast. In the check on the last 28 days, the chosen method (average of ETS and LightGBM) was off by 137 units per day on average, 29% less than the simple benchmark method (naive). 4 days of history were missing and were estimated by interpolation."
+    "answer": "For “Bread” I forecast about 47,785 units over 28 days (from 16 Aug 2017 to 12 Sep 2017), or 1,707 per day. That is 5.3% higher than the last 28 days (1,621 per day). The strongest day is Sunday (about 2,381 units) and the weakest is Thursday (about 1,207). The confidence interval is about ±13% around the central value: the wider it is, the more uncertain the forecast. In the check on the last 28 days, the chosen method (average of ETS and LightGBM) was off by 124 units per day on average, 22% less than the simple benchmark method (naive). 4 days of history were missing and were estimated by interpolation."
    },
    {
     "question": "What was my record day?",
     "intent": "peak_day",
     "understood": true,
-    "answer": "From 20 Apr 2017 to 18 Jul 2017 the best day was 21 May 2017 (Sunday) with 2,888 units; the worst was 25 May 2017 (Thursday) with 1,268."
+    "answer": "From 18 May 2017 to 15 Aug 2017 the best day was 21 May 2017 (Sunday) with 2,888 units; the worst was 27 Jul 2017 (Thursday) with 1,141."
    }
   ]
  }
