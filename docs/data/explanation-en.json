@@ -1,0 +1,32 @@
+{
+ "forecastRunId": 26,
+ "language": "en",
+ "text": "The sales forecast for Pane reale covering July 19, 2017 through August 15, 2017 predicts total sales of 49,051 units, averaging about 1,752 units per day. This prediction was calculated using a blend method, which combines the average of the ETS and LightGBM forecasts. Average daily sales are expected to decrease by 3.17 percent compared to the prior 28-day period. Sundays are projected to be the strongest day of the week with an average of 2,358 units, while Thursdays are expected to be the weakest with an average of 1,320 units.",
+ "source": "gemini",
+ "note": null,
+ "facts": {
+  "productName": "Pane reale",
+  "historyDays": 1656,
+  "historyEnd": "2017-07-18",
+  "methodUsed": "blend",
+  "horizon": 28,
+  "forecastStart": "2017-07-19",
+  "forecastEnd": "2017-08-15",
+  "forecastTotal": 49051.27492501561,
+  "forecastAvgPerDay": 1751.8312473219862,
+  "referenceDays": 28,
+  "referenceAvgPerDay": 1809.1757857142861,
+  "changePercent": -3.1696498950023,
+  "strongestWeekday": "Sunday",
+  "strongestWeekdayAvg": 2357.780479128365,
+  "weakestWeekday": "Thursday",
+  "weakestWeekdayAvg": 1320.1456270036665,
+  "intervalHalfWidthPercent": 15.100944690370483,
+  "holdoutDays": 28,
+  "maeUsed": 137.11441380683945,
+  "maeNaive": 193.16229761904765,
+  "improvementVsNaivePercent": 29.01595420175896,
+  "filledMissingDays": 4,
+  "zeroDaysPercent": 0.30193236714975846
+ }
+}

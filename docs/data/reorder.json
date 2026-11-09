@@ -1,0 +1,68 @@
+{
+ "variants": [
+  {
+   "forecastRunId": 26,
+   "methodUsed": "blend",
+   "leadTimeDays": 7,
+   "reviewDays": 7,
+   "periodDays": 14,
+   "serviceLevelPercent": 90,
+   "zValue": 1.2816,
+   "demandInPeriod": 24258.649956193338,
+   "dailyErrorStdDev": 206.41625134731632,
+   "safetyStock": 989.8295234795232,
+   "orderUpToLevel": 25248.47947967286,
+   "onHand": null,
+   "suggestedOrder": null,
+   "warnings": []
+  },
+  {
+   "forecastRunId": 26,
+   "methodUsed": "blend",
+   "leadTimeDays": 7,
+   "reviewDays": 7,
+   "periodDays": 14,
+   "serviceLevelPercent": 95,
+   "zValue": 1.6449,
+   "demandInPeriod": 24258.649956193338,
+   "dailyErrorStdDev": 206.41625134731632,
+   "safetyStock": 1270.4202427992102,
+   "orderUpToLevel": 25529.070198992547,
+   "onHand": null,
+   "suggestedOrder": null,
+   "warnings": []
+  },
+  {
+   "forecastRunId": 26,
+   "methodUsed": "blend",
+   "leadTimeDays": 7,
+   "reviewDays": 7,
+   "periodDays": 14,
+   "serviceLevelPercent": 98,
+   "zValue": 2.0537,
+   "demandInPeriod": 24258.649956193338,
+   "dailyErrorStdDev": 206.41625134731632,
+   "safetyStock": 1586.1523816868732,
+   "orderUpToLevel": 25844.80233788021,
+   "onHand": null,
+   "suggestedOrder": null,
+   "warnings": []
+  },
+  {
+   "forecastRunId": 26,
+   "methodUsed": "blend",
+   "leadTimeDays": 7,
+   "reviewDays": 7,
+   "periodDays": 14,
+   "serviceLevelPercent": 99,
+   "zValue": 2.3263,
+   "demandInPeriod": 24258.649956193338,
+   "dailyErrorStdDev": 206.41625134731632,
+   "safetyStock": 1796.6919635380887,
+   "orderUpToLevel": 26055.341919731425,
+   "onHand": null,
+   "suggestedOrder": null,
+   "warnings": []
+  }
+ ]
+}

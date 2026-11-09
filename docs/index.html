@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f1117">
+<title>Lumen-X · AI-powered sales forecasting</title>
+<meta name="description" content="Sales forecasting for small businesses: honest backtests, plain-language explanations, reorder suggestions and answers about your data. Live demo.">
+<link rel="canonical" href="https://asciosh.github.io/lumen-x/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Lumen-X">
+<meta property="og:title" content="Lumen-X · AI-powered sales forecasting for small businesses">
+<meta property="og:description" content="Honest backtests, plain-language explanations, reorder suggestions and answers about your data. .NET, FastAPI and an optional LLM. Live demo.">
+<meta property="og:url" content="https://asciosh.github.io/lumen-x/">
+<meta property="og:image" content="https://asciosh.github.io/lumen-x/banner.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/bricolage-grotesque-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/figtree-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="app.css">
+<style>
+  /* Demo only: language switch and notice */
+  .topbar { justify-content: space-between; }
+  .topbar .left { display: flex; align-items: center; gap: 0.9rem; }
+  .toggle { display: inline-flex; padding: 3px; gap: 2px; background: var(--ink-0); border: 1px solid var(--line); border-radius: 999px; }
+  .toggle button { font: inherit; font-size: 0.88rem; padding: 0.3rem 0.85rem; border: 0; border-radius: 999px; background: transparent; color: var(--muted); cursor: pointer; }
+  .toggle button.on { background: var(--amber); color: #1a1204; font-weight: 650; }
+  .notice { margin: 0 0 1.5rem; padding: 0.7rem 1rem; max-width: 70ch; color: var(--amber-soft); background: rgba(252, 187, 71, 0.07); border: 1px solid rgba(252, 187, 71, 0.25); border-radius: var(--radius-s); font-size: 0.95rem; }
+  .lede { margin-bottom: 1.4rem; }
+  .err { color: var(--err); background: var(--err-bg); border-left: 3px solid var(--err); padding: 0.7rem 1rem; border-radius: var(--radius-s); }
+  .source { margin-top: 0.2rem; }
+  #h-name { margin-bottom: 1.1rem; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="left">
+    <a class="brand" href="https://github.com/asciosh/lumen-x" aria-label="Lumen-X">
+      <svg class="brand-mark" viewBox="0 0 38 24" aria-hidden="true"><path class="m-line" d="M1.5 17 C5 6 8.5 20 13 12 S20 5 24 11"/><circle class="m-dot" cx="24" cy="11" r="3.2"/><path class="m-dash" d="M29 9 C31 5 33.5 11 36.5 4"/></svg>
+      Lumen-X
+    </a>
+    <span class="tagline" id="tagline"></span>
+  </div>
+  <span class="toggle" role="group" aria-label="Language">
+    <button id="btn-en" class="on">EN</button><button id="btn-it">IT</button>
+  </span>
+</header>
+
+<main class="content">
+  <p class="notice" id="banner"></p>
+  <div id="content"><p class="muted" id="loading"></p></div>
+</main>
+<footer class="footer" id="footer"></footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var TEXT = {
+    it: {
+      tagline: 'Previsione vendite',
+      banner: 'Questa è una demo statica: i numeri sono stati esportati dall\'app vera, in esecuzione su dati di esempio (Kaggle Store Sales), quindi niente qui è calcolato in diretta. <a href="https://codespaces.new/asciosh/lumen-x">Prova l\'app vera in un Codespace di GitHub</a> · <a href="https://github.com/asciosh/lumen-x">Codice sorgente</a>',
+      loading: 'Caricamento…', loadError: 'Impossibile caricare i dati della demo: ',
+      forecast: 'Previsione', lead: function (days, total, avg) { return 'Prossimi ' + days + ' giorni: circa <strong>' + total + '</strong> unità, ' + avg + ' al giorno.'; },
+      history: 'Storico', band: 'Fascia probabile (min–max)', chartNote: 'Ultimi 120 giorni di storico e previsione dei giorni successivi.',
+      method: 'Metodo', horizon: 'Orizzonte', days: 'giorni', check: 'Verifica su',
+      explanation: 'Spiegazione', source: 'Fonte', srcGemini: 'Gemini (riscritta dall\'AI a partire dai fatti calcolati)', srcTemplate: 'modello a regole (nessuna AI)',
+      noExplanation: 'Spiegazione non disponibile in questa lingua.',
+      reliable: 'Quanto è affidabile', reliableNote: 'Errore medio su giorni che il modello non aveva visto: più è basso, meglio è.', metric: 'Metodo',
+      repo: 'Codice e documentazione su GitHub', footer: 'Lumen-X · il futuro delle tue vendite, in chiaro.',
+      askTitle: 'Chiedi ai tuoi dati', askNote: 'Domande vere, con le risposte calcolate dall\'app sui dati di questo prodotto (senza AI). Nell\'app completa puoi scrivere le tue.',
+      reorderTitle: 'Riordino', reorderNote: 'Quanto ordinare per non restare senza merce fino al prossimo arrivo (7 giorni di consegna, 7 tra un ordine e l\'altro).',
+      serviceLevel: 'Livello di servizio', rPeriod: 'Periodo da coprire', rDemand: 'Domanda prevista nel periodo',
+      rSafety: function (p) { return 'Scorta di sicurezza (' + p + '%)'; }, rLevel: 'Livello massimo', daysN: function (n) { return n + ' giorni'; }
+    },
+    en: {
+      tagline: 'Sales forecasting',
+      banner: 'This is a static demo: the numbers were exported from the real app running on example data (Kaggle Store Sales), so nothing here is computed live. <a href="https://codespaces.new/asciosh/lumen-x">Try the real app in a GitHub Codespace</a> · <a href="https://github.com/asciosh/lumen-x">Source code</a>',
+      loading: 'Loading…', loadError: 'Could not load the demo data: ',
+      forecast: 'Forecast', lead: function (days, total, avg) { return 'Next ' + days + ' days: about <strong>' + total + '</strong> units, ' + avg + ' per day.'; },
+      history: 'History', band: 'Likely range (min–max)', chartNote: 'The last 120 days of history and the forecast for the days that follow.',
+      method: 'Method', horizon: 'Horizon', days: 'days', check: 'Checked on',
+      explanation: 'Explanation', source: 'Source', srcGemini: 'Gemini (rewritten by AI from the computed facts)', srcTemplate: 'rule-based template (no AI)',
+      noExplanation: 'Explanation not available in this language.',
+      reliable: 'How reliable is it', reliableNote: 'Average error on days the model had not seen: lower is better.', metric: 'Method',
+      repo: 'Code and documentation on GitHub', footer: 'Lumen-X · the future of your sales, in plain sight.',
+      askTitle: 'Ask your data', askNote: 'Real questions, answered by the app from this product\'s data (no AI involved). In the full app you can type your own.',
+      reorderTitle: 'Reorder', reorderNote: 'How much to order so you do not run out of stock until the next delivery (7 days of lead time, 7 days between orders).',
+      serviceLevel: 'Service level', rPeriod: 'Period to cover', rDemand: 'Expected demand in the period',
+      rSafety: function (p) { return 'Safety stock (' + p + '%)'; }, rLevel: 'Maximum level', daysN: function (n) { return n + ' days'; }
+    }
+  };
+
+  // English by default, Italian if the browser prefers it (same rule as the dashboard).
+  var state = { ask: null, reorder: null, turns: [], level: 95, lang: /^it/i.test(navigator.language || '') ? 'it' : 'en', forecast: null, sales: null, expl: { it: null, en: null } };
+
+  function el(id) { return document.getElementById(id); }
+  function t(key) { return TEXT[state.lang][key]; }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  // Same separators as the dashboard (never dependent on the browser language)
+  function num(v, d) {
+    var neg = v < 0, s = Math.abs(v).toFixed(d), parts = s.split('.');
+    var grp = state.lang === 'it' ? '.' : ',', dec = state.lang === 'it' ? ',' : '.';
+    var int = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, grp);
+    var out = parts.length > 1 ? int + dec + parts[1] : int;
+    return (neg && Number(s) !== 0 ? '-' : '') + out;
+  }
+  function dayNumber(iso) { var p = iso.split('-'); return Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000); }
+  function shortDate(dn) { var d = new Date(dn * 86400000), pad = function (x) { return (x < 10 ? '0' : '') + x; };
+    return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1) + '/' + pad(d.getUTCFullYear() % 100); }
+  function n(v) { return String(Math.round(v * 100) / 100); }
+
+  // "Nice" scale for the vertical axis (1, 2, 5 x power of 10)
+  function niceScale(lo, hi) {
+    var range = hi - lo; if (range <= 0) range = Math.max(1, Math.abs(hi));
+    var rough = range * 1.06 / 4, mag = Math.pow(10, Math.floor(Math.log10(rough))), frac = rough / mag;
+    var step = (frac <= 1 ? 1 : frac <= 2 ? 2 : frac <= 5 ? 5 : 10) * mag;
+    var min = Math.floor((lo - range * 0.03) / step) * step; if (lo >= 0 && min < 0) min = 0;
+    var max = Math.ceil((hi + range * 0.03) / step) * step; if (max <= min) max = min + step;
+    return { min: min, max: max, step: step };
+  }
+
+  function chartSvg(sales, fc, maxHist) {
+    var W = 800, H = 340, L = 58, R = 18, T = 18, B = 38;
+    var hist = sales.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    if (hist.length > maxHist) hist = hist.slice(hist.length - maxHist);
+    var days = hist.map(function (p) { return dayNumber(p.date); }).concat(fc.map(function (p) { return dayNumber(p.date); }));
+    if (!days.length) return '';
+    var x0 = Math.min.apply(null, days), x1 = Math.max.apply(null, days), span = Math.max(1, x1 - x0);
+    var vals = hist.map(function (p) { return p.quantity; });
+    fc.forEach(function (p) { vals.push(p.yhat, p.lower, p.upper); });
+    var sc = niceScale(Math.min.apply(null, vals), Math.max.apply(null, vals));
+    function X(d) { return L + (d - x0) / span * (W - L - R); }
+    function Y(v) { return T + (1 - (v - sc.min) / (sc.max - sc.min)) * (H - T - B); }
+    function pt(iso, v) { return n(X(dayNumber(iso))) + ',' + n(Y(v)); }
+
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="chart" role="img" aria-label="' + esc(t('forecast')) + '">';
+    s += '<defs><linearGradient id="lx-band" x1="0" y1="0" x2="0" y2="1"><stop class="band-top" offset="0"/><stop class="band-bottom" offset="1"/></linearGradient></defs>';
+    var dec = sc.step >= 1 ? 0 : (sc.step >= 0.1 ? 1 : 2), count = Math.round((sc.max - sc.min) / sc.step);
+    for (var i = 0; i <= count; i++) {
+      var v = sc.min + i * sc.step, y = Y(v);
+      s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + n(y) + '" y2="' + n(y) + '" class="grid"/>';
+      s += '<text x="' + (L - 10) + '" y="' + n(y + 4) + '" text-anchor="end" class="tick">' + num(v, dec) + '</text>';
+    }
+    for (var k = 0; k <= 4; k++) {
+      var dn = Math.round(x0 + span * k / 4), a = k === 4 ? 'end' : (k === 0 ? 'start' : 'middle');
+      s += '<text x="' + n(X(dn)) + '" y="' + (H - 12) + '" text-anchor="' + a + '" class="tick">' + shortDate(dn) + '</text>';
+    }
+    if (fc.length) {
+      var up = fc.map(function (p) { return pt(p.date, p.upper); });
+      var lo = fc.slice().reverse().map(function (p) { return pt(p.date, p.lower); });
+      s += '<polygon points="' + up.concat(lo).join(' ') + '" class="band"/>';
+    }
+    if (hist.length && fc.length) { var sx = n(X(dayNumber(hist[hist.length - 1].date))); s += '<line x1="' + sx + '" x2="' + sx + '" y1="' + T + '" y2="' + (H - B) + '" class="split"/>'; }
+    if (hist.length) s += '<polyline points="' + hist.map(function (p) { return pt(p.date, p.quantity); }).join(' ') + '" pathLength="1" class="line-history"/>';
+    if (fc.length) s += '<polyline points="' + fc.map(function (p) { return pt(p.date, p.yhat); }).join(' ') + '" class="line-yhat"/>';
+    if (hist.length && fc.length) { var last = hist[hist.length - 1]; s += '<circle cx="' + n(X(dayNumber(last.date))) + '" cy="' + n(Y(last.quantity)) + '" r="4.6" class="dot"/>'; }
+    return s + '</svg>';
+  }
+
+  function render() {
+    var f = state.forecast, ex = state.expl[state.lang], root = el('content');
+    document.documentElement.lang = state.lang;
+    el('tagline').textContent = t('tagline'); el('banner').innerHTML = t('banner'); el('footer').textContent = t('footer');
+    el('btn-it').className = state.lang === 'it' ? 'on' : ''; el('btn-en').className = state.lang === 'en' ? 'on' : '';
+    if (!f) return;
+
+    var fc = f.forecast || [];
+    var total = fc.reduce(function (a, p) { return a + p.yhat; }, 0);
+    var name = (state.expl.it && state.expl.it.facts && state.expl.it.facts.productName) ||
+               (state.expl.en && state.expl.en.facts && state.expl.en.facts.productName) || 'Lumen-X';
+
+    var html = '<h1 id="h-name"></h1><section class="card stage"><h2>' + esc(t('forecast')) + '</h2>';
+    if (fc.length) html += '<p class="lead">' + t('lead')(fc.length, num(total, 0), num(total / fc.length, 0)) + '</p>';
+    html += '<div class="chart-wrap">' + chartSvg(state.sales || [], fc, 120) + '</div>';
+    html += '<div class="legend"><span><i class="sw sw-history"></i> ' + esc(t('history')) + '</span><span><i class="sw sw-yhat"></i> ' + esc(t('forecast')) + '</span><span><i class="sw sw-band"></i> ' + esc(t('band')) + '</span></div>';
+    html += '<p class="muted">' + esc(t('chartNote')) + '</p>';
+    html += '<dl class="facts"><div><dt>' + esc(t('method')) + '</dt><dd><strong>' + esc(f.methodUsed) + '</strong></dd></div>' +
+            '<div><dt>' + esc(t('horizon')) + '</dt><dd>' + esc(f.horizon) + ' ' + esc(t('days')) + '</dd></div>' +
+            '<div><dt>' + esc(t('check')) + '</dt><dd>' + esc(f.holdoutDays) + ' ' + esc(t('days')) + '</dd></div></dl>';
+    html += '<h3>' + esc(t('explanation')) + '</h3>';
+    if (ex && ex.text) html += '<div class="explanation" id="h-expl"></div><p class="muted source">' + esc(t('source')) + ': ' + esc(ex.source === 'gemini' ? t('srcGemini') : t('srcTemplate')) + '</p>';
+    else html += '<p class="muted">' + esc(t('noExplanation')) + '</p>';
+
+    if (state.reorder && state.reorder.variants && state.reorder.variants.length) {
+      html += '<h3>' + esc(t('reorderTitle')) + '</h3><p class="muted">' + esc(t('reorderNote')) + '</p>';
+      html += '<div class="row"><label>' + esc(t('serviceLevel')) + '<select id="level">';
+      state.reorder.variants.forEach(function (v) { html += '<option value="' + esc(v.serviceLevelPercent) + '"' + (v.serviceLevelPercent === state.level ? ' selected' : '') + '>' + esc(v.serviceLevelPercent) + '%</option>'; });
+      html += '</select></label></div><div id="reorder-box"></div>';
+    }
+
+    var bt = f.backtest ? Object.keys(f.backtest) : [];
+    if (bt.length) {
+      html += '<h3>' + esc(t('reliable')) + '</h3><p class="muted">' + esc(t('reliableNote')) + '</p><table class="table narrow"><thead><tr><th>' + esc(t('metric')) + '</th><th class="num">MAE</th><th class="num">RMSE</th></tr></thead><tbody>';
+      bt.forEach(function (k) {
+        var m = f.backtest[k] || {}, cell = function (v) { return (v === null || v === undefined) ? '–' : num(v, 2); };
+        html += '<tr class="' + (k === f.methodUsed ? 'is-used' : '') + '"><td>' + esc(k) + '</td><td class="num">' + cell(m.mae) + '</td><td class="num">' + cell(m.rmse) + '</td></tr>';
+      });
+      html += '</tbody></table>';
+    }
+    html += '</section>';
+    var askList = state.ask && state.ask.questions && state.ask.questions[state.lang];
+    if (askList && askList.length) {
+      html += '<section class="card chat"><h2>' + esc(t('askTitle')) + '</h2><p class="muted">' + esc(t('askNote')) + '</p><div class="chips" id="chips">';
+      askList.forEach(function (q, i) { html += '<button type="button" class="chip" data-i="' + i + '">' + esc(q.question) + '</button>'; });
+      html += '</div><div id="turns"></div></section>';
+    }
+    html += '<p><a href="https://github.com/asciosh/lumen-x">' + esc(t('repo')) + '</a></p>';
+
+    root.innerHTML = html;
+    el('h-name').textContent = name;                 // texts coming from the data: always as text, never as HTML
+    if (el('h-expl')) el('h-expl').textContent = ex.text;
+    renderReorder();
+    wire();
+    state.turns = [];
+    askQuestion(0);                                   // starts with the first example already answered
+  }
+
+  // ---- questions and reorder: answers are the real ones exported from the app (see scripts/export_demo.py)
+  function qty(v) { return num(v, Math.abs(v) >= 100 ? 0 : 1); }
+
+  function renderTurns() {
+    var box = el('turns'); if (!box) return;
+    box.textContent = '';
+    state.turns.forEach(function (turn) {
+      var d = document.createElement('div'); d.className = 'turn';
+      var q = document.createElement('p'); q.className = 'q'; q.textContent = turn.question;      // always as text
+      var a = document.createElement('p'); a.className = 'a'; a.textContent = turn.answer;
+      d.appendChild(q); d.appendChild(a); box.appendChild(d);
+    });
+  }
+
+  function askQuestion(i) {
+    var list = state.ask && state.ask.questions && state.ask.questions[state.lang];
+    if (!list || !list[i]) return;
+    state.turns = state.turns.filter(function (x) { return x.question !== list[i].question; });
+    state.turns.unshift({ question: list[i].question, answer: list[i].answer });
+    if (state.turns.length > 8) state.turns.pop();
+    renderTurns();
+  }
+
+  function renderReorder() {
+    var box = el('reorder-box');
+    if (!box || !state.reorder) return;
+    var v = state.reorder.variants.filter(function (x) { return x.serviceLevelPercent === state.level; })[0] || state.reorder.variants[0];
+    box.innerHTML = '<table class="table narrow"><tbody>' +
+      '<tr><td>' + esc(t('rPeriod')) + '</td><td class="num">' + esc(t('daysN')(v.periodDays)) + '</td></tr>' +
+      '<tr><td>' + esc(t('rDemand')) + '</td><td class="num">' + qty(v.demandInPeriod) + '</td></tr>' +
+      '<tr><td>' + esc(t('rSafety')(v.serviceLevelPercent)) + '</td><td class="num">' + qty(v.safetyStock) + '</td></tr>' +
+      '<tr><td>' + esc(t('rLevel')) + '</td><td class="num"><strong>' + qty(v.orderUpToLevel) + '</strong></td></tr></tbody></table>';
+  }
+
+  function wire() {
+    var chips = el('chips');
+    if (chips) chips.onclick = function (e) { var b = e.target.closest ? e.target.closest('.chip') : null; if (b) askQuestion(+b.getAttribute('data-i')); };
+    var lv = el('level');
+    if (lv) lv.onchange = function () { state.level = +lv.value; renderReorder(); };
+  }
+
+  function getJson(file, optional) {
+    return fetch(file).then(function (r) { if (!r.ok) throw new Error(file + ' (HTTP ' + r.status + ')'); return r.json(); })
+      .catch(function (e) { if (optional) return null; throw e; });
+  }
+
+  el('btn-it').onclick = function () { state.lang = 'it'; render(); };
+  el('btn-en').onclick = function () { state.lang = 'en'; render(); };
+  el('btn-it').className = state.lang === 'it' ? 'on' : ''; el('btn-en').className = state.lang === 'en' ? 'on' : '';
+  document.documentElement.lang = state.lang;
+  el('tagline').textContent = t('tagline'); el('banner').innerHTML = t('banner'); el('loading').textContent = t('loading');
+
+  Promise.all([getJson('data/forecast.json'), getJson('data/sales.json'), getJson('data/explanation-it.json', true), getJson('data/explanation-en.json', true), getJson('data/ask.json', true), getJson('data/reorder.json', true)])
+    .then(function (r) { state.forecast = r[0]; state.sales = r[1]; state.expl.it = r[2]; state.expl.en = r[3]; state.ask = r[4]; state.reorder = r[5]; render(); })
+    .catch(function (e) {
+      var d = el('content'); d.textContent = '';
+      var p = document.createElement('p'); p.className = 'err'; p.textContent = t('loadError') + e.message; d.appendChild(p);
+    });
+})();
+</script>
+</body>
+</html>

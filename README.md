@@ -5,6 +5,8 @@
 ![Lumen-X](docs/banner.png)
 
 [![CI](https://github.com/asciosh/lumen-x/actions/workflows/ci.yml/badge.svg)](https://github.com/asciosh/lumen-x/actions/workflows/ci.yml)
+[![Live demo](https://img.shields.io/badge/live%20demo-asciosh.github.io%2Flumen--x-fcbb47)](https://asciosh.github.io/lumen-x/)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/asciosh/lumen-x)
 
 *Lumen-X: the future, in plain sight.*
 
@@ -50,7 +52,9 @@ Dashboard (Blazor Server, English and Italian): products, CSV import, forecasts 
 
 ![Live demo](docs/demo.png)
 
-Live demo (example data): https://asciosh.github.io/lumen-x/demo/
+**Live demo** (real outputs of the app on example data, English and Italian): <https://asciosh.github.io/lumen-x/>
+
+**Try the real app**, with nothing to install: click *Open in GitHub Codespaces* above. The first start takes a few minutes (it builds the containers and loads sample data); then the dashboard opens by itself. It uses your own free Codespaces allowance and nothing is public.
 
 ## Features
 
@@ -111,6 +115,8 @@ docker compose up --build
 ```
 
 Then open the dashboard on http://localhost:8081 (in a Codespace: Ports tab, port 8081). Explanations work without any key; to let Gemini rewrite them, set `GEMINI_API_KEY` (see `backend/README.md`).
+
+In a Codespace the sample data (a product with 240 days of synthetic sales and a forecast) is loaded for you. Elsewhere, after `docker compose up`, run `bash scripts/seed_demo.sh` to load it.
 
 Tests: `pytest` in `services/forecasting`, `dotnet test backend/tests/LumenX.Api.Tests` and `dotnet test dashboard/tests/LumenX.Dashboard.Tests`.
 

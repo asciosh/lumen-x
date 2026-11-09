@@ -1,0 +1,32 @@
+{
+ "forecastRunId": 26,
+ "language": "it",
+ "text": "Per «Pane reale» prevedo circa 49.051 unità su 28 giorni (dal 19/07/2017 al 15/08/2017), cioè 1.752 al giorno. Sono il 3,2% in meno rispetto agli ultimi 28 giorni (1.809 al giorno). Il giorno più forte è domenica (circa 2.358 unità), il più debole giovedì (circa 1.320). L'intervallo di confidenza è di circa ±15% attorno al valore centrale: più è ampio, più la previsione è incerta. Nella verifica sugli ultimi 28 giorni il metodo scelto (media di ETS e LightGBM) ha sbagliato in media di 137 unità al giorno, il 29% in meno del metodo semplice di confronto (naive). Nello storico mancavano 4 giorni di dati, stimati per interpolazione.",
+ "source": "template",
+ "note": "ai_unavailable",
+ "facts": {
+  "productName": "Pane reale",
+  "historyDays": 1656,
+  "historyEnd": "2017-07-18",
+  "methodUsed": "blend",
+  "horizon": 28,
+  "forecastStart": "2017-07-19",
+  "forecastEnd": "2017-08-15",
+  "forecastTotal": 49051.27492501561,
+  "forecastAvgPerDay": 1751.8312473219862,
+  "referenceDays": 28,
+  "referenceAvgPerDay": 1809.1757857142861,
+  "changePercent": -3.1696498950023,
+  "strongestWeekday": "Sunday",
+  "strongestWeekdayAvg": 2357.780479128365,
+  "weakestWeekday": "Thursday",
+  "weakestWeekdayAvg": 1320.1456270036665,
+  "intervalHalfWidthPercent": 15.100944690370483,
+  "holdoutDays": 28,
+  "maeUsed": 137.11441380683945,
+  "maeNaive": 193.16229761904765,
+  "improvementVsNaivePercent": 29.01595420175896,
+  "filledMissingDays": 4,
+  "zeroDaysPercent": 0.30193236714975846
+ }
+}

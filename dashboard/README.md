@@ -85,5 +85,5 @@ range sits behind it; the dot marks where the data ends and the forecast begins.
   and numbers, **Figtree** for text and tables. SIL Open Font License 1.1, texts next to the files.
 - There is a single motion: the line draws itself on first load. With "reduce motion" enabled in the system there
   is no animation.
-- The demo page (`docs/demo`) uses the same `app.css` and fonts: if you change the dashboard look, copy `app.css`
-  and the `fonts` folder there again.
+- The demo site (`docs/index.html`) uses the same `app.css` and fonts: if you change the dashboard look, copy `app.css`
+  and the `fonts` folder into `docs/` again.
