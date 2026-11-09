@@ -31,7 +31,7 @@ CSV / API  →  .NET Backend  →  Forecasting service (Python)
               PostgreSQL            Statistical / ML models
                   │
                   ▼
-           LLM layer (forecast explanations; data Q&A planned)
+           LLM layer (forecast explanations) and rule-based data Q&A
                   │
                   ▼
               Dashboard
@@ -59,7 +59,7 @@ Live demo (example data): https://asciosh.github.io/lumen-x/demo/
 - [x] Sales data import from CSV
 - [x] Forecasts by product and time period
 - [x] Natural-language explanations of forecasts
-- [ ] Chat-based questions over your data
+- [x] Questions over your data (rule-based, no AI needed)
 - [x] Reorder suggestions (safety stock)
 - [x] Interactive dashboard
 
