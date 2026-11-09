@@ -1,4 +1,4 @@
-# Il contesto di build e' la cartella dashboard/.
+# The build context is the dashboard/ folder.
 ARG DOTNET_MAJOR=10
 
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_MAJOR}.0 AS build

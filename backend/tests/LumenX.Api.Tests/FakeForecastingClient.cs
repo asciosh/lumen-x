@@ -3,13 +3,13 @@ using LumenX.Api.Forecasting;
 
 namespace LumenX.Api.Tests;
 
-/// <summary>Sostituisce il servizio Python nei test: nessuna rete.</summary>
+/// <summary>Replaces the Python service in tests: no network.</summary>
 public sealed class FakeForecastingClient : IForecastingClient
 {
     public int Calls { get; private set; }
     public ForecastingRequest? LastRequest { get; private set; }
 
-    /// <summary>Se valorizzata, viene lanciata alla prossima chiamata.</summary>
+    /// <summary>If set, it is thrown on the next call.</summary>
     public Exception? ExceptionToThrow { get; set; }
 
     public void Reset()

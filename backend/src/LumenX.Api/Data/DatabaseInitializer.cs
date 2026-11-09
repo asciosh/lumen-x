@@ -5,9 +5,9 @@ namespace LumenX.Api.Data;
 public static class DatabaseInitializer
 {
     /// <summary>
-    /// Database:UseMigrations = false -> EnsureCreated (default, nessuna migrazione).
-    /// Database:UseMigrations = true  -> Migrate (richiede che le migrazioni esistano).
-    /// Riprova alcune volte perché Postgres può essere ancora in avvio.
+    /// Database:UseMigrations = false -> EnsureCreated (default, no migrations).
+    /// Database:UseMigrations = true  -> Migrate (requires the migrations to exist).
+    /// Retries a few times because Postgres may still be starting.
     /// </summary>
     public static void Initialize(WebApplication app)
     {

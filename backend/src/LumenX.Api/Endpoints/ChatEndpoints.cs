@@ -14,7 +14,7 @@ public static class ChatEndpoints
 
     public static IEndpointRouteBuilder MapChatEndpoints(this IEndpointRouteBuilder app)
     {
-        // Corpo: { "question": "...", "language": "it" | "en" }. La lingua e' facoltativa (si riconosce dalla domanda).
+        // Body: { "question": "...", "language": "it" | "en" }. The language is optional (it is detected from the question).
         app.MapPost("/products/{productId:int}/ask", AskAsync);
         return app;
     }
@@ -29,7 +29,7 @@ public static class ChatEndpoints
         if (string.IsNullOrEmpty(question) || question.Length < MinQuestionLength || question.Length > MaxQuestionLength)
         {
             return Problems.Unprocessable(
-                $"Scrivi una domanda di almeno {MinQuestionLength} e al massimo {MaxQuestionLength} caratteri.");
+                $"Write a question of at least {MinQuestionLength} and at most {MaxQuestionLength} characters.");
         }
 
         string language;
@@ -42,7 +42,7 @@ public static class ChatEndpoints
             var requested = ExplanationLanguage.Normalize(request.Language);
             if (requested is null)
             {
-                return Problems.Unprocessable("'language' deve essere 'it' oppure 'en'.");
+                return Problems.Unprocessable("'language' must be 'it' or 'en'.");
             }
 
             language = requested;
@@ -53,7 +53,7 @@ public static class ChatEndpoints
             .FirstOrDefaultAsync(p => p.Id == productId, ct);
         if (product is null)
         {
-            return Problems.NotFound($"Prodotto {productId} non trovato.");
+            return Problems.NotFound($"Product {productId} not found.");
         }
 
         var sales = await db.SalesRecords

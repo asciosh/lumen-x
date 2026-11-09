@@ -7,7 +7,7 @@ public class ForecastingException : Exception
     }
 }
 
-/// <summary>Il servizio Python ha risposto 422: i dati inviati non vanno bene.</summary>
+/// <summary>The Python service answered 422: the data sent is not acceptable.</summary>
 public sealed class ForecastingInputException : ForecastingException
 {
     public ForecastingInputException(string message) : base(message)
@@ -15,7 +15,7 @@ public sealed class ForecastingInputException : ForecastingException
     }
 }
 
-/// <summary>Servizio non raggiungibile o timeout.</summary>
+/// <summary>Service unreachable or timeout.</summary>
 public sealed class ForecastingUnavailableException : ForecastingException
 {
     public ForecastingUnavailableException(string message, Exception? inner = null) : base(message, inner)
@@ -23,7 +23,7 @@ public sealed class ForecastingUnavailableException : ForecastingException
     }
 }
 
-/// <summary>Il servizio ha risposto con un errore diverso da 422 (es. 500) o con una risposta inutilizzabile.</summary>
+/// <summary>The service answered with an error other than 422 (e.g. 500) or with an unusable response.</summary>
 public sealed class ForecastingFailedException : ForecastingException
 {
     public ForecastingFailedException(string message, Exception? inner = null) : base(message, inner)

@@ -8,7 +8,7 @@ public class LumenApiClientTests
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
-    /// <summary>Gestore HTTP finto: registra indirizzo e corpo di ogni richiesta e risponde come deciso dal test.</summary>
+    /// <summary>Fake HTTP handler: records the address and body of each request and answers as the test decides.</summary>
     private sealed class StubHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, HttpResponseMessage> _respond;
@@ -110,7 +110,7 @@ public class LumenApiClientTests
 
         var result = await ClientFor(handler).AskAsync(5, "Qual è il giorno \"più forte\"?");
 
-        // Sul filo gli accenti viaggiano come sequenze \uXXXX: conta che il server riceva la domanda identica.
+        // On the wire accents travel as \uXXXX sequences: what matters is that the server receives the identical question.
         using var sent = JsonDocument.Parse(handler.LastBody!);
         Assert.Equal("Qual è il giorno \"più forte\"?", sent.RootElement.GetProperty("question").GetString());
         Assert.Equal(new[] { "Esempio uno", "Esempio due" }, result.Value!.Suggestions.ToArray());
@@ -169,7 +169,8 @@ public class LumenApiClientTests
         Assert.False(result.IsSuccess);
         Assert.Equal(422, result.StatusCode);
         Assert.Equal("Servono almeno 42 giorni di vendite.", result.Error);
-        Assert.StartsWith("Dati non validi:", result.ErrorText);
+        Assert.StartsWith("Invalid data:", result.ErrorText);
+        Assert.StartsWith("Dati non validi:", result.For("it"));
     }
 
     [Fact]
@@ -183,7 +184,9 @@ public class LumenApiClientTests
         var result = await ClientFor(handler).GetProductsAsync();
 
         Assert.Equal(500, result.StatusCode);
-        Assert.Equal("Errore HTTP 500.", result.Error);
+        Assert.Null(result.Error);
+        Assert.Equal("HTTP error 500.", result.ErrorText);
+        Assert.Equal("Errore HTTP 500.", result.For("it"));
     }
 
     [Fact]
@@ -195,7 +198,8 @@ public class LumenApiClientTests
 
         Assert.False(result.IsSuccess);
         Assert.Equal(0, result.StatusCode);
-        Assert.Contains("non raggiungibile", result.Error);
+        Assert.Contains("unreachable", result.Error);
+        Assert.Contains("non raggiungibile", result.For("it"));
     }
 
     [Fact]
@@ -207,6 +211,7 @@ public class LumenApiClientTests
 
         Assert.Equal(0, result.StatusCode);
         Assert.Contains("timeout", result.Error);
+        Assert.Contains("timeout", result.For("it"));
     }
 
     [Fact]

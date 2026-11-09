@@ -18,7 +18,7 @@ public class ProductDetailPageTests : DashboardTestBase
         return cut;
     }
 
-    // ------------------------------------------------------------------ prodotto e vendite
+    // ------------------------------------------------------------------ product and sales
 
     [Fact]
     public void Shows_the_product_with_its_sku_and_a_summary_of_the_sales()
@@ -27,7 +27,7 @@ public class ProductDetailPageTests : DashboardTestBase
 
         cut.WaitForAssertion(() => Assert.Equal("Pane", cut.Find("h1").TextContent));
         Assert.Contains("SKU: P-1", cut.Markup);
-        Assert.Contains("dal 01/01/2025 al 01/03/2025", cut.Markup);   // 60 giorni a partire dal 1 gennaio
+        Assert.Contains("dal 01/01/2025 al 01/03/2025", cut.Markup);   // 60 days starting on 1 January
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public class ProductDetailPageTests : DashboardTestBase
         Assert.Contains("Quanto è affidabile", headings);
         Assert.Contains("Giorno per giorno", headings);
         Assert.Contains("10,50", cut.Markup);                       // MAE del naive
-        Assert.Equal(28, cut.FindAll("div.scroll tbody tr").Count);   // un punto per giorno
+        Assert.Equal(28, cut.FindAll("div.scroll tbody tr").Count);   // one point per day
         Assert.Single(cut.FindAll("svg.chart"));
     }
 
@@ -148,7 +148,7 @@ public class ProductDetailPageTests : DashboardTestBase
             Assert.Contains("controlla che il servizio 'forecasting' sia attivo", cut.Find(".alert-error").TextContent));
     }
 
-    // ------------------------------------------------------------------ spiegazione
+    // ------------------------------------------------------------------ explanation
 
     [Fact]
     public void Explanation_is_loaded_in_italian_from_the_template_by_default()
@@ -209,7 +209,7 @@ public class ProductDetailPageTests : DashboardTestBase
         Assert.Single(cut.FindAll("svg.chart"));
     }
 
-    // ------------------------------------------------------------------ riordino
+    // ------------------------------------------------------------------ reorder
 
     [Fact]
     public void Reorder_section_appears_only_with_a_forecast()
@@ -315,7 +315,7 @@ public class ProductDetailPageTests : DashboardTestBase
         cut.WaitForAssertion(() => Assert.DoesNotContain("Periodo da coprire", cut.Markup));
     }
 
-    // ------------------------------------------------------------------ aspetto e struttura
+    // ------------------------------------------------------------------ look and structure
 
     [Fact]
     public void Page_opens_with_a_plain_sentence_about_the_next_days()
@@ -326,9 +326,9 @@ public class ProductDetailPageTests : DashboardTestBase
 
         Assert.Contains("Prossimi 28 giorni", lead);
         Assert.Contains("unità", lead);
-        // somma delle previsioni di Samples.Forecast(): 28 giorni, 120 + (i % 7) * 10
+        // sum of the Samples.Forecast() predictions: 28 days, 120 + (i % 7) * 10
         var expectedTotal = Samples.Forecast().Forecast.Sum(p => p.Yhat);
-        Assert.Contains(Fmt.Num(expectedTotal, 0), lead);
+        Assert.Contains(Fmt.Num(expectedTotal, 0, "it"), lead);
     }
 
     [Fact]

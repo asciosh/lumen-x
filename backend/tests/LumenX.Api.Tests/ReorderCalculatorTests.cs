@@ -43,7 +43,7 @@ public class ReorderCalculatorTests
         Assert.Equal(1.6449, s.ZValue, 6);
         Assert.Equal(123.09, s.SafetyStock, 2);
         Assert.Equal(1523.09, s.OrderUpToLevel, 2);
-        Assert.Equal(1224.0, s.SuggestedOrder!.Value, 6);   // 1523,09 - 300 arrotondato per eccesso
+        Assert.Equal(1224.0, s.SuggestedOrder!.Value, 6);   // 1523.09 - 300 rounded up
         Assert.Equal(7, s.ForecastRunId);
         Assert.Equal("blend", s.MethodUsed);
     }
@@ -116,8 +116,8 @@ public class ReorderCalculatorTests
         var outcome = ReorderCalculator.Calculate(Run(Points(14, _ => 100.0)), 10, 10, 95, null, 0);
 
         Assert.Null(outcome.Suggestion);
-        Assert.Contains("orizzonte", outcome.Error);
-        Assert.Contains("20 giorni", outcome.Error);
+        Assert.Contains("horizon", outcome.Error);
+        Assert.Contains("20 days", outcome.Error);
     }
 
     [Theory]

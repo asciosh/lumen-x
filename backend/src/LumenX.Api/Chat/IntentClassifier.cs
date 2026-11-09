@@ -1,16 +1,16 @@
 namespace LumenX.Api.Chat;
 
 /// <summary>
-/// Riconosce quale delle domande che il codice sa risolvere sta facendo l'utente, senza AI.
+/// Recognizes which of the questions the code can solve the user is asking, without AI.
 ///
-/// Ogni intento ha un elenco di "indizi" (radici di parola o frasi) con un peso. Il punteggio di un intento e'
-/// la somma dei pesi degli indizi trovati; vince il punteggio piu' alto e, a parita', l'intento che sta prima
-/// nell'elenco (le domande piu' specifiche, come "quanto ordinare", precedono quelle generiche, come "quanto ho venduto").
-/// Se nessun indizio compare la domanda e' <see cref="DataIntent.Unknown"/>: meglio dire "non ho capito" che indovinare.
+/// Each intent has a list of "cues" (word stems or phrases) with a weight. An intent's score is
+/// the sum of the weights of the cues found; the highest score wins and, on a tie, the intent that comes first
+/// in the list (more specific questions, like "how much to order", come before generic ones, like "how much did I sell").
+/// If no cue appears the question is <see cref="DataIntent.Unknown"/>: better to say "I did not understand" than to guess.
 /// </summary>
 public static class IntentClassifier
 {
-    // L'ORDINE conta: e' la priorita' a parita' di punteggio.
+    // ORDER matters: it is the priority on a tie.
     private static readonly (DataIntent Intent, (string Cue, int Weight)[] Cues)[] Rules =
     {
         (DataIntent.Reorder, new[] { ("ordin", 6), ("riordin", 6), ("rifornir", 3), ("scort", 1), ("magazzin", 1), ("order", 6), ("reorder", 2), ("restock", 3), ("stock", 1), ("inventor", 1) }),
@@ -49,7 +49,7 @@ public static class IntentClassifier
 
         foreach (var (cue, weight) in cues)
         {
-            // Una frase intera deve comparire cosi' com'e'; una singola parola e' una radice: basta che inizi cosi'.
+            // A whole phrase must appear as is; a single word is a stem: it is enough that a token starts with it.
             var hit = cue.Contains(' ')
                 ? padded.Contains(" " + cue + " ")
                 : tokens.Any(t => t.StartsWith(cue, StringComparison.Ordinal));

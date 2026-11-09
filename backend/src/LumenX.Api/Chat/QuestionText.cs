@@ -3,10 +3,10 @@ using System.Text.RegularExpressions;
 
 namespace LumenX.Api.Chat;
 
-/// <summary>Pulizia del testo della domanda e riconoscimento della lingua.</summary>
+/// <summary>Cleaning of the question text and language detection.</summary>
 public static class QuestionText
 {
-    // Accenti tolti a mano: la normalizzazione Unicode di .NET dipende dalle librerie ICU, che nei container possono mancare.
+    // Accents removed by hand: .NET's Unicode normalization depends on the ICU libraries, which may be missing in containers.
     private static readonly Dictionary<char, char> Folds = new()
     {
         ['à'] = 'a', ['á'] = 'a', ['â'] = 'a', ['ä'] = 'a',
@@ -17,7 +17,7 @@ public static class QuestionText
         ['ç'] = 'c', ['ñ'] = 'n'
     };
 
-    // Parole che compaiono (quasi) solo in una delle due lingue.
+    // Words that appear (almost) only in one of the two languages.
     private static readonly HashSet<string> ItalianMarkers = new()
     {
         "quanto", "quanti", "ho", "venduto", "vendite", "ultimi", "ultimo", "ultime", "giorni", "giorno", "settimana",
@@ -33,7 +33,7 @@ public static class QuestionText
         "was", "are", "is", "of", "to", "for", "with", "than"
     };
 
-    /// <summary>Minuscolo, senza accenti, solo lettere e cifre separate da uno spazio ("l'ultimo" diventa "l ultimo").</summary>
+    /// <summary>Lowercase, no accents, only letters and digits separated by a space ("l'ultimo" becomes "l ultimo").</summary>
     public static string Normalize(string text)
     {
         var sb = new StringBuilder(text.Length);
@@ -49,7 +49,7 @@ public static class QuestionText
     public static string[] Tokens(string normalized) =>
         normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-    /// <summary>"it" oppure "en": vince la lingua con piu' parole riconosciute; a parita' l'italiano.</summary>
+    /// <summary>"it" or "en": the language with more recognized words wins; on a tie, Italian.</summary>
     public static string DetectLanguage(string normalized)
     {
         var tokens = Tokens(normalized);

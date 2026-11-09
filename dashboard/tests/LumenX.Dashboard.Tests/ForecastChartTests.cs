@@ -2,11 +2,18 @@ using Bunit;
 using LumenX.Dashboard.Components;
 using LumenX.Dashboard.Services;
 using LumenX.Dashboard.Tests.TestSupport;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LumenX.Dashboard.Tests;
 
 public class ForecastChartTests : BunitContext
 {
+    public ForecastChartTests()
+    {
+        // Italian, like the other tests (the legend and the axis labels are checked in Italian).
+        Services.AddSingleton(new LanguageState(LanguageState.Italian));
+    }
+
     private IRenderedComponent<ForecastChart> RenderChart(
         IReadOnlyList<SalePointDto>? history, ForecastRunDto? forecast) =>
         Render<ForecastChart>(p => p
@@ -18,7 +25,7 @@ public class ForecastChartTests : BunitContext
     {
         var cut = RenderChart(Samples.Sales(60), Samples.Forecast());
 
-        Assert.Equal(2, cut.FindAll("polyline").Count);   // storico e previsione
+        Assert.Equal(2, cut.FindAll("polyline").Count);   // history and forecast
         Assert.Single(cut.FindAll("polygon"));             // banda dell'intervallo
         Assert.Single(cut.FindAll("svg.chart"));
     }

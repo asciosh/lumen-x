@@ -79,7 +79,7 @@ public class IntentClassifierTests
     [InlineData("Cosa conviene ordinare per le prossime settimane in base alla previsione?", DataIntent.Reorder)]
     public void More_specific_questions_win_over_generic_ones(string question, DataIntent expected)
     {
-        // Contengono anche parole di "previsione" o "prossimi giorni", ma la domanda vera e' un'altra.
+        // They also contain words about "forecast" or "next days", but the real question is another.
         Assert.Equal(expected, Classify(question));
     }
 

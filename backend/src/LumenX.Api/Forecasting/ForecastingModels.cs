@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace LumenX.Api.Forecasting;
 
-// Contratto del servizio Python (JSON in snake_case): nomi fissati con JsonPropertyName.
+// Contract of the Python service (JSON in snake_case): names fixed with JsonPropertyName.
 
 public sealed class SeriesPointDto
 {
@@ -66,7 +66,7 @@ public sealed class ForecastingResponse
     [JsonPropertyName("filled_missing_days")]
     public int FilledMissingDays { get; set; }
 
-    /// <summary>Tipo non assunto: tenuto come JSON grezzo.</summary>
+    /// <summary>Type not assumed: kept as raw JSON.</summary>
     [JsonPropertyName("interval")]
     public JsonElement? Interval { get; set; }
 

@@ -1,6 +1,6 @@
-# Il contesto di build è la cartella backend/.
-# DOTNET_MAJOR deve coincidere con PackagesMajor di Directory.Build.props
-# (qui viene comunque forzato in publish/restore, quindi non possono divergere nell'immagine).
+# The build context is the backend/ folder.
+# DOTNET_MAJOR must match PackagesMajor in Directory.Build.props
+# (it is also forced in publish/restore here, so they cannot diverge inside the image).
 ARG DOTNET_MAJOR=10
 
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_MAJOR}.0 AS build

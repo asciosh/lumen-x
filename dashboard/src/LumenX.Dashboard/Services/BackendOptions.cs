@@ -4,6 +4,6 @@ public sealed class BackendOptions
 {
     public string BaseUrl { get; set; } = "http://localhost:8080";
 
-    // Il forecast con LightGBM puo' richiedere tempo: timeout generoso.
+    // The LightGBM forecast can take time: generous timeout.
     public int TimeoutSeconds { get; set; } = 120;
 }

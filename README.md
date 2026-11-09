@@ -46,7 +46,7 @@ CSV / API  →  .NET Backend  →  Forecasting service (Python)
 | Dashboard | Blazor Server | ✅ available |
 | Deployment | Docker Compose | forecasting, backend, dashboard, PostgreSQL |
 
-Dashboard (Blazor Server): products, CSV import and forecasts with chart.
+Dashboard (Blazor Server, English and Italian): products, CSV import, forecasts with chart, explanations, reorder suggestions and questions about your data.
 
 ![Live demo](docs/demo.png)
 
@@ -61,7 +61,7 @@ Live demo (example data): https://asciosh.github.io/lumen-x/demo/
 - [x] Natural-language explanations of forecasts
 - [x] Questions over your data (rule-based, no AI needed)
 - [x] Reorder suggestions (safety stock)
-- [x] Interactive dashboard
+- [x] Interactive dashboard, bilingual (English / Italian)
 
 ## Forecasting service
 

@@ -18,7 +18,7 @@ public class FactsBuilderTests
         Dictionary<string, BacktestMetrics>? backtest = null) =>
         new(1, 1, DateTime.UtcNow, null, method, points.Count, 14, 2, null, backtest, points);
 
-    // 2025-03-01 e' un sabato.
+    // 2025-03-01 is a Saturday.
     private static List<ForecastPointView> Points(int days, Func<DateOnly, double> yhat) =>
         Enumerable.Range(0, days)
             .Select(i =>

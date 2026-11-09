@@ -11,23 +11,23 @@ public sealed class CsvParseResult
     public List<ParsedRow> Rows { get; } = new();
     public List<RowError> Errors { get; } = new();
 
-    /// <summary>Numero di righe dati non vuote (header escluso).</summary>
+    /// <summary>Number of non-empty data rows (header excluded).</summary>
     public int TotalRows { get; set; }
 
-    /// <summary>Se valorizzato, il file non è utilizzabile (header mancante, colonne assenti...).</summary>
+    /// <summary>If set, the file is unusable (missing header, missing columns...).</summary>
     public string? FatalError { get; set; }
 }
 
 /// <summary>
-/// Parser CSV minimale per le vendite.
-/// - Colonne obbligatorie (header, maiuscole/minuscole indifferenti): date, quantity. Altre colonne ignorate.
-/// - Separatore: ';' se presente nell'header, altrimenti ','.
-/// - Date: yyyy-MM-dd oppure dd/MM/yyyy.
-/// - Quantità: punto o virgola come decimale; con entrambi, l'ultimo simbolo è il decimale
-///   ("1.234,56" e "1,234.56" -> 1234.56). Un solo punto è sempre un decimale ("1.234" -> 1.234).
-///   Quantità negative rifiutate.
-/// - Con separatore ',' i decimali con virgola vanno tra virgolette ("12,5").
-/// - Campi tra virgolette supportati; campi su più righe NO.
+/// Minimal CSV parser for sales.
+/// - Required columns (header, case-insensitive): date, quantity. Other columns ignored.
+/// - Separator: ';' if present in the header, otherwise ','.
+/// - Dates: yyyy-MM-dd or dd/MM/yyyy.
+/// - Quantity: dot or comma as decimal; with both, the last symbol is the decimal
+///   ("1.234,56" and "1,234.56" -> 1234.56). A single dot is always a decimal ("1.234" -> 1.234).
+///   Negative quantities are rejected.
+/// - With ',' as separator, decimals written with a comma must be quoted ("12,5").
+/// - Quoted fields are supported; multi-line fields are NOT.
 /// </summary>
 public static class SalesCsvParser
 {
@@ -68,7 +68,7 @@ public static class SalesCsvParser
 
                 if (dateIdx < 0 || qtyIdx < 0)
                 {
-                    result.FatalError = "Nell'intestazione servono le colonne 'date' e 'quantity'.";
+                    result.FatalError = "The header needs the 'date' and 'quantity' columns.";
                     return result;
                 }
                 continue;
@@ -77,7 +77,7 @@ public static class SalesCsvParser
             result.TotalRows++;
             var cells = SplitLine(line, delimiter);
 
-            // Un separatore finale (es. "2025-01-01;12;") non è un errore.
+            // A trailing separator (e.g. "2025-01-01;12;") is not an error.
             while (cells.Count > headerCount && cells[cells.Count - 1].Length == 0)
             {
                 cells.RemoveAt(cells.Count - 1);
@@ -86,7 +86,7 @@ public static class SalesCsvParser
             if (cells.Count > headerCount)
             {
                 result.Errors.Add(new RowError(lineNo,
-                    "Troppe colonne. Se il separatore è la virgola, i decimali con virgola vanno tra virgolette (\"12,5\")."));
+                    "Too many columns. If the separator is a comma, decimals written with a comma must be quoted (\"12,5\")."));
                 continue;
             }
 
@@ -99,7 +99,7 @@ public static class SalesCsvParser
             if (!TryParseDate(cells[dateIdx], out var date))
             {
                 result.Errors.Add(new RowError(lineNo,
-                    $"Data non valida: '{cells[dateIdx].Trim()}' (formati ammessi: yyyy-MM-dd, dd/MM/yyyy)."));
+                    $"Invalid date: '{cells[dateIdx].Trim()}' (accepted formats: yyyy-MM-dd, dd/MM/yyyy)."));
                 continue;
             }
 
@@ -114,7 +114,7 @@ public static class SalesCsvParser
 
         if (!headerSeen)
         {
-            result.FatalError = "Il file è vuoto.";
+            result.FatalError = "The file is empty.";
         }
 
         return result;
@@ -133,7 +133,7 @@ public static class SalesCsvParser
         var s = raw.Trim().Replace(" ", string.Empty);
         if (s.Length == 0)
         {
-            error = "Quantità mancante.";
+            error = "Missing quantity.";
             return false;
         }
 
@@ -157,7 +157,7 @@ public static class SalesCsvParser
         {
             if (s.IndexOf(',') != lastComma)
             {
-                error = $"Quantità ambigua: '{raw.Trim()}'.";
+                error = $"Ambiguous quantity: '{raw.Trim()}'.";
                 return false;
             }
             s = s.Replace(',', '.');
@@ -165,14 +165,14 @@ public static class SalesCsvParser
 
         if (!double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out value) || !double.IsFinite(value))
         {
-            error = $"Quantità non valida: '{raw.Trim()}'.";
+            error = $"Invalid quantity: '{raw.Trim()}'.";
             value = 0;
             return false;
         }
 
         if (value < 0)
         {
-            error = $"Quantità negativa non ammessa: '{raw.Trim()}'.";
+            error = $"Negative quantity not allowed: '{raw.Trim()}'.";
             value = 0;
             return false;
         }

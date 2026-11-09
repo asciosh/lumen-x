@@ -13,7 +13,7 @@ public static class FactsBuilder
         }
         if (run.Forecast.Count == 0)
         {
-            throw new ArgumentException("Il forecast e' vuoto.", nameof(run));
+            throw new ArgumentException("The forecast is empty.", nameof(run));
         }
 
         var history = sales.OrderBy(s => s.Date).ToList();
@@ -23,13 +23,13 @@ public static class FactsBuilder
         var forecastTotal = points.Sum(p => p.Yhat);
         var forecastAvg = forecastTotal / horizon;
 
-        // Confronto con lo storico recente: stessa lunghezza dell'orizzonte (al massimo tutto lo storico).
+        // Comparison with recent history: same length as the horizon (at most the whole history).
         var referenceDays = Math.Min(horizon, history.Count);
         var referenceAvg = history.Skip(history.Count - referenceDays).Average(s => s.Quantity);
         double? change = referenceAvg > 0 ? (forecastAvg - referenceAvg) / referenceAvg * 100.0 : null;
 
-        // Giorno della settimana piu' forte / piu' debole (solo con almeno una settimana di previsione
-        // e se la differenza e' significativa, altrimenti sarebbe rumore).
+        // Strongest / weakest weekday (only with at least a week of forecast
+        // and if the difference is significant, otherwise it would be noise).
         string? strongest = null;
         string? weakest = null;
         double? strongestAvg = null;

@@ -16,12 +16,12 @@ public static class SalesEndpoints
             {
                 if (file is null || file.Length == 0)
                 {
-                    return Problems.BadRequest("Manca il file CSV (campo multipart 'file').");
+                    return Problems.BadRequest("The CSV file is missing (multipart field 'file').");
                 }
 
                 if (!await db.Products.AnyAsync(p => p.Id == productId, ct))
                 {
-                    return Problems.NotFound($"Prodotto {productId} non trovato.");
+                    return Problems.NotFound($"Product {productId} not found.");
                 }
 
                 using var stream = file.OpenReadStream();
@@ -38,7 +38,7 @@ public static class SalesEndpoints
             })
             .DisableAntiforgery();
 
-        // Lettura vendite con filtro opzionale ?from=yyyy-MM-dd&to=yyyy-MM-dd (estremi inclusi).
+        // Read sales with optional filter ?from=yyyy-MM-dd&to=yyyy-MM-dd (bounds included).
         app.MapGet("/products/{productId:int}/sales",
             async (int productId,
                    [FromQuery(Name = "from")] DateOnly? dateFrom,
@@ -48,12 +48,12 @@ public static class SalesEndpoints
             {
                 if (dateFrom.HasValue && dateTo.HasValue && dateFrom.Value > dateTo.Value)
                 {
-                    return Problems.Unprocessable("'from' non può essere successivo a 'to'.");
+                    return Problems.Unprocessable("'from' cannot be later than 'to'.");
                 }
 
                 if (!await db.Products.AnyAsync(p => p.Id == productId, ct))
                 {
-                    return Problems.NotFound($"Prodotto {productId} non trovato.");
+                    return Problems.NotFound($"Product {productId} not found.");
                 }
 
                 var query = db.SalesRecords.AsNoTracking().Where(s => s.ProductId == productId);

@@ -22,7 +22,7 @@ public class ForecastRun
     public int ProductId { get; set; }
     public DateTime CreatedAtUtc { get; set; }
 
-    /// <summary>Metodo richiesto dal client (null = non specificato).</summary>
+    /// <summary>Method requested by the client (null = not specified).</summary>
     public string? MethodRequested { get; set; }
 
     public string MethodUsed { get; set; } = string.Empty;
@@ -30,10 +30,10 @@ public class ForecastRun
     public int HoldoutDays { get; set; }
     public int FilledMissingDays { get; set; }
 
-    /// <summary>Campo "interval" della risposta Python, salvato come JSON grezzo (il tipo non è fissato qui).</summary>
+    /// <summary>The "interval" field of the Python response, stored as raw JSON (the type is not fixed here).</summary>
     public string? IntervalJson { get; set; }
 
-    /// <summary>Campo "backtest" della risposta Python, salvato come JSON.</summary>
+    /// <summary>The "backtest" field of the Python response, stored as JSON.</summary>
     public string? BacktestJson { get; set; }
 
     public List<ForecastPoint> Points { get; set; } = new();

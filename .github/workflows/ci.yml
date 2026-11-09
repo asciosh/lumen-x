@@ -1,12 +1,12 @@
 name: CI
 
-# Fa partire tutti i test a ogni push su main e a ogni pull request.
+# Runs all the tests on every push to main and on every pull request.
 on:
   push:
     branches: [main]
   pull_request:
 
-# Se arriva un nuovo push mentre uno precedente e' ancora in corso, quello vecchio viene annullato.
+# If a new push arrives while a previous run is still going, the old one is cancelled.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true

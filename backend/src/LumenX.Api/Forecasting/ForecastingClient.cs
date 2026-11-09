@@ -27,13 +27,13 @@ public sealed class ForecastingClient : IForecastingClient
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogWarning(ex, "Servizio di forecasting non raggiungibile.");
-            throw new ForecastingUnavailableException("Il servizio di forecasting non è raggiungibile.", ex);
+            _logger.LogWarning(ex, "Forecasting service unreachable.");
+            throw new ForecastingUnavailableException("The forecasting service is unreachable.", ex);
         }
         catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
-            _logger.LogWarning(ex, "Timeout verso il servizio di forecasting.");
-            throw new ForecastingUnavailableException("Il servizio di forecasting non ha risposto in tempo.", ex);
+            _logger.LogWarning(ex, "Timeout calling the forecasting service.");
+            throw new ForecastingUnavailableException("The forecasting service did not answer in time.", ex);
         }
 
         using (response)
@@ -47,7 +47,7 @@ public sealed class ForecastingClient : IForecastingClient
             if (!response.IsSuccessStatusCode)
             {
                 throw new ForecastingFailedException(
-                    $"Il servizio di forecasting ha risposto con HTTP {(int)response.StatusCode}.");
+                    $"The forecasting service answered with HTTP {(int)response.StatusCode}.");
             }
 
             ForecastingResponse? result;
@@ -57,12 +57,12 @@ public sealed class ForecastingClient : IForecastingClient
             }
             catch (JsonException ex)
             {
-                throw new ForecastingFailedException("Risposta del servizio di forecasting non leggibile.", ex);
+                throw new ForecastingFailedException("The forecasting service response could not be read.", ex);
             }
 
             if (result is null || result.Forecast is null || result.Forecast.Count == 0)
             {
-                throw new ForecastingFailedException("Il servizio di forecasting ha restituito una risposta vuota.");
+                throw new ForecastingFailedException("The forecasting service returned an empty response.");
             }
 
             return result;

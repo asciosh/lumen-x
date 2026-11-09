@@ -3,8 +3,8 @@ using Microsoft.Extensions.Options;
 namespace LumenX.Api.Explanations;
 
 /// <summary>
-/// Sceglie la fonte: testo a modello (sempre disponibile) oppure Gemini, se richiesto e configurato.
-/// Se Gemini fallisce, ripiega sul testo a modello.
+/// Chooses the source: template text (always available) or Gemini, if requested and configured.
+/// If Gemini fails, it falls back to the template text.
 /// </summary>
 public sealed class ExplanationService
 {
@@ -45,7 +45,7 @@ public sealed class ExplanationService
         }
         catch (ExplanationUnavailableException ex)
         {
-            _logger.LogWarning("Gemini non utilizzabile, uso il testo a modello: {Reason}", ex.Message);
+            _logger.LogWarning("Gemini not usable, using the template text: {Reason}", ex.Message);
             var plain = await _template.ExplainAsync(facts, language, cancellationToken);
             return plain with { Note = ex.Note };
         }

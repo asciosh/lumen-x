@@ -2,7 +2,7 @@ using LumenX.Dashboard.Services;
 
 namespace LumenX.Dashboard.Tests.TestSupport;
 
-/// <summary>Dati di esempio per i test: stesso formato delle risposte del backend.</summary>
+/// <summary>Sample data for tests: same format as the backend responses.</summary>
 public static class Samples
 {
     public static readonly DateTime Now = new(2026, 11, 6, 10, 30, 0, DateTimeKind.Utc);
@@ -11,7 +11,7 @@ public static class Samples
     public static ProductDto Product(int id = 5, string name = "Pane", string? sku = "P-1") =>
         new(id, name, sku, Now);
 
-    /// <summary>Storico giornaliero a partire dal 1 gennaio 2025, con un piccolo schema settimanale.</summary>
+    /// <summary>Daily history starting on 1 January 2025, with a small weekly pattern.</summary>
     public static List<SalePointDto> Sales(int days)
     {
         return Enumerable.Range(0, days)
@@ -19,7 +19,7 @@ public static class Samples
             .ToList();
     }
 
-    /// <summary>Forecast che parte il giorno dopo le prime 60 giornate di <see cref="Sales"/>.</summary>
+    /// <summary>Forecast that starts the day after the first 60 days of <see cref="Sales"/>.</summary>
     public static ForecastRunDto Forecast(int horizon = 28, string method = "blend")
     {
         var last = FirstDay.AddDays(59);

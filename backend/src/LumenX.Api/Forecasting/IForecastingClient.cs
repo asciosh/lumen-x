@@ -2,8 +2,8 @@ namespace LumenX.Api.Forecasting;
 
 public interface IForecastingClient
 {
-    /// <exception cref="ForecastingInputException">HTTP 422 dal servizio.</exception>
-    /// <exception cref="ForecastingUnavailableException">Servizio non raggiungibile / timeout.</exception>
-    /// <exception cref="ForecastingFailedException">Altri errori dal servizio.</exception>
+    /// <exception cref="ForecastingInputException">HTTP 422 from the service.</exception>
+    /// <exception cref="ForecastingUnavailableException">Service unreachable / timeout.</exception>
+    /// <exception cref="ForecastingFailedException">Other errors from the service.</exception>
     Task<ForecastingResponse> ForecastAsync(ForecastingRequest request, CancellationToken cancellationToken = default);
 }

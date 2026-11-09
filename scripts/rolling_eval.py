@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Valutazione su piu' finestre ("rolling origin") del servizio di forecasting di Lumen-X.
+"""Multi-window ("rolling origin") evaluation of the Lumen-X forecasting service.
 
-Per ogni finestra: usa lo storico fino a una data di taglio, prevede i `h` giorni
-successivi con il codice VERO del servizio (metodi auto, naive, ets, lightgbm) e confronta
-con i giorni reali. Serve a capire se la scelta di `auto` regge su piu' periodi, non su uno solo.
+For each window: it uses the history up to a cutoff date, forecasts the next `h` days
+with the REAL service code (methods auto, naive, ets, lightgbm) and compares with the real
+days. It tells whether the choice made by `auto` holds across several periods, not just one.
 
-Uso, dentro il container del servizio:
-  python /tmp/rolling_eval.py /tmp/pane.csv --folds 8 --h 28
-Il CSV deve avere le colonne date,quantity (lo storico COMPLETO, comprese le ultime settimane).
+Usage, inside the forecasting service container:
+  python /tmp/rolling_eval.py /tmp/bread.csv --folds 8 --h 28
+The CSV must have the columns date,quantity (the FULL history, including the last weeks).
 """
 import argparse
 import csv
@@ -26,8 +26,8 @@ import pandas as pd  # noqa: E402
 from app.models import METHODS, lightgbm_ok  # noqa: E402
 from app.service import SeriesError, prepare_series, run_forecast  # noqa: E402
 
-RUN = ["auto", "naive", "ets", "lightgbm"]       # metodi del servizio
-COLS = RUN + ["blend"]                            # blend = media di ets e lightgbm (solo in questo test)
+RUN = ["auto", "naive", "ets", "lightgbm"]       # service methods
+COLS = RUN + ["blend"]                            # blend = mean of ets and lightgbm (only in this test)
 
 
 def wape_bias(actual, pred):
@@ -48,7 +48,7 @@ def fmt(x, w=8, d=1):
 
 
 def blend_score(dates, values, h, truth):
-    """Errore della media semplice tra ETS e LightGBM, sugli stessi giorni reali."""
+    """Error of the simple mean of ETS and LightGBM, on the same real days."""
     try:
         y, _ = prepare_series(dates, values)
         if not lightgbm_ok(len(y), h):
@@ -71,15 +71,15 @@ def main():
     with open(args.csv, newline="", encoding="utf-8") as f:
         rows = sorted((date.fromisoformat(r["date"][:10]), float(r["quantity"])) for r in csv.DictReader(f))
     last = rows[-1][0]
-    print(f"Storico: {len(rows)} righe, {rows[0][0]} -> {last}. Finestre da {args.h} giorni, {args.folds} in totale.\n")
+    print(f"History: {len(rows)} rows, {rows[0][0]} -> {last}. Windows of {args.h} days, {args.folds} in total.\n")
 
-    results = []   # per fold: {metodo: (wape, bias)}, chosen
+    results = []   # per fold: {method: (wape, bias)}, chosen
     for i in range(args.folds - 1, -1, -1):
         cutoff = last - timedelta(days=args.h * (i + 1))
         train = [(d, v) for d, v in rows if d <= cutoff]
         truth = {d: v for d, v in rows if cutoff < d <= cutoff + timedelta(days=args.h)}
         if len(train) < 60 or len(truth) < args.h // 2:
-            print(f"finestra con taglio {cutoff}: saltata (dati insufficienti)")
+            print(f"window with cutoff {cutoff}: skipped (not enough data)")
             continue
         t0 = time.time()
         dates, values = [d for d, _ in train], [v for _, v in train]
@@ -98,31 +98,31 @@ def main():
             per[m] = wape_bias([a for a, _ in pts], [p for _, p in pts])
         per["blend"] = blend_score(dates, values, args.h, truth)
         results.append((cutoff, chosen, per, cov))
-        print(f"  taglio {cutoff} fatto in {time.time() - t0:.0f}s", file=sys.stderr, flush=True)
+        print(f"  cutoff {cutoff} done in {time.time() - t0:.0f}s", file=sys.stderr, flush=True)
 
-    print("\nWAPE % per finestra (piu' basso = meglio)")
-    print(f"{'taglio':<12}{'auto sceglie':<14}" + "".join(f"{m:>10}" for m in COLS) + f"{'in fascia %':>13}")
+    print("\nWAPE % per window (lower = better)")
+    print(f"{'cutoff':<12}{'auto chooses':<14}" + "".join(f"{m:>10}" for m in COLS) + f"{'in band %':>13}")
     for cutoff, chosen, per, cov in results:
         print(f"{str(cutoff):<12}{str(chosen):<14}" + "".join(fmt(per[m][0], 10) for m in COLS) + fmt(cov, 13, 0))
 
     print(f"\n{'':<26}" + "".join(f"{m:>10}" for m in COLS))
-    print(f"{'MEDIA WAPE %':<26}" + "".join(fmt(mean([r[2][m][0] for r in results]), 10) for m in COLS))
-    print(f"{'MEDIA scostamento % *':<26}" + "".join(fmt(mean([r[2][m][1] for r in results]), 10) for m in COLS))
-    print(f"{'MEDIA giorni in fascia %':<26}{fmt(mean([r[3] for r in results]), 10, 0)}  (intervallo di auto; atteso circa 80)")
-    print("* positivo = prevede troppo, negativo = prevede troppo poco, sul totale dei giorni\n")
+    print(f"{'MEAN WAPE %':<26}" + "".join(fmt(mean([r[2][m][0] for r in results]), 10) for m in COLS))
+    print(f"{'MEAN bias % *':<26}" + "".join(fmt(mean([r[2][m][1] for r in results]), 10) for m in COLS))
+    print(f"{'MEAN days in band %':<26}{fmt(mean([r[3] for r in results]), 10, 0)}  (auto's interval; expected about 80)")
+    print("* positive = forecasts too much, negative = forecasts too little, over the total of the days\n")
 
     both = [r for r in results if r[2]["auto"][0] is not None and r[2]["naive"][0] is not None]
     wins = sum(1 for r in both if r[2]["auto"][0] < r[2]["naive"][0])
-    print(f"auto batte il naive in {wins} finestre su {len(both)}")
+    print(f"auto beats the naive in {wins} windows out of {len(both)}")
     fixed = ["naive", "ets", "lightgbm"]
     best = sum(1 for r in results if r[2]["auto"][0] is not None and
                r[2]["auto"][0] <= min(x for x in (r[2][m][0] for m in fixed) if x is not None) + 1e-9)
-    print(f"auto coincide con il metodo migliore in {best} finestre su {len(results)}")
+    print(f"auto matches the best method in {best} windows out of {len(results)}")
 
     bw = [r for r in results if r[2]["blend"][0] is not None and r[2]["naive"][0] is not None]
-    print(f"blend batte il naive in {sum(1 for r in bw if r[2]['blend'][0] < r[2]['naive'][0])} finestre su {len(bw)}")
+    print(f"blend beats the naive in {sum(1 for r in bw if r[2]['blend'][0] < r[2]['naive'][0])} windows out of {len(bw)}")
     ba = [r for r in results if r[2]["blend"][0] is not None and r[2]["auto"][0] is not None]
-    print(f"blend batte auto in {sum(1 for r in ba if r[2]['blend'][0] < r[2]['auto'][0])} finestre su {len(ba)}")
+    print(f"blend beats auto in {sum(1 for r in ba if r[2]['blend'][0] < r[2]['auto'][0])} windows out of {len(ba)}")
 
 if __name__ == "__main__":
     main()

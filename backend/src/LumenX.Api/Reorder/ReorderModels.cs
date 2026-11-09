@@ -1,6 +1,6 @@
 namespace LumenX.Api.Reorder;
 
-/// <summary>Suggerimento di riordino calcolato dal forecast salvato e dal suo errore di backtest.</summary>
+/// <summary>Reorder suggestion computed from the saved forecast and its backtest error.</summary>
 public sealed record ReorderSuggestion(
     int ForecastRunId,
     string MethodUsed,
@@ -17,7 +17,7 @@ public sealed record ReorderSuggestion(
     double? SuggestedOrder,
     IReadOnlyList<string> Warnings);
 
-/// <summary>Esito del calcolo: il suggerimento oppure un messaggio per l'utente (mai entrambi).</summary>
+/// <summary>Outcome of the calculation: the suggestion or a message for the user (never both).</summary>
 public sealed record ReorderOutcome(ReorderSuggestion? Suggestion, string? Error)
 {
     public static ReorderOutcome Ok(ReorderSuggestion suggestion) => new(suggestion, null);

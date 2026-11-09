@@ -4,7 +4,7 @@ namespace LumenX.Dashboard.Tests.TestSupport;
 
 public sealed record ReorderCall(int ProductId, int LeadTimeDays, int ReviewDays, int ServiceLevel, double? OnHand);
 
-/// <summary>Sostituisce il backend nei test della dashboard: nessuna rete, risposte configurabili, chiamate registrate.</summary>
+/// <summary>Replaces the backend in dashboard tests: no network, configurable answers, recorded calls.</summary>
 public sealed class FakeLumenApiClient : ILumenApiClient
 {
     // ---- risposte configurabili ----
@@ -24,6 +24,7 @@ public sealed class FakeLumenApiClient : ILumenApiClient
     public List<(string Language, bool UseAi)> ExplanationCalls { get; } = new();
     public List<ReorderCall> ReorderCalls { get; } = new();
     public List<(int ProductId, string Question)> AskCalls { get; } = new();
+    public List<string?> AskLanguages { get; } = new();
     public List<(int ProductId, int? Horizon, string? Method)> ForecastCalls { get; } = new();
 
     public Task<ApiResult<List<ProductDto>>> GetProductsAsync(CancellationToken ct = default) =>
@@ -83,7 +84,7 @@ public sealed class FakeLumenApiClient : ILumenApiClient
             return Task.FromResult(ReorderFactory(call));
         }
 
-        // Numeri fissi (come nell'esempio a mano: domanda 1400, sicurezza 123,09), tranne l'ordine suggerito.
+        // Fixed numbers (as in the hand example: demand 1400, safety 123.09), except the suggested order.
         const double level = 1523.09;
         var suggested = onHand.HasValue ? Math.Ceiling(Math.Max(0, level - onHand.Value)) : (double?)null;
         return Task.FromResult(ApiResult<ReorderSuggestionDto>.Ok(new ReorderSuggestionDto(
@@ -91,9 +92,11 @@ public sealed class FakeLumenApiClient : ILumenApiClient
             1400, 20, 123.09, level, onHand, suggested, new List<string>())));
     }
 
-    public Task<ApiResult<AskResponseDto>> AskAsync(int productId, string question, CancellationToken ct = default)
+    public Task<ApiResult<AskResponseDto>> AskAsync(
+        int productId, string question, string? language = null, CancellationToken ct = default)
     {
         AskCalls.Add((productId, question));
+        AskLanguages.Add(language);
         var result = AskFactory is not null
             ? AskFactory(question)
             : ApiResult<AskResponseDto>.Ok(new AskResponseDto(

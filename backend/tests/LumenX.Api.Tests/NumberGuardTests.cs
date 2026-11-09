@@ -37,7 +37,7 @@ public class NumberGuardTests
     [Fact]
     public void Slightly_rounded_numbers_are_accepted()
     {
-        // 3.360 scritto come 3.350: entro l'1%
+        // 3.360 written as 3.350: within 1%
         Assert.Empty(NumberGuard.FindUnsupportedNumbers("Prevedo circa 3.350 unità.", Facts(), "it"));
     }
 

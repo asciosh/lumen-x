@@ -10,7 +10,7 @@ public class TemplateExplainerTests
         var text = TemplateExplainer.Explain(ExplanationTestData.Facts(), "it");
 
         Assert.Contains("Caffè", text);
-        Assert.Contains("3.360", text);        // separatore delle migliaia all'italiana
+        Assert.Contains("3.360", text);        // Italian-style thousands separator
         Assert.Contains("28 giorni", text);
         Assert.Contains("20% in più", text);
         Assert.Contains("sabato", text);

@@ -6,6 +6,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
+// One language state per browser session (circuit), shared by every component of the page.
+builder.Services.AddScoped<LanguageState>();
+
 builder.Services.Configure<BackendOptions>(builder.Configuration.GetSection("Backend"));
 builder.Services.AddHttpClient<ILumenApiClient, LumenApiClient>((serviceProvider, client) =>
 {

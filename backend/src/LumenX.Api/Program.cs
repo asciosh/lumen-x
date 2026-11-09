@@ -12,7 +12,7 @@ builder.Services.AddDbContext<LumenXDbContext>((serviceProvider, options) =>
     var connectionString = serviceProvider.GetRequiredService<IConfiguration>().GetConnectionString("Default");
     if (string.IsNullOrWhiteSpace(connectionString))
     {
-        throw new InvalidOperationException("Manca la stringa di connessione ConnectionStrings:Default.");
+        throw new InvalidOperationException("The connection string ConnectionStrings:Default is missing.");
     }
     options.UseNpgsql(connectionString);
 });
@@ -49,7 +49,7 @@ app.MapChatEndpoints();
 
 app.Run();
 
-// Necessario perché WebApplicationFactory<Program> nei test possa vedere il tipo.
+// Needed so that WebApplicationFactory<Program> in the tests can see the type.
 public partial class Program
 {
 }

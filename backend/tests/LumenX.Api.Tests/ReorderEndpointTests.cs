@@ -14,7 +14,7 @@ public class ReorderEndpointTests : IClassFixture<LumenXFactory>
         _client = factory.CreateClient();
     }
 
-    // Il fake del servizio restituisce 28 giorni con yhat = 100 + i e RMSE 4 per ETS.
+    // The fake service returns 28 days with yhat = 100 + i and RMSE 4 for ETS.
     private async Task<int> ProductWithForecastAsync()
     {
         var id = await TestData.CreateProductAsync(_client, TestData.UniqueName());
@@ -54,7 +54,7 @@ public class ReorderEndpointTests : IClassFixture<LumenXFactory>
         var json = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal(14, json.GetProperty("periodDays").GetInt32());
         Assert.Equal(95, json.GetProperty("serviceLevelPercent").GetInt32());
-        Assert.Equal(1505.0, json.GetProperty("demandInPeriod").GetDouble(), 6);   // somma di 100+i per i = 1..14
+        Assert.Equal(1505.0, json.GetProperty("demandInPeriod").GetDouble(), 6);   // sum of 100+i for i = 1..14
         Assert.Equal(24.62, json.GetProperty("safetyStock").GetDouble(), 2);        // 1,6449 x 4 x radice(14)
         Assert.Equal(1529.62, json.GetProperty("orderUpToLevel").GetDouble(), 2);
         Assert.Equal(JsonValueKind.Null, json.GetProperty("suggestedOrder").ValueKind);
@@ -97,7 +97,7 @@ public class ReorderEndpointTests : IClassFixture<LumenXFactory>
     [Theory]
     [InlineData("serviceLevel=97")]
     [InlineData("leadTimeDays=0")]
-    [InlineData("leadTimeDays=30&reviewDays=7")]   // 37 giorni, ma il forecast del fake ne ha 28
+    [InlineData("leadTimeDays=30&reviewDays=7")]   // 37 days, but the fake's forecast has 28
     [InlineData("onHand=-3")]
     public async Task Invalid_parameters_return_422(string query)
     {

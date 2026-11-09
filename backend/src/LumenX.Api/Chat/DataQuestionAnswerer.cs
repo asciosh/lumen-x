@@ -5,9 +5,9 @@ using LumenX.Api.Reorder;
 namespace LumenX.Api.Chat;
 
 /// <summary>
-/// Risponde alle domande sui dati. Nessuna AI e nessun numero inventato: la domanda viene ricondotta a una di quelle
-/// che il codice sa risolvere (<see cref="DataIntent"/>), la risposta e' calcolata sui dati e scritta con frasi fisse.
-/// I periodi sono sempre riferiti all'ultimo giorno di dati, non alla data di oggi.
+/// Answers questions about the data. No AI and no invented numbers: the question is mapped to one of those
+/// the code knows how to solve (<see cref="DataIntent"/>); the answer is computed from the data and written with fixed phrases.
+/// Periods always refer to the last day of data, not to today's date.
 /// </summary>
 public static class DataQuestionAnswerer
 {
@@ -17,7 +17,7 @@ public static class DataQuestionAnswerer
     private const int WeekdayWindowDays = 84;
     private const int MinWeekdayDays = 14;
 
-    // Parole che parlano di soldi: il sistema ha solo le quantita', non i prezzi.
+    // Words about money: the system only has quantities, not prices.
     private static readonly string[] MoneyStems =
     {
         "incass", "fattur", "ricav", "guadagn", "soldi", "euro", "revenue", "income", "earn", "profit", "money"
@@ -47,7 +47,7 @@ public static class DataQuestionAnswerer
         "What was my record day?"
     };
 
-    /// <summary>Domande di esempio che il sistema sa sicuramente capire.</summary>
+    /// <summary>Example questions the system is sure to understand.</summary>
     public static IReadOnlyList<string> Examples(string language) =>
         language == ExplanationLanguage.English ? EnglishExamples : ItalianExamples;
 
@@ -99,7 +99,7 @@ public static class DataQuestionAnswerer
         ? "Non conosco i prezzi, quindi non posso parlare di incassi: ti rispondo con le unità vendute. "
         : "I do not have prices, so I cannot talk about revenue: here are the units sold. ";
 
-    // ------------------------------------------------------------------ vendite
+    // ------------------------------------------------------------------ sales
 
     private static string SalesTotal(string normalized, List<SalePointDto> sales, bool it)
     {
@@ -274,7 +274,7 @@ public static class DataQuestionAnswerer
             : $"From {fromText} to {toText} the best day was {D(best.Date, it)} ({NumberText.Weekday(best.Date.DayOfWeek, it)}) with {Qty(best.Quantity, it)} units; the worst was {D(worst.Date, it)} ({NumberText.Weekday(worst.Date.DayOfWeek, it)}) with {Qty(worst.Quantity, it)}.";
     }
 
-    // ------------------------------------------------------------------ previsione
+    // ------------------------------------------------------------------ forecast
 
     private static string ForecastTotal(string normalized, AskContext context, bool it)
     {
@@ -320,7 +320,7 @@ public static class DataQuestionAnswerer
         if (s is null)
         {
             return it
-                ? outcome.Error ?? "Non riesco a calcolare il riordino con questo forecast."
+                ? "Il forecast è troppo corto per coprire il periodo di riordino: ricalcolalo con un orizzonte più lungo (almeno 14 giorni)."
                 : "The forecast is too short to cover the reorder period: recompute it with a longer horizon (at least 14 days).";
         }
 
@@ -395,7 +395,7 @@ public static class DataQuestionAnswerer
         return TemplateExplainer.Explain(FactsBuilder.Build(context.ProductName, sales, forecast), language);
     }
 
-    // ------------------------------------------------------------------ testi comuni
+    // ------------------------------------------------------------------ shared texts
 
     private static string UnknownText(bool it) => it
         ? "Non ho capito la domanda. Posso rispondere su: vendite in un periodo, confronto con il periodo precedente, giorno più forte della settimana, giorno migliore e peggiore, previsione dei prossimi giorni, quanto ordinare e affidabilità della previsione. Per esempio: «Quanto ho venduto negli ultimi 30 giorni?»"

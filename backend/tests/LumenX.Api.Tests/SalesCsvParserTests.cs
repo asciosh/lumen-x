@@ -65,12 +65,12 @@ public class SalesCsvParserTests
     public void Invalid_rows_are_reported_with_line_numbers_and_valid_rows_are_kept()
     {
         var text = "date;quantity\n" +
-                   "2025-01-01;10\n" +      // riga 2 ok
-                   "non-una-data;5\n" +     // riga 3 errore
-                   "\n" +                   // riga 4 vuota, ignorata
-                   "2025-01-02;abc\n" +     // riga 5 errore
-                   "2025-01-03;-4\n" +      // riga 6 errore (negativa)
-                   "2025-01-04;8\n";        // riga 7 ok
+                   "2025-01-01;10\n" +      // line 2 ok
+                   "not-a-date;5\n" +     // line 3 error
+                   "\n" +                   // line 4 empty, ignored
+                   "2025-01-02;abc\n" +     // line 5 error
+                   "2025-01-03;-4\n" +      // line 6 error (negative)
+                   "2025-01-04;8\n";        // line 7 ok
 
         var result = Parse(text);
 

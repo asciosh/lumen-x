@@ -1,12 +1,12 @@
 @page "/"
 @page "/products"
-@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits LocalizedComponentBase
 @inject ILumenApiClient Api
 
-<PageTitle>Prodotti – Lumen-X</PageTitle>
+<PageTitle>@T("Products") – Lumen-X</PageTitle>
 
-<h1>Prodotti</h1>
-<p class="lede">Scegli un prodotto per vedere cosa prevedo e cosa conviene ordinare, oppure creane uno nuovo.</p>
+<h1>@T("Products")</h1>
+<p class="lede">@T("Pick a product to see what I forecast and what to order, or create a new one.")</p>
 
 @if (error is not null)
 {
@@ -14,15 +14,15 @@
 }
 
 <section class="card">
-    <h2>Nuovo prodotto</h2>
+    <h2>@T("New product")</h2>
     <div class="row">
-        <label>Nome
+        <label>@T("Name")
             <input @bind="newName" maxlength="200" />
         </label>
-        <label>SKU (opzionale)
+        <label>@T("SKU (optional)")
             <input @bind="newSku" maxlength="100" />
         </label>
-        <button class="btn" @onclick="CreateAsync" disabled="@busy">Crea</button>
+        <button class="btn" @onclick="CreateAsync" disabled="@busy">@T("Create")</button>
     </div>
     @if (createError is not null)
     {
@@ -31,20 +31,20 @@
 </section>
 
 <section class="card">
-    <h2>Elenco</h2>
+    <h2>@T("List")</h2>
     @if (loading)
     {
-        <p class="muted">Caricamento…</p>
+        <p class="muted">@T("Loading…")</p>
     }
     else if (products.Count == 0)
     {
-        <p class="muted">Nessun prodotto per ora. Creane uno qui sopra, poi importa le vendite da CSV.</p>
+        <p class="muted">@T("No products yet. Create one above, then import the sales from a CSV.")</p>
     }
     else
     {
         <table class="table">
             <thead>
-                <tr><th>ID</th><th>Nome</th><th>SKU</th><th>Creato</th></tr>
+                <tr><th>ID</th><th>@T("Name")</th><th>SKU</th><th>@T("Created")</th></tr>
             </thead>
             <tbody>
                 @foreach (var p in products)
@@ -53,7 +53,7 @@
                         <td>@p.Id</td>
                         <td><a href="/products/@p.Id">@p.Name</a></td>
                         <td>@p.Sku</td>
-                        <td>@Fmt.DateTimeUtc(p.CreatedAtUtc)</td>
+                        <td>@FmtDateTime(p.CreatedAtUtc)</td>
                     </tr>
                 }
             </tbody>
@@ -86,7 +86,7 @@
         }
         else
         {
-            error = result.ErrorText;
+            error = result.For(Lang.Current);
         }
         loading = false;
     }
@@ -96,7 +96,7 @@
         createError = null;
         if (string.IsNullOrWhiteSpace(newName))
         {
-            createError = "Inserisci un nome.";
+            createError = T("Enter a name.");
             return;
         }
 
@@ -113,7 +113,7 @@
             }
             else
             {
-                createError = result.ErrorText;
+                createError = result.For(Lang.Current);
             }
         }
         finally

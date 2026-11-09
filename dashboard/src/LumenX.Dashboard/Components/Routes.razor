@@ -1,11 +1,20 @@
+@inject LanguageState Lang
+
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)" />
     </Found>
     <NotFound>
         <LayoutView Layout="typeof(MainLayout)">
-            <h1>Pagina non trovata</h1>
-            <p><a href="/">Torna ai prodotti</a></p>
+            <NotFoundPage />
         </LayoutView>
     </NotFound>
 </Router>
+
+@code {
+    /// <summary>The language chosen on the server from the cookie or the browser settings (see App.razor).</summary>
+    [Parameter] public string? InitialLanguage { get; set; }
+
+    // Runs before any child is drawn, so the first render is already in the right language.
+    protected override void OnInitialized() => Lang.Initialize(InitialLanguage);
+}

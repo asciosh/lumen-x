@@ -63,7 +63,7 @@ public class ForecastTests : IClassFixture<LumenXFactory>
         Assert.Equal(28, json.GetProperty("forecast").GetArrayLength());
         Assert.Equal(3.0, json.GetProperty("backtest").GetProperty("ets").GetProperty("mae").GetDouble());
 
-        // La serie inviata al servizio contiene tutti i 60 giorni.
+        // The series sent to the service contains all 60 days.
         Assert.NotNull(_fake.LastRequest);
         Assert.Equal(60, _fake.LastRequest!.Series.Count);
 
@@ -144,7 +144,7 @@ public class ForecastTests : IClassFixture<LumenXFactory>
     public async Task Service_unreachable_becomes_503()
     {
         var productId = await ProductWithSalesAsync(60);
-        _fake.ExceptionToThrow = new ForecastingUnavailableException("giù");
+        _fake.ExceptionToThrow = new ForecastingUnavailableException("down");
 
         var response = await _client.PostAsJsonAsync($"/products/{productId}/forecast", new { });
 
@@ -166,7 +166,7 @@ public class ForecastTests : IClassFixture<LumenXFactory>
     public async Task Failed_calls_do_not_save_a_run()
     {
         var productId = await ProductWithSalesAsync(60);
-        _fake.ExceptionToThrow = new ForecastingUnavailableException("giù");
+        _fake.ExceptionToThrow = new ForecastingUnavailableException("down");
         await _client.PostAsJsonAsync($"/products/{productId}/forecast", new { });
 
         var latest = await _client.GetAsync($"/products/{productId}/forecast");

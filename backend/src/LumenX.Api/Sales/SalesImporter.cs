@@ -10,7 +10,7 @@ public static class SalesImporter
     public const int MaxReportedErrors = 100;
 
     /// <summary>
-    /// Upsert per (prodotto, data). Se nel file la stessa data compare più volte, vince l'ultima riga.
+    /// Upsert by (product, date). If the same date appears several times in the file, the last row wins.
     /// </summary>
     public static async Task<ImportResultDto> ImportAsync(
         LumenXDbContext db, int productId, CsvParseResult parsed, CancellationToken ct)

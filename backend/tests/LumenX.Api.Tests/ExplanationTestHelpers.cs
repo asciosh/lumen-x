@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 
 namespace LumenX.Api.Tests;
 
-/// <summary>Gestore HTTP finto: nessuna rete. Registra l'ultima richiesta (come stringhe, a richiesta gia' chiusa).</summary>
+/// <summary>Fake HTTP handler: no network. Records the last request (as strings, once the request is closed).</summary>
 public sealed class StubHandler : HttpMessageHandler
 {
     private readonly Func<HttpResponseMessage> _responder;

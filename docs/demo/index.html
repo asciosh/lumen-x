@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,7 +10,7 @@
 <link rel="preload" href="fonts/figtree-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="app.css">
 <style>
-  /* Solo per la demo: selettore lingua e avviso */
+  /* Demo only: language switch and notice */
   .topbar { justify-content: space-between; }
   .topbar .left { display: flex; align-items: center; gap: 0.9rem; }
   .toggle { display: inline-flex; padding: 3px; gap: 2px; background: var(--ink-0); border: 1px solid var(--line); border-radius: 999px; }
@@ -33,7 +33,7 @@
     <span class="tagline" id="tagline"></span>
   </div>
   <span class="toggle" role="group" aria-label="Language">
-    <button id="btn-it" class="on">Italiano</button><button id="btn-en">English</button>
+    <button id="btn-en" class="on">EN</button><button id="btn-it">IT</button>
   </span>
 </header>
 
@@ -74,13 +74,14 @@
     }
   };
 
-  var state = { lang: 'it', forecast: null, sales: null, expl: { it: null, en: null } };
+  // English by default, Italian if the browser prefers it (same rule as the dashboard).
+  var state = { lang: /^it/i.test(navigator.language || '') ? 'it' : 'en', forecast: null, sales: null, expl: { it: null, en: null } };
 
   function el(id) { return document.getElementById(id); }
   function t(key) { return TEXT[state.lang][key]; }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
-  // Stessi separatori della dashboard (mai dipendenti dalla lingua del browser)
+  // Same separators as the dashboard (never dependent on the browser language)
   function num(v, d) {
     var neg = v < 0, s = Math.abs(v).toFixed(d), parts = s.split('.');
     var grp = state.lang === 'it' ? '.' : ',', dec = state.lang === 'it' ? ',' : '.';
@@ -93,7 +94,7 @@
     return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1) + '/' + pad(d.getUTCFullYear() % 100); }
   function n(v) { return String(Math.round(v * 100) / 100); }
 
-  // Scala "tonda" per l'asse verticale (1, 2, 5 x potenza di 10)
+  // "Nice" scale for the vertical axis (1, 2, 5 x power of 10)
   function niceScale(lo, hi) {
     var range = hi - lo; if (range <= 0) range = Math.max(1, Math.abs(hi));
     var rough = range * 1.06 / 4, mag = Math.pow(10, Math.floor(Math.log10(rough))), frac = rough / mag;
@@ -177,7 +178,7 @@
     html += '</section><p><a href="https://github.com/asciosh/lumen-x">' + esc(t('repo')) + '</a></p>';
 
     root.innerHTML = html;
-    el('h-name').textContent = name;                 // testi che arrivano dai dati: sempre come testo, mai come HTML
+    el('h-name').textContent = name;                 // texts coming from the data: always as text, never as HTML
     if (el('h-expl')) el('h-expl').textContent = ex.text;
   }
 
@@ -188,6 +189,8 @@
 
   el('btn-it').onclick = function () { state.lang = 'it'; render(); };
   el('btn-en').onclick = function () { state.lang = 'en'; render(); };
+  el('btn-it').className = state.lang === 'it' ? 'on' : ''; el('btn-en').className = state.lang === 'en' ? 'on' : '';
+  document.documentElement.lang = state.lang;
   el('tagline').textContent = t('tagline'); el('banner').textContent = t('banner'); el('loading').textContent = t('loading');
 
   Promise.all([getJson('forecast.json'), getJson('sales.json'), getJson('explanation-it.json', true), getJson('explanation-en.json', true)])

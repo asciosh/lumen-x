@@ -1,7 +1,9 @@
 @inherits LayoutComponentBase
+@inject LanguageState Lang
+@implements IDisposable
 
 <header class="topbar">
-    <a href="/" class="brand" aria-label="Lumen-X, torna ai prodotti">
+    <a href="/" class="brand" aria-label="@Loc.T("Lumen-X, back to products", Lang.Current)">
         <svg class="brand-mark" viewBox="0 0 38 24" aria-hidden="true">
             <path class="m-line" d="M1.5 17 C5 6 8.5 20 13 12 S20 5 24 11" />
             <circle class="m-dot" cx="24" cy="11" r="3.2" />
@@ -9,11 +11,20 @@
         </svg>
         Lumen-X
     </a>
-    <span class="tagline">Previsione vendite</span>
+    <span class="tagline">@Loc.T("Sales forecasting", Lang.Current)</span>
+    <LanguageSwitch />
 </header>
 
 <main class="content">
     @Body
 </main>
 
-<footer class="footer">Lumen-X · il futuro delle tue vendite, in chiaro.</footer>
+<footer class="footer">@Loc.T("Lumen-X · the future of your sales, in plain sight.", Lang.Current)</footer>
+
+@code {
+    protected override void OnInitialized() => Lang.Changed += Refresh;
+
+    private void Refresh() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Lang.Changed -= Refresh;
+}

@@ -2,13 +2,13 @@ using System.Globalization;
 
 namespace LumenX.Api.Explanations;
 
-/// <summary>Spiegazione scritta dal codice, in italiano o inglese: gratis, offline, senza AI.</summary>
+/// <summary>Explanation written by the code, in Italian or English: free, offline, no AI.</summary>
 public sealed class TemplateExplainer : IExplainer
 {
-    // Sopra questa percentuale di giorni a zero la serie e' "intermittente" e la previsione poco affidabile.
+    // Above this percentage of zero-sales days the series is "intermittent" and the forecast not very reliable.
     private const double IntermittentThresholdPercent = 20;
 
-    // Formati numerici espliciti: non dipendono dalle culture installate (nei container possono mancare).
+    // Explicit number formats: they do not depend on the installed cultures (they may be missing in containers).
     private static readonly NumberFormatInfo ItNumbers = new()
     {
         NumberDecimalSeparator = ",",
@@ -39,7 +39,7 @@ public sealed class TemplateExplainer : IExplainer
     public static string Explain(ExplanationFacts facts, string language) =>
         language == ExplanationLanguage.English ? BuildEnglish(facts) : BuildItalian(facts);
 
-    // ---------- formattazione ----------
+    // ---------- formatting ----------
 
     private static string Qty(double v, bool it)
     {
@@ -61,14 +61,14 @@ public sealed class TemplateExplainer : IExplainer
 
     private static string DaysEn(int n) => n == 1 ? "1 day" : $"{n} days";
 
-    // "blend" e' il nome tecnico della media di ETS e LightGBM: nel testo si scrive per esteso.
+    // "blend" is the technical name for the average of ETS and LightGBM: in the text it is written in full.
     private static string MethodLabel(string method, bool it) =>
         method == "blend" ? (it ? "media di ETS e LightGBM" : "average of ETS and LightGBM") : method;
 
     private static string WeekdayIt(string englishName) =>
         ItWeekdays.TryGetValue(englishName, out var it) ? it : englishName;
 
-    // ---------- italiano ----------
+    // ---------- Italian ----------
 
     private static string BuildItalian(ExplanationFacts f)
     {
@@ -138,7 +138,7 @@ public sealed class TemplateExplainer : IExplainer
         return string.Join(" ", parts);
     }
 
-    // ---------- inglese ----------
+    // ---------- English ----------
 
     private static string BuildEnglish(ExplanationFacts f)
     {

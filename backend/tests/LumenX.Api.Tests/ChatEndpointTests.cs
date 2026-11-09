@@ -147,7 +147,7 @@ public class ChatEndpointTests : IClassFixture<LumenXFactory>
         Assert.Equal("forecast_total", json.GetProperty("intent").GetString());
         var answer = json.GetProperty("answer").GetString();
         Assert.Contains("prossimi 14 giorni", answer);
-        Assert.Contains("1.505", answer);   // il finto servizio prevede 100 + i per il giorno i: somma dei primi 14 = 1.505
+        Assert.Contains("1.505", answer);   // the fake service forecasts 100 + i for day i: sum of the first 14 = 1,505
     }
 
     [Fact]

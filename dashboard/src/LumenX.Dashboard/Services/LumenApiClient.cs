@@ -71,9 +71,10 @@ public sealed class LumenApiClient : ILumenApiClient
         return SendAsync<ReorderSuggestionDto>(() => _http.GetAsync(url, ct), ct);
     }
 
-    public Task<ApiResult<AskResponseDto>> AskAsync(int productId, string question, CancellationToken ct = default) =>
+    public Task<ApiResult<AskResponseDto>> AskAsync(
+        int productId, string question, string? language = null, CancellationToken ct = default) =>
         SendAsync<AskResponseDto>(
-            () => _http.PostAsJsonAsync($"products/{productId}/ask", new AskRequest(question, null), Json, ct), ct);
+            () => _http.PostAsJsonAsync($"products/{productId}/ask", new AskRequest(question, language), Json, ct), ct);
 
     public Task<ApiResult<ForecastRunDto>> CreateForecastAsync(
         int productId, int? horizon, string? method, CancellationToken ct = default) =>
@@ -92,7 +93,7 @@ public sealed class LumenApiClient : ILumenApiClient
             {
                 var value = await response.Content.ReadFromJsonAsync<T>(Json, ct);
                 return value is null
-                    ? ApiResult<T>.Fail((int)response.StatusCode, "Risposta vuota dal backend.")
+                    ? ApiResult<T>.Fail((int)response.StatusCode, "Empty response from the backend.")
                     : ApiResult<T>.Ok(value);
             }
 
@@ -101,19 +102,19 @@ public sealed class LumenApiClient : ILumenApiClient
         }
         catch (HttpRequestException)
         {
-            return ApiResult<T>.Fail(0, "Backend non raggiungibile. Controlla che sia avviato e che Backend:BaseUrl sia corretto.");
+            return ApiResult<T>.Fail(0, "Backend unreachable. Check that it is running and that Backend:BaseUrl is correct.");
         }
         catch (TaskCanceledException) when (!ct.IsCancellationRequested)
         {
-            return ApiResult<T>.Fail(0, "Il backend non ha risposto in tempo (timeout).");
+            return ApiResult<T>.Fail(0, "The backend did not answer in time (timeout).");
         }
         catch (JsonException)
         {
-            return ApiResult<T>.Fail(0, "Risposta del backend in un formato non atteso.");
+            return ApiResult<T>.Fail(0, "Unexpected response format from the backend.");
         }
     }
 
-    private static async Task<string> ReadProblemDetailAsync(HttpResponseMessage response, CancellationToken ct)
+    private static async Task<string?> ReadProblemDetailAsync(HttpResponseMessage response, CancellationToken ct)
     {
         try
         {
@@ -129,9 +130,9 @@ public sealed class LumenApiClient : ILumenApiClient
         }
         catch (JsonException)
         {
-            // Corpo non JSON: uso il messaggio generico qui sotto.
+            // Body is not JSON: use the generic message below.
         }
 
-        return $"Errore HTTP {(int)response.StatusCode}.";
+        return null;   // no usable detail: the UI shows a generic "HTTP error" message
     }
 }

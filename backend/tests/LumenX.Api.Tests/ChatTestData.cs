@@ -5,9 +5,9 @@ using LumenX.Api.Forecasting;
 namespace LumenX.Api.Tests;
 
 /// <summary>
-/// Storico inventato, facile da verificare a mano: 90 giorni dal 1 gennaio al 31 marzo 2026, con
-/// quantita' = 100 + 10 x (giorno della settimana, domenica = 0) + 10 x (numero di settimana trascorsa).
-/// Forecast di prova: 28 giorni dal 1 aprile 2026 a 150 unita' (fascia 140-160), errore del metodo (RMSE) 10.
+/// Invented history, easy to check by hand: 90 days from 1 January to 31 March 2026, with
+/// quantity = 100 + 10 x (day of the week, Sunday = 0) + 10 x (number of weeks elapsed).
+/// Test forecast: 28 days from 1 April 2026 at 150 units (band 140-160), method error (RMSE) 10.
 /// </summary>
 public static class ChatTestData
 {

@@ -11,7 +11,7 @@ public static class ExplanationEndpoints
 {
     public static IEndpointRouteBuilder MapExplanationEndpoints(this IEndpointRouteBuilder app)
     {
-        // ?lang=it|en (default it) & useAi=true|false (default true: usa Gemini se configurato)
+        // ?lang=it|en (default it) & useAi=true|false (default true: use Gemini if configured)
         app.MapGet("/products/{productId:int}/forecast/explanation", GetExplanationAsync);
         return app;
     }
@@ -27,7 +27,7 @@ public static class ExplanationEndpoints
         var language = ExplanationLanguage.Normalize(lang);
         if (language is null)
         {
-            return Problems.Unprocessable("'lang' deve essere 'it' oppure 'en'.");
+            return Problems.Unprocessable("'lang' must be 'it' or 'en'.");
         }
 
         var product = await db.Products
@@ -35,7 +35,7 @@ public static class ExplanationEndpoints
             .FirstOrDefaultAsync(p => p.Id == productId, ct);
         if (product is null)
         {
-            return Problems.NotFound($"Prodotto {productId} non trovato.");
+            return Problems.NotFound($"Product {productId} not found.");
         }
 
         var run = await db.ForecastRuns
@@ -46,7 +46,7 @@ public static class ExplanationEndpoints
             .FirstOrDefaultAsync(ct);
         if (run is null)
         {
-            return Problems.NotFound($"Nessun forecast salvato per il prodotto {productId}.");
+            return Problems.NotFound($"No forecast saved for product {productId}.");
         }
 
         var sales = await db.SalesRecords
@@ -59,7 +59,7 @@ public static class ExplanationEndpoints
         var runDto = ForecastMapper.ToDto(run);
         if (sales.Count == 0 || runDto.Forecast.Count == 0)
         {
-            return Problems.Unprocessable("Mancano vendite o punti di forecast per costruire la spiegazione.");
+            return Problems.Unprocessable("Sales or forecast points are missing: the explanation cannot be built.");
         }
 
         var facts = FactsBuilder.Build(product.Name, sales, runDto);

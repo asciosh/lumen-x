@@ -4,11 +4,11 @@ services:
     environment:
       POSTGRES_DB: lumenx
       POSTGRES_USER: lumenx
-      # Password solo di sviluppo: sovrascrivibile con la variabile d'ambiente POSTGRES_PASSWORD.
-      # Evita ';' e spazi nella password (finisce in una connection string).
+      # Development-only password: can be overridden with the POSTGRES_PASSWORD environment variable.
+      # Avoid ';' and spaces in the password (it ends up in a connection string).
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lumenx_dev_password}
     ports:
-      # Esposta solo su localhost della macchina, non sulla rete.
+      # Exposed only on the machine's localhost, not on the network.
       - "127.0.0.1:5432:5432"
     volumes:
       - lumenx_pgdata:/var/lib/postgresql/data
@@ -27,13 +27,13 @@ services:
     build:
       context: ./backend
       args:
-        # Stessa versione major di PackagesMajor in backend/Directory.Build.props
+        # Same major version as PackagesMajor in backend/Directory.Build.props
         DOTNET_MAJOR: ${DOTNET_MAJOR:-10}
     environment:
       ConnectionStrings__Default: "Host=db;Port=5432;Database=lumenx;Username=lumenx;Password=${POSTGRES_PASSWORD:-lumenx_dev_password}"
       Forecasting__BaseUrl: "http://forecasting:8000"
       Database__UseMigrations: "${DB_USE_MIGRATIONS:-false}"
-      # Facoltativi: senza chiave le spiegazioni usano solo il testo a modello.
+      # Optional: without a key, explanations only use the template text.
       Gemini__ApiKey: "${GEMINI_API_KEY:-}"
       Gemini__Model: "${GEMINI_MODEL:-gemini-3.6-flash}"
       Gemini__TimeoutSeconds: "${GEMINI_TIMEOUT_SECONDS:-60}"
@@ -49,10 +49,10 @@ services:
     build:
       context: ./dashboard
       args:
-        # Stessa versione major di PackagesMajor in dashboard/Directory.Build.props
+        # Same major version as PackagesMajor in dashboard/Directory.Build.props
         DOTNET_MAJOR: ${DOTNET_MAJOR:-10}
     environment:
-      # Dentro la rete di Docker il backend si chiama "backend" (la chiamata parte dal server della dashboard).
+      # Inside Docker's network the backend is called "backend" (the call comes from the dashboard server).
       Backend__BaseUrl: "http://backend:8080"
     ports:
       - "8081:8080"

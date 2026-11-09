@@ -1,12 +1,12 @@
 @page "/products/{Id:int}"
 @using System.Globalization
 @using System.Text.Json
-@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits LocalizedComponentBase
 @inject ILumenApiClient Api
 
-<PageTitle>@(product?.Name ?? "Prodotto") – Lumen-X</PageTitle>
+<PageTitle>@(product?.Name ?? T("Product")) – Lumen-X</PageTitle>
 
-<p class="crumb"><a href="/">← Tutti i prodotti</a></p>
+<p class="crumb"><a href="/">@T("← All products")</a></p>
 
 @if (pageError is not null)
 {
@@ -14,7 +14,7 @@
 }
 else if (product is null)
 {
-    <p class="muted">Caricamento…</p>
+    <p class="muted">@T("Loading…")</p>
 }
 else
 {
@@ -27,12 +27,12 @@ else
     </div>
 
     <section class="card stage">
-        <h2>Previsione</h2>
+        <h2>@T("Forecast")</h2>
         <div class="row">
-            <label>Orizzonte (giorni, 1–90)
+            <label>@T("Horizon (days, 1–90)")
                 <input type="number" min="1" max="90" @bind="horizon" />
             </label>
-            <label>Metodo
+            <label>@T("Method")
                 <select @bind="method">
                     <option value="auto">auto</option>
                     <option value="naive">naive</option>
@@ -41,7 +41,7 @@ else
                 </select>
             </label>
             <button class="btn" @onclick="RunForecastAsync" disabled="@forecasting">
-                @(forecasting ? "Calcolo in corso…" : "Calcola forecast")
+                @(forecasting ? T("Computing…") : T("Compute forecast"))
             </button>
         </div>
         @if (forecastError is not null)
@@ -51,40 +51,40 @@ else
 
         @if (forecast is null)
         {
-            <p class="muted">Nessun forecast salvato per questo prodotto.</p>
+            <p class="muted">@T("No forecast saved for this product.")</p>
         }
         else
         {
             @if (forecast.Forecast.Count > 0)
             {
                 <p class="lead">
-                    Prossimi @forecast.Forecast.Count giorni: circa <strong>@Fmt.Num(forecast.Forecast.Sum(p => p.Yhat), 0)</strong> unità,
-                    @Fmt.Num(forecast.Forecast.Average(p => p.Yhat), 0) al giorno.
+                    @T("Next {0} days: about", forecast.Forecast.Count) <strong>@FmtNum(forecast.Forecast.Sum(p => p.Yhat), 0)</strong>
+                    @T("units, {0} per day.", FmtNum(forecast.Forecast.Average(p => p.Yhat), 0))
                 </p>
             }
 
             <ForecastChart History="sales" Forecast="forecast" />
-            <p class="muted">Il grafico mostra gli ultimi 120 giorni di storico (tra quelli caricati) e la previsione.</p>
+            <p class="muted">@T("The chart shows the last 120 days of history (among those loaded) and the forecast.")</p>
 
             <dl class="facts">
-                <div><dt>Metodo</dt><dd><strong title="@(forecast.MethodUsed == "blend" ? "Media di ETS e LightGBM" : null)">@forecast.MethodUsed</strong></dd></div>
-                <div><dt>Orizzonte</dt><dd>@forecast.Horizon giorni</dd></div>
-                <div><dt>Verifica su</dt><dd>@forecast.HoldoutDays giorni</dd></div>
-                <div><dt>Giorni stimati</dt><dd>@forecast.FilledMissingDays</dd></div>
-                <div><dt>Intervallo</dt><dd>@IntervalText(forecast.Interval)</dd></div>
-                <div><dt>Calcolato il</dt><dd>@Fmt.DateTimeUtc(forecast.CreatedAtUtc)</dd></div>
+                <div><dt>@T("Method")</dt><dd><strong title="@(forecast.MethodUsed == "blend" ? T("Average of ETS and LightGBM") : null)">@forecast.MethodUsed</strong></dd></div>
+                <div><dt>@T("Horizon")</dt><dd>@T("{0} days", forecast.Horizon)</dd></div>
+                <div><dt>@T("Checked on")</dt><dd>@T("{0} days", forecast.HoldoutDays)</dd></div>
+                <div><dt>@T("Days filled in")</dt><dd>@forecast.FilledMissingDays</dd></div>
+                <div><dt>@T("Interval")</dt><dd>@IntervalText(forecast.Interval)</dd></div>
+                <div><dt>@T("Computed on")</dt><dd>@FmtDateTime(forecast.CreatedAtUtc)</dd></div>
             </dl>
 
-            <h3>Spiegazione</h3>
+            <h3>@T("Explanation")</h3>
             <div class="row">
-                <label>Lingua
+                <label>@T("Language")
                     <select value="@explainLang" @onchange="OnExplainLangChanged">
                         <option value="it">Italiano</option>
                         <option value="en">English</option>
                     </select>
                 </label>
                 <button class="btn btn-secondary" @onclick="RewriteWithAiAsync" disabled="@explaining">
-                    @(explaining ? "Un attimo…" : "Riscrivi con Gemini")
+                    @(explaining ? T("One moment…") : T("Rewrite with Gemini"))
                 </button>
             </div>
             @if (explainError is not null)
@@ -94,19 +94,19 @@ else
             @if (explanation is not null)
             {
                 <div class="explanation">@explanation.Text</div>
-                <p class="muted">Fonte: @SourceLabel(explanation.Source)@NoteText(explanation.Note)</p>
+                <p class="muted">@T("Source: {0}{1}", SourceLabel(explanation.Source), NoteText(explanation.Note))</p>
             }
 
-            <h3>Riordino</h3>
-            <p class="muted">Quanto ordinare per non restare senza merce fino al prossimo arrivo, in base alla previsione e al suo errore.</p>
+            <h3>@T("Reorder")</h3>
+            <p class="muted">@T("How much to order so you do not run out of stock until the next delivery, based on the forecast and its error.")</p>
             <div class="row">
-                <label>Giorni di consegna
+                <label>@T("Lead time (days)")
                     <input type="number" min="1" max="60" @bind="leadDays" />
                 </label>
-                <label>Giorni tra un ordine e l'altro
+                <label>@T("Days between orders")
                     <input type="number" min="0" max="60" @bind="reviewDays" />
                 </label>
-                <label>Livello di servizio
+                <label>@T("Service level")
                     <select @bind="serviceLevel">
                         <option value="90">90%</option>
                         <option value="95">95%</option>
@@ -114,11 +114,11 @@ else
                         <option value="99">99%</option>
                     </select>
                 </label>
-                <label>Scorta attuale (facoltativa)
+                <label>@T("Current stock (optional)")
                     <input @bind="onHandText" />
                 </label>
                 <button class="btn btn-secondary" @onclick="CalculateReorderAsync" disabled="@computingReorder">
-                    @(computingReorder ? "Un attimo…" : "Calcola riordino")
+                    @(computingReorder ? T("One moment…") : T("Compute reorder"))
                 </button>
             </div>
             @if (reorderError is not null)
@@ -129,13 +129,13 @@ else
             {
                 <table class="table narrow">
                     <tbody>
-                        <tr><td>Periodo da coprire</td><td class="num">@reorder.PeriodDays giorni</td></tr>
-                        <tr><td>Domanda prevista nel periodo</td><td class="num">@Fmt.Num(reorder.DemandInPeriod, 0)</td></tr>
-                        <tr><td>Scorta di sicurezza (@reorder.ServiceLevelPercent%)</td><td class="num">@Fmt.Num(reorder.SafetyStock, 0)</td></tr>
-                        <tr><td>Livello massimo</td><td class="num"><strong>@Fmt.Num(reorder.OrderUpToLevel, 0)</strong></td></tr>
+                        <tr><td>@T("Period to cover")</td><td class="num">@T("{0} days", reorder.PeriodDays)</td></tr>
+                        <tr><td>@T("Expected demand in the period")</td><td class="num">@FmtNum(reorder.DemandInPeriod, 0)</td></tr>
+                        <tr><td>@T("Safety stock ({0}%)", reorder.ServiceLevelPercent)</td><td class="num">@FmtNum(reorder.SafetyStock, 0)</td></tr>
+                        <tr><td>@T("Maximum level")</td><td class="num"><strong>@FmtNum(reorder.OrderUpToLevel, 0)</strong></td></tr>
                         @if (reorder.SuggestedOrder is double order)
                         {
-                            <tr><td>Ordine suggerito (scorta attuale @Fmt.Num(reorder.OnHand ?? 0, 0))</td><td class="num"><strong>@Fmt.Num(order, 0)</strong></td></tr>
+                            <tr><td>@T("Suggested order (current stock {0})", FmtNum(reorder.OnHand ?? 0, 0))</td><td class="num"><strong>@FmtNum(order, 0)</strong></td></tr>
                         }
                     </tbody>
                 </table>
@@ -144,42 +144,41 @@ else
                     <div class="alert alert-error">@ReorderWarning(w)</div>
                 }
                 <p class="muted">
-                    Scorta di sicurezza = fattore del livello di servizio × errore giornaliero del metodo (@Fmt.Num(reorder.DailyErrorStdDev, 1)) × radice dei giorni del periodo.
-                    Presuppone errori indipendenti da un giorno all'altro: se le vendite cambiano livello di colpo, la scorta può risultare scarsa.
+                    @T("Safety stock = service-level factor × the method's daily error ({0}) × square root of the days in the period. It assumes errors are independent from one day to the next: if sales suddenly change level, the stock may turn out too low.", FmtNum(reorder.DailyErrorStdDev, 1))
                 </p>
             }
 
             @if (forecast.Backtest is { Count: > 0 })
             {
-                <h3>Quanto è affidabile</h3>
-                <p class="muted">Errore medio su giorni che il modello non aveva visto: più è basso, meglio è.</p>
+                <h3>@T("How reliable it is")</h3>
+                <p class="muted">@T("Average error on days the model had not seen: lower is better.")</p>
                 <table class="table narrow">
-                    <thead><tr><th>Metodo</th><th class="num">MAE</th><th class="num">RMSE</th></tr></thead>
+                    <thead><tr><th>@T("Method")</th><th class="num">MAE</th><th class="num">RMSE</th></tr></thead>
                     <tbody>
                         @foreach (var kv in forecast.Backtest)
                         {
                             <tr class="@(kv.Key == forecast.MethodUsed ? "is-used" : null)">
                                 <td>@kv.Key</td>
-                                <td class="num">@Fmt.Metric(kv.Value.Mae)</td>
-                                <td class="num">@Fmt.Metric(kv.Value.Rmse)</td>
+                                <td class="num">@FmtMetric(kv.Value.Mae)</td>
+                                <td class="num">@FmtMetric(kv.Value.Rmse)</td>
                             </tr>
                         }
                     </tbody>
                 </table>
             }
 
-            <h3>Giorno per giorno</h3>
+            <h3>@T("Day by day")</h3>
             <div class="scroll">
                 <table class="table narrow">
-                    <thead><tr><th>Data</th><th class="num">Previsione</th><th class="num">Min</th><th class="num">Max</th></tr></thead>
+                    <thead><tr><th>@T("Date")</th><th class="num">@T("Forecast")</th><th class="num">@T("Min")</th><th class="num">@T("Max")</th></tr></thead>
                     <tbody>
                         @foreach (var p in forecast.Forecast)
                         {
                             <tr>
-                                <td>@Fmt.Date(p.Date)</td>
-                                <td class="num">@Fmt.Num(p.Yhat, 1)</td>
-                                <td class="num">@Fmt.Num(p.Lower, 1)</td>
-                                <td class="num">@Fmt.Num(p.Upper, 1)</td>
+                                <td>@FmtDate(p.Date)</td>
+                                <td class="num">@FmtNum(p.Yhat, 1)</td>
+                                <td class="num">@FmtNum(p.Lower, 1)</td>
+                                <td class="num">@FmtNum(p.Upper, 1)</td>
                             </tr>
                         }
                     </tbody>
@@ -189,13 +188,13 @@ else
     </section>
 
     <section class="card chat">
-        <h2>Chiedi ai tuoi dati</h2>
-        <p class="muted">Domande sulle vendite, sulla previsione e su cosa ordinare. Le risposte sono calcolate dal codice sui tuoi dati, senza inventare nulla.</p>
+        <h2>@T("Ask your data")</h2>
+        <p class="muted">@T("Questions about sales, the forecast and what to order. The answers are computed by the code on your data, without inventing anything.")</p>
         <form class="ask" @onsubmit="AskAsync">
-            <label>La tua domanda
-                <input @bind="questionText" @bind:event="oninput" maxlength="300" placeholder="Per esempio: quanto ho venduto negli ultimi 30 giorni?" />
+            <label>@T("Your question")
+                <input @bind="questionText" @bind:event="oninput" maxlength="300" placeholder="@(T("For example: how much did I sell in the last 30 days?"))" />
             </label>
-            <button type="button" class="btn" @onclick="AskAsync" disabled="@asking">@(asking ? "Un attimo…" : "Chiedi")</button>
+            <button type="button" class="btn" @onclick="AskAsync" disabled="@asking">@(asking ? T("One moment…") : T("Ask"))</button>
         </form>
         <div class="chips">
             @foreach (var example in ExampleQuestions)
@@ -217,12 +216,12 @@ else
     </section>
 
     <details class="card fold" open="@dataOpen">
-        <summary><h2>Vendite</h2></summary>
+        <summary><h2>@T("Sales")</h2></summary>
         <div class="row">
-            <label>Da <input type="date" value="@fromText" @onchange="OnFromChanged" /></label>
-            <label>A <input type="date" value="@toText" @onchange="OnToChanged" /></label>
-            <button class="btn" @onclick="ApplyFilterAsync" disabled="@loadingSales">Applica</button>
-            <button class="btn btn-secondary" @onclick="ClearFilterAsync" disabled="@loadingSales">Azzera</button>
+            <label>@T("From") <input type="date" value="@fromText" @onchange="OnFromChanged" /></label>
+            <label>@T("To") <input type="date" value="@toText" @onchange="OnToChanged" /></label>
+            <button class="btn" @onclick="ApplyFilterAsync" disabled="@loadingSales">@T("Apply")</button>
+            <button class="btn btn-secondary" @onclick="ClearFilterAsync" disabled="@loadingSales">@T("Clear")</button>
         </div>
         @if (salesError is not null)
         {
@@ -230,41 +229,40 @@ else
         }
         @if (loadingSales)
         {
-            <p class="muted">Caricamento…</p>
+            <p class="muted">@T("Loading…")</p>
         }
         else if (sales.Count == 0)
         {
-            <p class="muted">Nessuna vendita nel periodo. Importa un CSV qui sopra.</p>
+            <p class="muted">@T("No sales in the period. Import a CSV above.")</p>
         }
         else
         {
             <p>
-                <strong>@sales.Count</strong> giorni, dal @Fmt.Date(sales.First().Date) al @Fmt.Date(sales.Last().Date) ·
-                totale @Fmt.Num(sales.Sum(s => s.Quantity), 1) · media @Fmt.Num(sales.Average(s => s.Quantity), 1) al giorno
+                <strong>@sales.Count</strong> @T("days, from {0} to {1} · total {2} · average {3} per day", FmtDate(sales.First().Date), FmtDate(sales.Last().Date), FmtNum(sales.Sum(s => s.Quantity), 1), FmtNum(sales.Average(s => s.Quantity), 1))
             </p>
             <table class="table">
-                <thead><tr><th>Data</th><th class="num">Quantità</th></tr></thead>
+                <thead><tr><th>@T("Date")</th><th class="num">@T("Quantity")</th></tr></thead>
                 <tbody>
                     @foreach (var s in sales.OrderByDescending(x => x.Date).Take(15))
                     {
-                        <tr><td>@Fmt.Date(s.Date)</td><td class="num">@Fmt.Num(s.Quantity, 1)</td></tr>
+                        <tr><td>@FmtDate(s.Date)</td><td class="num">@FmtNum(s.Quantity, 1)</td></tr>
                     }
                 </tbody>
             </table>
             @if (sales.Count > 15)
             {
-                <p class="muted">Mostrate le ultime 15 righe.</p>
+                <p class="muted">@T("Showing the last 15 rows.")</p>
             }
         }
     </details>
 
     <details class="card fold" open="@dataOpen">
-        <summary><h2>Importa vendite da CSV</h2></summary>
-        <p class="muted">Colonne <code>date</code> e <code>quantity</code>. Separatore virgola o punto e virgola; date yyyy-MM-dd o dd/MM/yyyy; decimali con punto o virgola. Le righe già presenti (stessa data) vengono aggiornate.</p>
+        <summary><h2>@T("Import sales from CSV")</h2></summary>
+        <p class="muted">@((MarkupString)T("Columns <code>date</code> and <code>quantity</code>. Separator comma or semicolon; dates yyyy-MM-dd or dd/MM/yyyy; decimals with a dot or a comma. Rows already present (same date) are updated."))</p>
         <InputFile OnChange="OnFileSelected" accept=".csv,text/csv" disabled="@importing" @key="fileInputKey" />
         @if (importing)
         {
-            <p class="muted">Importazione in corso…</p>
+            <p class="muted">@T("Import in progress…")</p>
         }
         @if (importError is not null)
         {
@@ -273,14 +271,12 @@ else
         @if (importResult is not null)
         {
             <div class="alert alert-ok">
-                Righe lette: @importResult.TotalRows · valide: @importResult.ValidRows ·
-                inserite: @importResult.Inserted · aggiornate: @importResult.Updated ·
-                duplicate nel file: @importResult.DuplicatesInFile · scartate: @importResult.Rejected
+                @T("Rows read: {0} · valid: {1} · inserted: {2} · updated: {3} · duplicates in the file: {4} · rejected: {5}", importResult.TotalRows, importResult.ValidRows, importResult.Inserted, importResult.Updated, importResult.DuplicatesInFile, importResult.Rejected)
             </div>
             @if (importResult.Errors.Count > 0)
             {
                 <table class="table">
-                    <thead><tr><th>Riga</th><th>Problema</th></tr></thead>
+                    <thead><tr><th>@T("Row")</th><th>@T("Problem")</th></tr></thead>
                     <tbody>
                         @foreach (var e in importResult.Errors)
                         {
@@ -290,7 +286,7 @@ else
                 </table>
                 @if (importResult.ErrorsTruncated)
                 {
-                    <p class="muted">Elenco errori troncato: ce ne sono altri.</p>
+                    <p class="muted">@T("Error list truncated: there are more.")</p>
                 }
             }
         }
@@ -328,7 +324,7 @@ else
 
     private bool dataOpen;
     private ExplanationDto? explanation;
-    private string explainLang = "it";
+    private string explainLang = LanguageState.English;
     private bool explaining;
     private string? explainError;
 
@@ -338,6 +334,28 @@ else
     private void OnToChanged(ChangeEventArgs e) => toText = e.Value?.ToString() ?? "";
     private int horizon = 28;
     private string method = "auto";
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        explainLang = Lang.Current;
+    }
+
+    // When the interface language changes, the explanation is requested again in that language.
+    protected override void LanguageChanged()
+    {
+        explainLang = Lang.Current;
+        if (forecast is not null)
+        {
+            _ = ReloadExplanationAsync();
+        }
+    }
+
+    private async Task ReloadExplanationAsync()
+    {
+        await LoadExplanationAsync(false);
+        await InvokeAsync(StateHasChanged);
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -361,7 +379,7 @@ else
         var p = await Api.GetProductAsync(Id);
         if (!p.IsSuccess)
         {
-            pageError = p.ErrorText;
+            pageError = p.For(Lang.Current);
             return;
         }
         product = p.Value;
@@ -376,7 +394,7 @@ else
         }
         else if (f.StatusCode != 404)
         {
-            forecastError = f.ErrorText;
+            forecastError = f.For(Lang.Current);
         }
 
         if (forecast is not null)
@@ -397,7 +415,7 @@ else
         var to = ParseDate(toText);
         if (from.HasValue && to.HasValue && from.Value > to.Value)
         {
-            salesError = "'Da' non può essere successivo ad 'A'.";
+            salesError = T("'From' cannot be later than 'To'.");
             return;
         }
 
@@ -411,7 +429,7 @@ else
             }
             else
             {
-                salesError = result.ErrorText;
+                salesError = result.For(Lang.Current);
             }
         }
         finally
@@ -448,17 +466,17 @@ else
             }
             else
             {
-                importError = result.ErrorText;
+                importError = result.For(Lang.Current);
             }
         }
         catch (IOException)
         {
-            importError = "File troppo grande (massimo 10 MB).";
+            importError = T("File too large (max 10 MB).");
         }
         finally
         {
             importing = false;
-            fileInputKey++; // permette di riselezionare lo stesso file
+            fileInputKey++; // allows selecting the same file again
         }
     }
 
@@ -467,7 +485,7 @@ else
         forecastError = null;
         if (horizon < 1 || horizon > 90)
         {
-            forecastError = "L'orizzonte deve essere compreso tra 1 e 90 giorni.";
+            forecastError = T("The horizon must be between 1 and 90 days.");
             return;
         }
 
@@ -483,7 +501,7 @@ else
             }
             else
             {
-                forecastError = result.ErrorText;
+                forecastError = result.For(Lang.Current);
             }
         }
         finally
@@ -500,7 +518,7 @@ else
         {
             if (!double.TryParse(onHandText.Trim().Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
             {
-                reorderError = "La scorta attuale deve essere un numero (per esempio 300).";
+                reorderError = T("Current stock must be a number (for example 300).");
                 return;
             }
             onHand = parsed;
@@ -517,7 +535,7 @@ else
             else
             {
                 reorder = null;
-                reorderError = result.ErrorText;
+                reorderError = result.For(Lang.Current);
             }
         }
         finally
@@ -526,13 +544,13 @@ else
         }
     }
 
-    private static string ReorderWarning(string code) => code switch
+    private string ReorderWarning(string code) => code switch
     {
-        "intermittent" => "Molti giorni a zero nello storico: il calcolo presuppone vendite regolari, quindi la scorta suggerita non è affidabile.",
+        "intermittent" => T("Many zero-sales days in the history: the calculation assumes regular sales, so the suggested stock is not reliable."),
         _ => code
     };
 
-    private static readonly string[] ExampleQuestions =
+    private static readonly string[] ItalianExamples =
     {
         "Quanto ho venduto negli ultimi 30 giorni?",
         "Come vanno le vendite rispetto al mese scorso?",
@@ -541,6 +559,19 @@ else
         "Cosa conviene ordinare?",
         "Quanto è affidabile la previsione?"
     };
+
+    private static readonly string[] EnglishExamples =
+    {
+        "How much did I sell in the last 30 days?",
+        "How are sales doing compared to last month?",
+        "Which day of the week sells best?",
+        "How much will I sell in the next 2 weeks?",
+        "What should I order?",
+        "How reliable is the forecast?"
+    };
+
+    // The example questions follow the interface language (the backend understands both).
+    private string[] ExampleQuestions => Lang.IsItalian ? ItalianExamples : EnglishExamples;
 
     private sealed record ChatTurn(string Question, string Answer);
 
@@ -563,14 +594,14 @@ else
         var question = (text ?? "").Trim();
         if (question.Length < 3)
         {
-            askError = "Scrivi una domanda (almeno 3 caratteri).";
+            askError = T("Write a question (at least 3 characters).");
             return;
         }
 
         asking = true;
         try
         {
-            var result = await Api.AskAsync(Id, question);
+            var result = await Api.AskAsync(Id, question, Lang.Current);
             if (result.IsSuccess)
             {
                 conversation.Insert(0, new ChatTurn(question, result.Value!.Answer));
@@ -583,7 +614,7 @@ else
             }
             else
             {
-                askError = result.ErrorText;
+                askError = result.For(Lang.Current);
             }
         }
         finally
@@ -605,7 +636,7 @@ else
             }
             else
             {
-                explainError = result.ErrorText;
+                explainError = result.For(Lang.Current);
             }
         }
         finally
@@ -622,14 +653,14 @@ else
 
     private Task RewriteWithAiAsync() => LoadExplanationAsync(true);
 
-    private static string SourceLabel(string source) =>
-        source == "gemini" ? "Gemini (riscritta dall'AI a partire dai fatti calcolati)" : "modello a regole (nessuna AI)";
+    private string SourceLabel(string source) =>
+        source == "gemini" ? T("Gemini (rewritten by the AI from the computed facts)") : T("rule-based template (no AI)");
 
-    private static string NoteText(string? note) => note switch
+    private string NoteText(string? note) => note switch
     {
-        "ai_not_configured" => " · Gemini non è configurato (manca GEMINI_API_KEY): mostro la versione a regole.",
-        "ai_unavailable" => " · Gemini non ha risposto (limiti o errore): mostro la versione a regole.",
-        "ai_rejected" => " · Gemini ha scritto numeri che non sono nei fatti calcolati: mostro la versione a regole.",
+        "ai_not_configured" => T(" · Gemini is not configured (GEMINI_API_KEY is missing): showing the template version."),
+        "ai_unavailable" => T(" · Gemini did not answer (limits or error): showing the template version."),
+        "ai_rejected" => T(" · Gemini wrote numbers that are not in the computed facts: showing the template version."),
         _ => ""
     };
 

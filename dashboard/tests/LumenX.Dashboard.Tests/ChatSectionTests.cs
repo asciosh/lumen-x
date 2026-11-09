@@ -54,6 +54,16 @@ public class ChatSectionTests : DashboardTestBase
     }
 
     [Fact]
+    public void The_question_is_sent_with_the_interface_language()
+    {
+        var cut = RenderDetail();
+
+        Ask(cut, "Quanto ho venduto?");
+
+        cut.WaitForAssertion(() => Assert.Equal("it", Api.AskLanguages.Single()));
+    }
+
+    [Fact]
     public void Clicking_an_example_asks_it_straight_away()
     {
         var cut = RenderDetail();

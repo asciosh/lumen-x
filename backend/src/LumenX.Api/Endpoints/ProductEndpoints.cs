@@ -27,7 +27,7 @@ public static class ProductEndpoints
                 .Select(p => new ProductDto(p.Id, p.Name, p.Sku, p.CreatedAtUtc))
                 .FirstOrDefaultAsync(ct);
             return product is null
-                ? Problems.NotFound($"Prodotto {productId} non trovato.")
+                ? Problems.NotFound($"Product {productId} not found.")
                 : Results.Ok(product);
         });
 
@@ -36,11 +36,11 @@ public static class ProductEndpoints
             var name = request.Name?.Trim();
             if (string.IsNullOrEmpty(name))
             {
-                return Problems.Unprocessable("Il campo 'name' è obbligatorio.");
+                return Problems.Unprocessable("The 'name' field is required.");
             }
             if (name.Length > 200)
             {
-                return Problems.Unprocessable("Il campo 'name' può avere al massimo 200 caratteri.");
+                return Problems.Unprocessable("The 'name' field can have at most 200 characters.");
             }
 
             var sku = request.Sku?.Trim();
@@ -50,13 +50,13 @@ public static class ProductEndpoints
             }
             else if (sku.Length > 100)
             {
-                return Problems.Unprocessable("Il campo 'sku' può avere al massimo 100 caratteri.");
+                return Problems.Unprocessable("The 'sku' field can have at most 100 characters.");
             }
 
             var lowerName = name.ToLowerInvariant();
             if (await db.Products.AnyAsync(p => p.Name.ToLower() == lowerName, ct))
             {
-                return Problems.Conflict($"Esiste già un prodotto chiamato '{name}'.");
+                return Problems.Conflict($"A product named '{name}' already exists.");
             }
 
             var product = new Product
@@ -73,8 +73,8 @@ public static class ProductEndpoints
             }
             catch (DbUpdateException)
             {
-                // Indice unico sul nome violato da una richiesta concorrente.
-                return Problems.Conflict($"Esiste già un prodotto chiamato '{name}'.");
+                // Unique index on the name violated by a concurrent request.
+                return Problems.Conflict($"A product named '{name}' already exists.");
             }
 
             var dto = new ProductDto(product.Id, product.Name, product.Sku, product.CreatedAtUtc);

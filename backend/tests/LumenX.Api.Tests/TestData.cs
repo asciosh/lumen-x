@@ -10,7 +10,7 @@ public static class TestData
 {
     public static string UniqueName() => "prodotto-" + Guid.NewGuid().ToString("N");
 
-    /// <summary>CSV ISO con virgola: date,quantity — una riga al giorno.</summary>
+    /// <summary>ISO CSV with commas: date,quantity — one row per day.</summary>
     public static string BuildCsv(DateOnly start, int days)
     {
         var sb = new StringBuilder();

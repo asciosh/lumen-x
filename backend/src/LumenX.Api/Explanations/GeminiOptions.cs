@@ -2,10 +2,10 @@ namespace LumenX.Api.Explanations;
 
 public sealed class GeminiOptions
 {
-    /// <summary>Chiave API: solo da variabile d'ambiente / segreto, mai nel codice o in appsettings.</summary>
+    /// <summary>API key: only from an environment variable / secret, never in the code or in appsettings.</summary>
     public string? ApiKey { get; set; }
 
-    /// <summary>Nome del modello. Cambia spesso: controlla quelli disponibili in Google AI Studio.</summary>
+    /// <summary>Model name. It changes often: check the ones available in Google AI Studio.</summary>
     public string Model { get; set; } = "gemini-3.5-flash";
 
     public string BaseUrl { get; set; } = "https://generativelanguage.googleapis.com/";

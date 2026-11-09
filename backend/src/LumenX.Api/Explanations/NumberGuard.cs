@@ -4,20 +4,20 @@ using System.Text.RegularExpressions;
 namespace LumenX.Api.Explanations;
 
 /// <summary>
-/// Controlla che i numeri scritti da un LLM compaiano tra i fatti calcolati dal codice.
-/// Un testo che contiene cifre non presenti nei fatti viene scartato dal chiamante.
+/// Checks that the numbers written by an LLM appear among the facts computed by the code.
+/// A text containing figures that are not in the facts is discarded by the caller.
 ///
-/// Limiti: e' un controllo prudente, non una prova. Accetta arrotondamenti (entro il 1% o
-/// l'ultima cifra scritta) e le cifre di date e nome del prodotto, quindi puo' lasciar passare
-/// una cifra inventata che coincide per caso con una di queste, e puo' scartare testi corretti
-/// che usano formati inattesi (per esempio uno spazio come separatore delle migliaia).
+/// Limits: it is a cautious check, not a proof. It accepts roundings (within 1% or
+/// the last written digit) and the digits of dates and product name, so it may let through
+/// an invented figure that happens to coincide with one of these, and it may discard correct texts
+/// that use unexpected formats (for example a space as thousands separator).
 /// </summary>
 public static class NumberGuard
 {
     private static readonly Regex NumberToken = new(@"\d+(?:[.,]\d+)*", RegexOptions.Compiled);
     private static readonly Regex Digits = new(@"\d+", RegexOptions.Compiled);
 
-    /// <summary>I numeri del testo che non corrispondono a nessun fatto (senza duplicati).</summary>
+    /// <summary>The numbers in the text that match no fact (without duplicates).</summary>
     public static IReadOnlyList<string> FindUnsupportedNumbers(string text, ExplanationFacts facts, string language)
     {
         var allowed = AllowedValues(facts);
@@ -44,7 +44,7 @@ public static class NumberGuard
             f.ForecastTotal, f.ForecastAvgPerDay, f.ReferenceAvgPerDay, f.ZeroDaysPercent
         };
 
-        // Variazioni e differenze possono essere scritte senza segno ("il 4% in piu'").
+        // Changes and differences may be written without sign ("4% more").
         AddAbs(values, f.ChangePercent);
         AddAbs(values, f.StrongestWeekdayAvg);
         AddAbs(values, f.WeakestWeekdayAvg);
@@ -53,7 +53,7 @@ public static class NumberGuard
         AddAbs(values, f.MaeNaive);
         AddAbs(values, f.ImprovementVsNaivePercent);
 
-        // Giorno, mese e anno delle date: l'AI le scrive per esteso ("16 maggio 2026").
+        // Day, month and year of the dates: the AI writes them in full ("16 May 2026").
         foreach (var d in new[] { f.HistoryEnd, f.ForecastStart, f.ForecastEnd })
         {
             values.Add(d.Day);
@@ -61,7 +61,7 @@ public static class NumberGuard
             values.Add(d.Year);
         }
 
-        // Le cifre che stanno nel nome del prodotto ("Pane 2024") sono legittime.
+        // Digits in the product name ("Bread 2024") are legitimate.
         foreach (Match m in Digits.Matches(f.ProductName))
         {
             values.Add(double.Parse(m.Value, CultureInfo.InvariantCulture));
@@ -78,7 +78,7 @@ public static class NumberGuard
         }
     }
 
-    /// <summary>Legge un numero con i separatori della lingua richiesta (it: 3.360,5 - en: 3,360.5).</summary>
+    /// <summary>Reads a number with the separators of the requested language (it: 3.360,5 - en: 3,360.5).</summary>
     private static bool TryParse(string token, string language, out double value, out int decimals)
     {
         value = 0;
@@ -94,7 +94,7 @@ public static class NumberGuard
         {
             if (token.IndexOf(decimalSeparator) != lastDecimal)
             {
-                return false;   // piu' separatori decimali: formato non valido
+                return false;   // more than one decimal separator: invalid format
             }
             integerPart = token.Substring(0, lastDecimal);
             fraction = token.Substring(lastDecimal + 1);

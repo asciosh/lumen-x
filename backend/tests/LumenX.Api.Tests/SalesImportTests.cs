@@ -20,7 +20,7 @@ public class SalesImportTests : IClassFixture<LumenXFactory>
         var csv = "date;quantity\n" +
                   "01/02/2025;12,5\n" +
                   "2025-02-02;7\n" +
-                  "non-una-data;3\n" +
+                  "not-a-date;3\n" +
                   "03/02/2025;abc\n";
 
         var response = await TestData.ImportCsvAsync(_client, productId, csv);

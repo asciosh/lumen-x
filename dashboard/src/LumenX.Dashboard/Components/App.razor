@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="@language">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,10 +9,23 @@
     <link rel="preload" href="fonts/bricolage-grotesque-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="fonts/figtree-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="app.css" />
-    <HeadOutlet />
+    <HeadOutlet @rendermode="InteractiveNoPrerender" />
 </head>
 <body>
-    <Routes />
+    <Routes @rendermode="InteractiveNoPrerender" InitialLanguage="@language" />
+    <script src="lang.js"></script>
     <script src="_framework/blazor.web.js"></script>
 </body>
 </html>
+
+@code {
+    // The whole app is interactive (one circuit per browser tab), so the language switch in the header works
+    // and the choice survives navigation between pages.
+    private static readonly IComponentRenderMode InteractiveNoPrerender = new InteractiveServerRenderMode(prerender: false);
+
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    private string language => LanguageState.Resolve(
+        HttpContext?.Request.Cookies["lumenx_lang"],
+        HttpContext?.Request.Headers.AcceptLanguage.ToString());
+}

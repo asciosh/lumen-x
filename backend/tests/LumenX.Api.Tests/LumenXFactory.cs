@@ -19,14 +19,14 @@ public class LumenXFactory : WebApplicationFactory<Program>
     {
         builder.UseEnvironment("Testing");
 
-        // Nei test Gemini non deve mai essere chiamato, qualunque sia l'ambiente della macchina.
+        // In tests Gemini must never be called, whatever the machine's environment.
         builder.UseSetting("Gemini:ApiKey", "");
 
         builder.ConfigureTestServices(services =>
         {
-            // 1) Rimuovere Npgsql. Con EF Core 9+ non basta DbContextOptions<T>: va tolta anche
-            //    IDbContextOptionsConfiguration<T>. Quel tipo non esiste (pubblico) in EF 8, quindi
-            //    lo cerco per nome: così il codice compila con qualsiasi versione.
+            // 1) Remove Npgsql. With EF Core 9+ removing DbContextOptions<T> is not enough: also remove
+            //    IDbContextOptionsConfiguration<T>. That type does not exist (publicly) in EF 8, so
+            //    it is looked up by name: this way the code compiles with any version.
             services.RemoveAll<DbContextOptions<LumenXDbContext>>();
 
             var optionsConfigurations = services
@@ -42,7 +42,7 @@ public class LumenXFactory : WebApplicationFactory<Program>
 
             services.AddDbContext<LumenXDbContext>(options => options.UseInMemoryDatabase(_dbName));
 
-            // 2) Sostituire il client verso il servizio Python con il fake.
+            // 2) Replace the client for the Python service with the fake.
             services.RemoveAll<IForecastingClient>();
             services.AddSingleton<IForecastingClient>(Fake);
         });

@@ -1,7 +1,7 @@
 /* ==========================================================================
    Lumen-X · dashboard
-   Inchiostro e ambra: pagina scura, una sola luce (l'ambra) per cio' che conta.
-   Titoli e numeri: Bricolage Grotesque. Testo e tabelle: Figtree.
+   Ink and amber: a dark page, a single light (amber) for what matters.
+   Headings and numbers: Bricolage Grotesque. Text and tables: Figtree.
    ========================================================================== */
 
 @font-face {
@@ -75,7 +75,7 @@ a:hover { color: var(--cream); }
 
 ::selection { background: rgba(252, 187, 71, 0.35); color: var(--cream); }
 
-/* ---------- intestazione ---------- */
+/* ---------- header ---------- */
 
 .topbar {
   position: sticky;
@@ -124,7 +124,7 @@ a:hover { color: var(--cream); }
   border-top: 1px solid var(--line-soft);
 }
 
-/* ---------- titoli e testo ---------- */
+/* ---------- headings and text ---------- */
 
 h1, h2, h3 {
   font-family: var(--font-display);
@@ -167,7 +167,7 @@ code {
   color: var(--amber-soft);
 }
 
-/* ---------- sezioni ---------- */
+/* ---------- sections ---------- */
 
 .card {
   margin: 0;
@@ -176,7 +176,7 @@ code {
 }
 .card > h2:first-child { margin-top: 0; }
 
-/* Il riquadro del grafico e' l'unico "illuminato" della pagina. */
+/* The chart panel is the only "lit" one on the page. */
 .card.stage {
   position: relative;
   margin: 0 0 1.5rem;
@@ -197,7 +197,7 @@ code {
 }
 .card.stage > * { position: relative; }
 
-/* Sezioni ripiegabili (vendite e importazione) */
+/* Collapsible sections (sales and import) */
 .fold > summary {
   display: flex;
   align-items: center;
@@ -222,7 +222,7 @@ code {
 .fold[open] > summary::after { transform: rotate(-135deg); }
 .fold[open] > summary { margin-bottom: 0.9rem; }
 
-/* ---------- campi e pulsanti ---------- */
+/* ---------- fields and buttons ---------- */
 
 .row { display: flex; flex-wrap: wrap; gap: 0.9rem; align-items: flex-end; margin-bottom: 0.9rem; }
 
@@ -277,7 +277,7 @@ input[type="file"]::file-selector-button {
 }
 .btn-secondary:hover { background: var(--ink-3); border-color: #3a4050; }
 
-/* ---------- messaggi ---------- */
+/* ---------- messages ---------- */
 
 .alert {
   margin: 0.75rem 0;
@@ -289,7 +289,7 @@ input[type="file"]::file-selector-button {
 .alert-error { color: var(--err); background: var(--err-bg); border-color: var(--err); }
 .alert-ok { color: var(--ok); background: var(--ok-bg); border-color: var(--ok); }
 
-/* ---------- dati di sintesi ---------- */
+/* ---------- summary facts ---------- */
 
 .facts {
   display: flex;
@@ -303,7 +303,7 @@ input[type="file"]::file-selector-button {
 .facts dd { margin: 0; font-size: 0.98rem; color: var(--text); }
 .facts strong { color: var(--cream); font-weight: 650; }
 
-/* ---------- spiegazione ---------- */
+/* ---------- explanation ---------- */
 
 .explanation {
   margin: 0.9rem 0 0.5rem;
@@ -318,7 +318,7 @@ input[type="file"]::file-selector-button {
   border-radius: 0 var(--radius-s) var(--radius-s) 0;
 }
 
-/* ---------- tabelle ---------- */
+/* ---------- tables ---------- */
 
 .table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
 .table th {
@@ -341,7 +341,7 @@ input[type="file"]::file-selector-button {
 .scroll { max-width: 640px; max-height: 22rem; overflow: auto; border-radius: var(--radius-s); border: 1px solid var(--line-soft); }
 .scroll .table th { position: sticky; top: 0; background: var(--ink-2); }
 
-/* ---------- grafico ---------- */
+/* ---------- chart ---------- */
 
 .chart-wrap { overflow-x: auto; margin: 0 -0.25rem; padding: 0 0.25rem; }
 .chart { display: block; width: 100%; height: auto; min-width: 560px; overflow: visible; }
@@ -371,7 +371,7 @@ input[type="file"]::file-selector-button {
 }
 .chart .dot { fill: var(--ink); stroke: var(--amber-soft); stroke-width: 2.4; }
 
-/* L'unico movimento non richiesto: la linea si disegna una volta, poi la previsione si accende. */
+/* The only unrequested motion: the line draws itself once, then the forecast lights up. */
 @media (prefers-reduced-motion: no-preference) {
   .chart .line-history { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.5s cubic-bezier(0.3, 0.6, 0.2, 1) 0.1s forwards; }
   .chart .band, .chart .line-yhat, .chart .dot, .chart .split { opacity: 0; animation: rise 0.9s ease 1.2s forwards; }
@@ -386,7 +386,7 @@ input[type="file"]::file-selector-button {
 .sw-yhat { border-top: 3px dashed var(--amber-soft); }
 .sw-band { height: 12px; border: 0; border-radius: 3px; background: linear-gradient(180deg, rgba(252, 187, 71, 0.5), rgba(252, 187, 71, 0.2)); }
 
-/* ---------- chat sui dati ---------- */
+/* ---------- data questions ---------- */
 
 .chat form.ask { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; margin: 0.5rem 0 0.75rem; }
 .chat form.ask label { flex: 1 1 22rem; }
@@ -409,7 +409,8 @@ input[type="file"]::file-selector-button {
 
 .turn { margin-top: 1.25rem; }
 .turn .q { margin: 0 0 0.35rem; color: var(--muted); font-size: 0.92rem; }
-.turn .q::before { content: "Tu · "; color: var(--faint); }
+.turn .q::before { content: "You · "; color: var(--faint); }
+:lang(it) .turn .q::before { content: "Tu · "; }
 .turn .a {
   margin: 0;
   max-width: 70ch;
@@ -421,7 +422,24 @@ input[type="file"]::file-selector-button {
   border-radius: 0 var(--radius-s) var(--radius-s) 0;
 }
 
-/* ---------- adattamento ai telefoni ---------- */
+/* ---------- language switch ---------- */
+
+.lang-switch { margin-left: auto; display: inline-flex; padding: 3px; gap: 2px; background: var(--ink-0); border: 1px solid var(--line); border-radius: 999px; }
+.lang-switch button {
+  font: inherit;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  padding: 0.25rem 0.7rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.lang-switch button:hover { color: var(--cream); }
+.lang-switch button.on { background: var(--amber); color: #1a1204; font-weight: 650; }
+
+/* ---------- phones ---------- */
 
 @media (max-width: 640px) {
   .tagline { display: none; }
@@ -431,7 +449,7 @@ input[type="file"]::file-selector-button {
   .facts { gap: 0.6rem 1.4rem; }
   .table { display: block; overflow-x: auto; }
 
-  /* Sul telefono il grafico si ridimensiona invece di scorrere: la previsione deve restare in vista. */
+  /* On a phone the chart scales instead of scrolling: the forecast must stay in view. */
   .chart { min-width: 0; }
   .chart .tick { font-size: 24px; }
   .chart .line-history, .chart .line-yhat { stroke-width: 4; }

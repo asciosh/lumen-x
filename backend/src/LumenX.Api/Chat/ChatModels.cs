@@ -2,7 +2,7 @@ using LumenX.Api.Contracts;
 
 namespace LumenX.Api.Chat;
 
-/// <summary>Le domande che il codice sa risolvere. Tutto il resto e' <see cref="Unknown"/>.</summary>
+/// <summary>The questions the code knows how to solve. Everything else is <see cref="Unknown"/>.</summary>
 public enum DataIntent
 {
     Unknown,
@@ -18,7 +18,7 @@ public enum DataIntent
 
 public static class DataIntentExtensions
 {
-    /// <summary>Il codice che esce dall'API (stabile, in minuscolo con il trattino basso).</summary>
+    /// <summary>The code returned by the API (stable, lowercase with underscores).</summary>
     public static string ToCode(this DataIntent intent) => intent switch
     {
         DataIntent.SalesTotal => "sales_total",
@@ -33,7 +33,7 @@ public static class DataIntentExtensions
     };
 }
 
-/// <summary>Corpo di POST /products/{id}/ask. La lingua e' facoltativa: se manca la si riconosce dalla domanda.</summary>
+/// <summary>Body of POST /products/{id}/ask. The language is optional: if missing, it is detected from the question.</summary>
 public sealed record AskRequest(string? Question, string? Language);
 
 public sealed record AskResponse(
@@ -44,7 +44,7 @@ public sealed record AskResponse(
     string Answer,
     IReadOnlyList<string> Suggestions);
 
-/// <summary>Tutto cio' che serve per rispondere: lo storico, l'ultimo forecast (se c'e') e la quota di giorni a zero.</summary>
+/// <summary>Everything needed to answer: the history, the latest forecast (if any) and the share of zero-sales days.</summary>
 public sealed record AskContext(
     string ProductName,
     IReadOnlyList<SalePointDto> Sales,

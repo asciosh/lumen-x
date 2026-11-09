@@ -10,16 +10,16 @@ public enum PeriodKind
     CalendarMonth
 }
 
-/// <summary>Il periodo nominato nella domanda: "ultimi N giorni" oppure un mese del calendario (con anno facoltativo).</summary>
+/// <summary>The period named in the question: "last N days" or a calendar month (with an optional year).</summary>
 public sealed record PeriodSpec(PeriodKind Kind, int Days = 0, int Year = 0, int Month = 0);
 
-/// <summary>Il periodo risolto in date reali, riferito all'ultimo giorno di dati e non alla data di oggi.</summary>
+/// <summary>The period resolved to real dates, relative to the last day of data and not to today's date.</summary>
 public sealed record PeriodRange(DateOnly Start, DateOnly End, PeriodKind Kind, int Year, int Month);
 
 /// <summary>
-/// Estrae dal testo (gia' normalizzato) il periodo di cui si parla. Regole, tutte riferite all'ULTIMO GIORNO DI DATI:
-/// "ultimi 30 giorni" sono i 30 giorni che finiscono li'; una settimana vale 7 giorni, un mese 30, un anno 365;
-/// "a marzo" e' il mese di calendario (senza anno, il piu' recente non successivo all'ultimo giorno di dati).
+/// Extracts from the (already normalized) text the period being talked about. Rules, all relative to the LAST DAY OF DATA:
+/// "last 30 days" (Italian "ultimi 30 giorni") are the 30 days ending there; a week is 7 days, a month 30, a year 365;
+/// "in March" is the calendar month (without a year, the most recent one not after the last day of data).
 /// </summary>
 public static class PeriodParser
 {
@@ -51,7 +51,7 @@ public static class PeriodParser
         ["july"] = 7, ["august"] = 8, ["september"] = 9, ["october"] = 10, ["november"] = 11, ["december"] = 12
     };
 
-    /// <summary>I mesi nominati, nell'ordine in cui compaiono e senza ripetizioni.</summary>
+    /// <summary>The months named, in order of appearance and without repetitions.</summary>
     public static IReadOnlyList<int> MonthsMentioned(string normalized)
     {
         var months = new List<int>();
@@ -66,7 +66,7 @@ public static class PeriodParser
         return months;
     }
 
-    /// <summary>Il periodo passato: "ultimi N giorni/settimane/mesi" oppure un mese del calendario.</summary>
+    /// <summary>The past period: "last N days/weeks/months" or a calendar month.</summary>
     public static PeriodSpec ParseLast(string normalized)
     {
         var match = LastPeriod.Match(normalized);
@@ -86,7 +86,7 @@ public static class PeriodParser
         return new PeriodSpec(PeriodKind.None);
     }
 
-    /// <summary>Quanti giorni nel futuro: "prossime 2 settimane" vale 14. Null se la domanda non lo dice.</summary>
+    /// <summary>How many days into the future: "next 2 weeks" is 14. Null if the question does not say.</summary>
     public static int? ParseFutureDays(string normalized)
     {
         var match = FuturePeriod.Match(normalized);
@@ -116,7 +116,7 @@ public static class PeriodParser
         }
     }
 
-    // Gruppi del regex: 1 = numero in cifre, 2 = parola (forse un numero scritto a lettere), 3 = unita'.
+    // Regex groups: 1 = number in digits, 2 = word (maybe a number written in letters), 3 = unit.
     private static bool TryDays(Match match, out int days)
     {
         days = 0;
@@ -135,7 +135,7 @@ public static class PeriodParser
         }
         else if (IsPlural(unit))
         {
-            return false;   // "ultimi giorni" senza numero: non so quanti
+            return false;   // "last days" without a number: unknown how many
         }
         else
         {

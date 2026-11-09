@@ -1,8 +1,8 @@
 <Project>
   <!--
-    UNICO PUNTO in cui cambiare versione di framework (stessa logica di backend/Directory.Build.props).
-    Per .NET 8: PackagesMajor = 8. Tenere allineato con backend/ (il contesto Docker del backend e'
-    ./backend, quindi il file non si puo' condividere senza spostarlo: e' una copia).
+    SINGLE PLACE to change the framework version (same logic as backend/Directory.Build.props).
+    For .NET 8: PackagesMajor = 8. Keep it aligned with backend/ (the backend's Docker context is
+    ./backend, so the file cannot be shared without moving it: this is a copy).
   -->
   <PropertyGroup>
     <PackagesMajor Condition="'$(PackagesMajor)' == ''">10</PackagesMajor>

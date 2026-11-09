@@ -51,8 +51,8 @@ public class LumenXDbContext : DbContext
 }
 
 /// <summary>
-/// Usata solo dai comandi "dotnet ef": evita che gli strumenti avviino l'intera app
-/// (che proverebbe a connettersi a Postgres). Non fa nessuna connessione.
+/// Used only by the "dotnet ef" commands: it stops the tools from starting the whole app
+/// (which would try to connect to Postgres). It makes no connection.
 /// </summary>
 public class LumenXDbContextFactory : IDesignTimeDbContextFactory<LumenXDbContext>
 {

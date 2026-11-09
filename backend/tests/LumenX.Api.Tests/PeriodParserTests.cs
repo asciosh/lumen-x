@@ -91,7 +91,7 @@ public class PeriodParserTests
         Assert.Null(Future(question));
     }
 
-    // ---- risoluzione in date reali (ultimo giorno di dati: 31 marzo 2026) ----
+    // ---- resolution into real dates (last day of data: 31 March 2026) ----
 
     private static readonly DateOnly FirstDay = new(2026, 1, 1);
     private static readonly DateOnly LastDay = new(2026, 3, 31);
@@ -115,10 +115,10 @@ public class PeriodParserTests
     }
 
     [Theory]
-    [InlineData(3, 2026, 3, 1, 3, 31)]    // marzo: il mese in corso
-    [InlineData(2, 2026, 2, 1, 2, 28)]    // febbraio 2026
-    [InlineData(12, 2025, 12, 1, 12, 31)] // dicembre non e' ancora arrivato: quello dell'anno prima
-    [InlineData(4, 2025, 4, 1, 4, 30)]    // aprile: ancora nel futuro, quindi aprile 2025
+    [InlineData(3, 2026, 3, 1, 3, 31)]    // March: the current month
+    [InlineData(2, 2026, 2, 1, 2, 28)]    // February 2026
+    [InlineData(12, 2025, 12, 1, 12, 31)] // December has not arrived yet: the one from the previous year
+    [InlineData(4, 2025, 4, 1, 4, 30)]    // April: still in the future, so April 2025
     public void Month_without_year_is_the_latest_one_not_after_the_last_day(
         int month, int year, int sm, int sd, int em, int ed)
     {
@@ -135,6 +135,6 @@ public class PeriodParserTests
         var range = PeriodParser.Resolve(new PeriodSpec(PeriodKind.CalendarMonth, 0, 2024, 2), FirstDay, LastDay, 30);
 
         Assert.Equal(new DateOnly(2024, 2, 1), range.Start);
-        Assert.Equal(new DateOnly(2024, 2, 29), range.End);   // 2024 e' bisestile
+        Assert.Equal(new DateOnly(2024, 2, 29), range.End);   // 2024 is a leap year
     }
 }

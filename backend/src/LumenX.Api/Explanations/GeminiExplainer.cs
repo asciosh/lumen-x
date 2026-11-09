@@ -7,14 +7,14 @@ using Microsoft.Extensions.Options;
 namespace LumenX.Api.Explanations;
 
 /// <summary>
-/// Riscrive in modo naturale i fatti gia' calcolati usando l'API Gemini (REST, generateContent).
-/// All'AI vanno solo i fatti aggregati: niente vendite grezze, e le e' vietato fare nuovi calcoli.
+/// Rewrites the already computed facts in a natural way using the Gemini API (REST, generateContent).
+/// Only aggregated facts go to the AI: no raw sales, and it is forbidden to do new calculations.
 /// </summary>
 public sealed class GeminiExplainer : IExplainer
 {
     private const int MaxTextLength = 2000;
 
-    // Encoder "rilassato": gli accenti restano caratteri normali (con quello di default diventerebbero \u00E8).
+    // "Relaxed" encoder: accents stay normal characters (with the default one they would become \u00E8).
     private static readonly JsonSerializerOptions FactsJson = new(JsonSerializerDefaults.Web)
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
@@ -39,7 +39,7 @@ public sealed class GeminiExplainer : IExplainer
     {
         if (!_options.IsConfigured)
         {
-            throw new ExplanationUnavailableException("Gemini non e' configurato (manca la chiave API).");
+            throw new ExplanationUnavailableException("Gemini is not configured (the API key is missing).");
         }
 
         var languageName = language == ExplanationLanguage.English ? "English" : "Italian";
@@ -77,7 +77,7 @@ public sealed class GeminiExplainer : IExplainer
 
         using var request = new HttpRequestMessage(
             HttpMethod.Post, $"v1beta/models/{Uri.EscapeDataString(_options.Model)}:generateContent");
-        // La chiave va nell'header, non nell'URL, cosi' non finisce nei log.
+        // The key goes in the header, not in the URL, so it does not end up in the logs.
         request.Headers.Add("x-goog-api-key", _options.ApiKey);
         request.Content = new StringContent(body.ToJsonString(BodyJson), Encoding.UTF8, "application/json");
 
@@ -92,12 +92,12 @@ public sealed class GeminiExplainer : IExplainer
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
             var text = ExtractText(json);
 
-            // L'AI puo' sbagliare i numeri: se scrive cifre che non sono nei fatti, il testo non si usa.
+            // The AI can get numbers wrong: if it writes figures that are not in the facts, the text is not used.
             var unsupported = NumberGuard.FindUnsupportedNumbers(text, facts, language);
             if (unsupported.Count > 0)
             {
                 throw new ExplanationUnavailableException(
-                    "Il testo di Gemini contiene numeri che non sono nei fatti: " + string.Join(", ", unsupported),
+                    "Gemini's text contains numbers that are not in the facts: " + string.Join(", ", unsupported),
                     note: "ai_rejected");
             }
 
@@ -105,15 +105,15 @@ public sealed class GeminiExplainer : IExplainer
         }
         catch (HttpRequestException ex)
         {
-            throw new ExplanationUnavailableException("Gemini non raggiungibile.", ex);
+            throw new ExplanationUnavailableException("Gemini is unreachable.", ex);
         }
         catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
-            throw new ExplanationUnavailableException("Gemini non ha risposto in tempo.", ex);
+            throw new ExplanationUnavailableException("Gemini did not answer in time.", ex);
         }
         catch (JsonException ex)
         {
-            throw new ExplanationUnavailableException("Risposta di Gemini in un formato non atteso.", ex);
+            throw new ExplanationUnavailableException("Gemini returned an unexpected format.", ex);
         }
     }
 
@@ -126,7 +126,7 @@ public sealed class GeminiExplainer : IExplainer
             || candidates.ValueKind != JsonValueKind.Array
             || candidates.GetArrayLength() == 0)
         {
-            throw new ExplanationUnavailableException("Gemini non ha restituito risposte.");
+            throw new ExplanationUnavailableException("Gemini returned no answers.");
         }
 
         var first = candidates[0];
@@ -134,7 +134,7 @@ public sealed class GeminiExplainer : IExplainer
             || !content.TryGetProperty("parts", out var parts)
             || parts.ValueKind != JsonValueKind.Array)
         {
-            throw new ExplanationUnavailableException("Gemini ha restituito una risposta senza testo.");
+            throw new ExplanationUnavailableException("Gemini returned an answer without text.");
         }
 
         var sb = new StringBuilder();
@@ -149,7 +149,7 @@ public sealed class GeminiExplainer : IExplainer
         var result = sb.ToString().Trim();
         if (result.Length == 0)
         {
-            throw new ExplanationUnavailableException("Gemini ha restituito un testo vuoto.");
+            throw new ExplanationUnavailableException("Gemini returned an empty text.");
         }
         if (result.Length > MaxTextLength)
         {

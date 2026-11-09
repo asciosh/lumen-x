@@ -5,7 +5,7 @@ namespace LumenX.Api.Tests;
 
 public class DataQuestionAnswererTests
 {
-    // ------------------------------------------------------------------ vendite in un periodo
+    // ------------------------------------------------------------------ sales in a period
 
     [Fact]
     public void Sales_in_the_last_30_days_are_summed_from_the_last_day_of_data()
@@ -57,7 +57,7 @@ public class DataQuestionAnswererTests
         Assert.Equal("From 2 Mar 2026 to 31 Mar 2026 (30 days) you sold 6,930 units, or 231 per day.", text);
     }
 
-    // ------------------------------------------------------------------ confronto tra periodi
+    // ------------------------------------------------------------------ comparison between periods
 
     [Fact]
     public void Compare_with_the_previous_week()
@@ -135,7 +135,7 @@ public class DataQuestionAnswererTests
         Assert.Contains("non è ancora supportato", Ask("Vendite di aprile rispetto a marzo"));
     }
 
-    // ------------------------------------------------------------------ giorni della settimana e record
+    // ------------------------------------------------------------------ weekdays and record
 
     [Fact]
     public void Strongest_and_weakest_weekday_over_the_last_12_weeks()
@@ -189,7 +189,7 @@ public class DataQuestionAnswererTests
             Ask("What was my record day?", "en"));
     }
 
-    // ------------------------------------------------------------------ previsione
+    // ------------------------------------------------------------------ forecast
 
     [Fact]
     public void Forecast_total_for_the_next_two_weeks()
@@ -244,7 +244,7 @@ public class DataQuestionAnswererTests
         Assert.EndsWith("Attenzione: molti giorni a zero nello storico, quindi la previsione è poco affidabile.", text);
     }
 
-    // ------------------------------------------------------------------ riordino
+    // ------------------------------------------------------------------ reorder
 
     [Fact]
     public void Reorder_uses_the_default_lead_time_review_and_service_level()
@@ -253,7 +253,7 @@ public class DataQuestionAnswererTests
 
         Assert.StartsWith("Per coprire i prossimi 14 giorni (7 di consegna e 7 tra un ordine e l'altro) con un livello di servizio del 95%:", text);
         Assert.Contains("domanda prevista 2.100", text);
-        Assert.Contains("scorta di sicurezza 61,5", text);                 // 1,6449 x 10 x radice(14)
+        Assert.Contains("scorta di sicurezza 61,5", text);                 // 1.6449 x 10 x sqrt(14)
         Assert.Contains("livello massimo di circa 2.162 unità", text);
         Assert.Contains("riquadro Riordino", text);
     }
@@ -279,7 +279,7 @@ public class DataQuestionAnswererTests
         Assert.Contains("14 giorni", text);
     }
 
-    // ------------------------------------------------------------------ affidabilita' e spiegazione
+    // ------------------------------------------------------------------ reliability and explanation
 
     [Fact]
     public void Reliability_reports_method_error_range_and_gain_over_the_naive()
@@ -329,7 +329,7 @@ public class DataQuestionAnswererTests
         Assert.StartsWith("For “Pane” I forecast about 4,200 units over 28 days", text);
     }
 
-    // ------------------------------------------------------------------ casi limite
+    // ------------------------------------------------------------------ edge cases
 
     [Fact]
     public void Unknown_question_says_what_can_be_asked_and_offers_examples()
@@ -383,7 +383,7 @@ public class DataQuestionAnswererTests
         Assert.Equal(DataIntent.PeakDay, DataQuestionAnswerer.Answer("Qual è il picco di vendite?", "it", Context()).Intent);
     }
 
-    // ------------------------------------------------------------------ domande sui soldi
+    // ------------------------------------------------------------------ money questions
 
     [Fact]
     public void Revenue_questions_are_answered_with_units_and_an_honest_note()

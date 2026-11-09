@@ -1,59 +1,89 @@
 # Lumen-X · Dashboard (Blazor Server)
 
-Dashboard web per prodotti, vendite (import CSV) e forecast. Parla solo con il backend (`backend/`),
-mai direttamente con il servizio Python.
+Web dashboard for products, sales (CSV import), forecasts, plain-language explanations, reorder suggestions and
+questions about the data. It talks only to the backend (`backend/`), never directly to the Python service.
 
-## Avvio con Docker Compose (dalla root del repo)
+The interface is **bilingual: English and Italian**. It starts in English (or in Italian if the browser prefers it)
+and the **EN / IT** switch in the header changes it instantly; the choice is remembered in a cookie.
+
+## Run with Docker Compose (from the repo root)
 
 ```bash
 docker compose up --build
 ```
 
-- Dashboard: porta **8081** (nel Codespace: scheda *Porte* → apri la 8081)
-- Backend: porta 8080 · Forecasting: porta 8000
+- Dashboard: port **8081** (in a Codespace: *Ports* tab → open 8081)
+- Backend: port 8080 · Forecasting: port 8000
 
-## Avvio in sviluppo (senza container per la dashboard)
+## Run in development (without a container for the dashboard)
 
-Con backend e servizi già attivi (`docker compose up -d db forecasting backend`):
+With the backend and services already running (`docker compose up -d db forecasting backend`):
 
 ```bash
 cd dashboard/src/LumenX.Dashboard
 dotnet run --urls http://0.0.0.0:8081
 ```
 
-L'URL del backend è in `appsettings.json` (`Backend:BaseUrl`, default `http://localhost:8080`);
-si può sovrascrivere con la variabile d'ambiente `Backend__BaseUrl`.
+The backend URL is in `appsettings.json` (`Backend:BaseUrl`, default `http://localhost:8080`);
+it can be overridden with the `Backend__BaseUrl` environment variable.
 
-## Versione di .NET
+## .NET version
 
-Un solo punto: `dashboard/Directory.Build.props` (`PackagesMajor`, default 10). I Dockerfile usano
-l'argomento `DOTNET_MAJOR` (compose: variabile `DOTNET_MAJOR`, default 10). Va tenuto allineato con `backend/`.
+A single place: `dashboard/Directory.Build.props` (`PackagesMajor`, default 10). The Dockerfiles use the
+`DOTNET_MAJOR` argument (compose: `DOTNET_MAJOR` variable, default 10). Keep it aligned with `backend/`.
 
-## Struttura
+## Structure
 
-- `Services/` client tipizzato verso il backend (`ILumenApiClient`), DTO, formattazione
-- `Components/Pages/Products.razor` elenco e creazione prodotti
-- `Components/Pages/ProductDetail.razor` import CSV, vendite con filtro, forecast
-- `Components/ForecastChart.razor` grafico SVG (storico + previsione + intervallo)
-- Nella pagina del prodotto il riquadro **Chiedi ai tuoi dati** manda le domande a `POST /products/{id}/ask` (vedi `backend/README.md`) e mostra le ultime otto risposte, le più recenti in alto
+- `Services/` typed client to the backend (`ILumenApiClient`), DTOs, number and date formatting (`Fmt`),
+  the translation dictionary (`Loc`) and the language state (`LanguageState`)
+- `Components/App.razor` the page shell: it picks the starting language (cookie, then browser language)
+- `Components/Pages/Products.razor` product list and creation
+- `Components/Pages/ProductDetail.razor` forecast, explanation, reorder, **Ask your data** box, sales with filter, CSV import
+- `Components/ForecastChart.razor` SVG chart (history + forecast + interval)
+- `Components/LanguageSwitch.razor` the EN / IT switch; `Components/LocalizedComponentBase.cs` base class of the components with texts
 
-## Test
+## Languages
+
+Texts are written in English in the markup (`@T("Compute forecast")`) and the Italian version lives in one
+dictionary, `Services/Loc.cs`, keyed by the English text. A text with no Italian entry simply shows in English.
+To add a text:
+
+1. write it in English with `@T("...")` (use `{0}`, `{1}` for values: `@T("Next {0} days", n)`);
+2. add the Italian version to `Loc.cs`.
+
+Numbers and dates follow the language (`1,234.5` and `31 Mar 2026` in English, `1.234,5` and `31/03/2026` in
+Italian). Error messages that come from the backend are in English and are shown as they are.
+The whole app is one interactive Blazor circuit per browser tab, so the language switch works without reloading
+and the choice persists while navigating between pages.
+
+The questions typed in the **Ask your data** box are answered in the interface language, and the example questions
+change with it.
+
+## Tests
 
 ```bash
 dotnet test dashboard/tests/LumenX.Dashboard.Tests
 ```
 
-I test usano [bUnit](https://bunit.dev) (serie 2.x, supporta .NET 10) per disegnare le pagine in memoria e controllarne il contenuto, con un finto `ILumenApiClient` al posto del backend: nessuna rete, nessun Docker.
-Coprono la pagina dei prodotti, la pagina del prodotto (vendite, forecast, spiegazione e relative note, riordino), il grafico, il client HTTP (indirizzi, errori, timeout) e la formattazione.
-Non coprono l'aspetto grafico (colori, posizione degli elementi) né il caricamento di un CSV: per quelli resta la prova a mano.
+The tests use [bUnit](https://bunit.dev) (2.x, supports .NET 10) to render the pages in memory and check their
+content, with a fake `ILumenApiClient` in place of the backend: no network, no Docker. The page tests start in
+Italian (so they check the Italian texts); `LocalizationTests.cs` checks the English texts, the switch, the
+dictionary (every translation keeps the same placeholders) and how the language is chosen at startup.
+They cover the product list, the product page (sales, forecast, explanation and its notes, reorder, questions),
+the chart, the HTTP client (addresses, errors, timeouts) and formatting.
+They do not cover the look (colors, element positions) nor the CSV upload: for those, check by hand.
 
-## Aspetto
+## Look
 
-Tema scuro "inchiostro e ambra", ripreso dall'immagine di anteprima del repo: sfondo `#0f1117`, testo crema `#fef4e2`, ambra `#fcbb47` come unico colore d'azione e ambra scuro per la fascia d'incertezza.
-Il grafico è l'elemento principale: la linea dello storico è piena e luminosa, la previsione è tratteggiata e la fascia probabile le sta dietro; il pallino segna dove finiscono i dati e comincia la previsione.
+Dark "ink and amber" theme, taken from the repository's preview image: background `#0f1117`, cream text `#fef4e2`,
+amber `#fcbb47` as the only action color and dark amber for the uncertainty band.
+The chart is the main element: the history line is solid and luminous, the forecast is dashed and the likely
+range sits behind it; the dot marks where the data ends and the forecast begins.
 
-- Tutti i colori e i caratteri sono variabili in `wwwroot/app.css` (blocco `:root`): per cambiare tema basta modificare lì.
-- Caratteri incorporati in `wwwroot/fonts` (nessuna richiesta a servizi esterni): **Bricolage Grotesque** per titoli e numeri, **Figtree** per testo e tabelle. Licenza SIL Open Font License 1.1, testi accanto ai file.
-- Il movimento è uno solo: la linea si disegna al primo caricamento. Con "riduci movimento" attivo nel sistema non c'è nessuna animazione.
-- La pagina di demo (`docs/demo`) usa la stessa `app.css` e gli stessi caratteri: se cambi la grafica della dashboard, copia di nuovo `app.css` e la cartella `fonts` anche lì.
-
+- All colors and fonts are variables in `wwwroot/app.css` (the `:root` block): to change the theme, edit there.
+- Fonts are embedded in `wwwroot/fonts` (no requests to external services): **Bricolage Grotesque** for headings
+  and numbers, **Figtree** for text and tables. SIL Open Font License 1.1, texts next to the files.
+- There is a single motion: the line draws itself on first load. With "reduce motion" enabled in the system there
+  is no animation.
+- The demo page (`docs/demo`) uses the same `app.css` and fonts: if you change the dashboard look, copy `app.css`
+  and the `fonts` folder there again.

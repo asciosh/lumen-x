@@ -3,8 +3,8 @@ using System.Globalization;
 namespace LumenX.Api.Chat;
 
 /// <summary>
-/// Numeri, date e nomi nella lingua della risposta. Separatori scritti a mano: non dipendono dalle
-/// culture installate (nei container possono mancare).
+/// Numbers, dates and names in the language of the answer. Separators are written by hand: they do not depend on the
+/// installed cultures (they may be missing in containers).
 /// </summary>
 public static class NumberText
 {
@@ -22,7 +22,7 @@ public static class NumberText
         NumberGroupSizes = new[] { 3 }
     };
 
-    // Indicizzati con (int)DayOfWeek: domenica = 0.
+    // Indexed by (int)DayOfWeek: Sunday = 0.
     private static readonly string[] ItWeekdays = { "domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato" };
     private static readonly string[] EnWeekdays = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
 
@@ -38,14 +38,14 @@ public static class NumberText
         "July", "August", "September", "October", "November", "December"
     };
 
-    /// <summary>Quantita': nessun decimale da 100 in su, uno sotto.</summary>
+    /// <summary>Quantity: no decimals from 100 up, one below.</summary>
     public static string Qty(double value, bool it)
     {
         var decimals = Math.Abs(value) >= 100 ? 0 : 1;
         return value.ToString("N" + decimals, it ? ItNumbers : EnNumbers);
     }
 
-    /// <summary>Percentuale senza segno: il verso ("in piu'", "in meno") lo dice la frase.</summary>
+    /// <summary>Percentage without sign: the direction ("more", "less") is stated by the sentence.</summary>
     public static string Pct(double value, bool it)
     {
         var decimals = Math.Abs(value) >= 10 ? 0 : 1;
@@ -60,6 +60,6 @@ public static class NumberText
 
     public static string Weekday(DayOfWeek day, bool it) => (it ? ItWeekdays : EnWeekdays)[(int)day];
 
-    /// <summary>Mese da 1 a 12.</summary>
+    /// <summary>Month from 1 to 12.</summary>
     public static string Month(int month, bool it) => (it ? ItMonths : EnMonths)[month - 1];
 }

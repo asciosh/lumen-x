@@ -1,0 +1,23 @@
+@using Microsoft.JSInterop
+@inherits LocalizedComponentBase
+@inject IJSRuntime JS
+
+<div class="lang-switch" role="group" aria-label="@T("Language")">
+    <button type="button" class="@ClassFor(LanguageState.English)" aria-pressed="@PressedFor(LanguageState.English)"
+            @onclick="() => SetAsync(LanguageState.English)">EN</button>
+    <button type="button" class="@ClassFor(LanguageState.Italian)" aria-pressed="@PressedFor(LanguageState.Italian)"
+            @onclick="() => SetAsync(LanguageState.Italian)">IT</button>
+</div>
+
+@code {
+    private string ClassFor(string language) => Lang.Current == language ? "on" : "";
+
+    private string PressedFor(string language) => Lang.Current == language ? "true" : "false";
+
+    private async Task SetAsync(string language)
+    {
+        Lang.Set(language);
+        // Remember the choice (cookie) so the next page load starts in the same language.
+        await JS.InvokeVoidAsync("lumenxSetLang", Lang.Current);
+    }
+}

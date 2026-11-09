@@ -1,17 +1,18 @@
 @using System.Globalization
 @using System.Text
+@inherits LocalizedComponentBase
 
 @if (svgHtml is null)
 {
-    <p class="muted">Nessun dato da mostrare.</p>
+    <p class="muted">@T("No data to show.")</p>
 }
 else
 {
     <div class="chart-wrap">@((MarkupString)svgHtml)</div>
     <div class="legend">
-        <span><i class="sw sw-history"></i> Storico</span>
-        <span><i class="sw sw-yhat"></i> Previsione</span>
-        <span><i class="sw sw-band"></i> Fascia probabile (min–max)</span>
+        <span><i class="sw sw-history"></i> @T("History")</span>
+        <span><i class="sw sw-yhat"></i> @T("Forecast")</span>
+        <span><i class="sw sw-band"></i> @T("Likely range (min–max)")</span>
     </div>
 }
 
@@ -29,10 +30,16 @@ else
         svgHtml = BuildSvg();
     }
 
-    // Numeri sempre con il punto decimale, qualunque sia la cultura del server.
+    // Axis labels use the language's number and date style, so the drawing is rebuilt when the language changes.
+    protected override void LanguageChanged()
+    {
+        svgHtml = BuildSvg();
+    }
+
+    // Drawing coordinates always use a dot as decimal separator, whatever the server culture.
     private static string N(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
 
-    /// <summary>Estremi e passo "tondi" per l'asse verticale (1, 2, 5 x potenza di 10), cosi' le tacche sono leggibili.</summary>
+    /// <summary>"Nice" bounds and step for the vertical axis (1, 2, 5 x a power of 10), so the ticks are readable.</summary>
     private static (double Min, double Max, double Step) NiceScale(double lo, double hi)
     {
         var range = hi - lo;
@@ -60,8 +67,8 @@ else
         return (min, max, step);
     }
 
-    // Il markup viene costruito qui come stringa (solo numeri e date formattate dal codice, nessun testo
-    // inserito dall'utente) perche' <text> dentro i blocchi Razor verrebbe interpretato da Razor.
+    // The markup is built here as a string (only numbers and dates formatted by the code, no text typed by the
+    // user) because <text> inside Razor blocks would be interpreted by Razor.
     private string? BuildSvg()
     {
         var hist = (History ?? Array.Empty<SalePointDto>()).OrderBy(p => p.Date).ToList();
@@ -88,11 +95,11 @@ else
         string Pt(DateOnly d, double v) => N(X(d)) + "," + N(Y(v));
 
         var sb = new StringBuilder();
-        sb.Append($"<svg viewBox='0 0 {N(W)} {N(H)}' class='chart' role='img' aria-label='Storico vendite e previsione'>");
+        sb.Append($"<svg viewBox='0 0 {N(W)} {N(H)}' class='chart' role='img' aria-label='{T("Sales history and forecast")}'>");
         sb.Append("<defs><linearGradient id='lx-band' x1='0' y1='0' x2='0' y2='1'>");
         sb.Append("<stop class='band-top' offset='0'/><stop class='band-bottom' offset='1'/></linearGradient></defs>");
 
-        // Griglia orizzontale e etichette asse Y, a passi tondi
+        // Horizontal grid and Y-axis labels, at round steps
         var decimals = step >= 1 ? 0 : (step >= 0.1 ? 1 : 2);
         var tickCount = (int)Math.Round((yMax - yMin) / step);
         for (int i = 0; i <= tickCount; i++)
@@ -100,19 +107,19 @@ else
             double v = yMin + i * step;
             double y = Y(v);
             sb.Append($"<line x1='{N(Left)}' x2='{N(W - Right)}' y1='{N(y)}' y2='{N(y)}' class='grid'/>");
-            sb.Append($"<text x='{N(Left - 10)}' y='{N(y + 4)}' text-anchor='end' class='tick'>{Fmt.Num(v, decimals)}</text>");
+            sb.Append($"<text x='{N(Left - 10)}' y='{N(y + 4)}' text-anchor='end' class='tick'>{Fmt.Num(v, decimals, Lang.Current)}</text>");
         }
 
-        // Etichette asse X
+        // X-axis labels
         for (int i = 0; i <= 4; i++)
         {
             var d = xStart.AddDays((int)Math.Round(span * i / 4.0));
-            // Prima etichetta allineata a sinistra e ultima a destra: cosi' non escono dal disegno.
+            // First label aligned to the left and last to the right: this way they do not leave the drawing.
             var anchor = i == 4 ? "end" : (i == 0 ? "start" : "middle");
-            sb.Append($"<text x='{N(X(d))}' y='{N(H - 12)}' text-anchor='{anchor}' class='tick'>{Fmt.ShortDate(d)}</text>");
+            sb.Append($"<text x='{N(X(d))}' y='{N(H - 12)}' text-anchor='{anchor}' class='tick'>{Fmt.ShortDate(d, Lang.Current)}</text>");
         }
 
-        // Banda dell'intervallo (upper in avanti, lower all'indietro)
+        // Interval band (upper going forward, lower coming back)
         if (fc.Count > 0)
         {
             var upper = fc.Select(p => Pt(p.Date, p.Upper));
@@ -120,7 +127,7 @@ else
             sb.Append($"<polygon points='{string.Join(" ", upper.Concat(lower))}' class='band'/>");
         }
 
-        // Dove finisce lo storico e comincia la previsione
+        // Where the history ends and the forecast begins
         if (hist.Count > 0 && fc.Count > 0)
         {
             var sx = N(X(hist[^1].Date));

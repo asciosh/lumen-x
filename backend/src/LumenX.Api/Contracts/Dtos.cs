@@ -7,7 +7,7 @@ namespace LumenX.Api.Contracts;
 public sealed record CreateProductRequest(string? Name, string? Sku);
 public sealed record ProductDto(int Id, string Name, string? Sku, DateTime CreatedAtUtc);
 
-// ---- Vendite ----
+// ---- sales ----
 public sealed record SalePointDto(DateOnly Date, double Quantity);
 public sealed record RowErrorDto(int Line, string Message);
 
@@ -21,7 +21,7 @@ public sealed record ImportResultDto(
     IReadOnlyList<RowErrorDto> Errors,
     bool ErrorsTruncated);
 
-// ---- Forecast ----
+// ---- forecast ----
 public sealed record ForecastRequestDto(int? Horizon, string? Method);
 public sealed record ForecastPointView(DateOnly Date, double Yhat, double Lower, double Upper);
 

@@ -9,7 +9,7 @@ public class GeminiExplainerTests
     public async Task Successful_response_returns_the_text_with_source_gemini()
     {
         var handler = new StubHandler(() => StubHandler.Json(ExplanationTestData.GeminiOkJson));
-        var explainer = ExplanationTestData.Gemini(handler, "chiave-finta");
+        var explainer = ExplanationTestData.Gemini(handler, "fake-key");
 
         var result = await explainer.ExplainAsync(ExplanationTestData.Facts(), "it");
 
@@ -22,13 +22,13 @@ public class GeminiExplainerTests
     public async Task Request_uses_header_for_the_key_and_the_configured_model()
     {
         var handler = new StubHandler(() => StubHandler.Json(ExplanationTestData.GeminiOkJson));
-        var explainer = ExplanationTestData.Gemini(handler, "chiave-finta");
+        var explainer = ExplanationTestData.Gemini(handler, "fake-key");
 
         await explainer.ExplainAsync(ExplanationTestData.Facts(), "en");
 
-        Assert.Equal("chiave-finta", handler.LastApiKeyHeader);
+        Assert.Equal("fake-key", handler.LastApiKeyHeader);
         Assert.NotNull(handler.LastUri);
-        Assert.DoesNotContain("chiave-finta", handler.LastUri!);   // la chiave non e' nell'URL
+        Assert.DoesNotContain("fake-key", handler.LastUri!);   // the key is not in the URL
         Assert.Contains("models/test-model:generateContent", handler.LastUri);
         Assert.Contains("English", handler.LastBody);
         Assert.Contains("Caffè", handler.LastBody);
@@ -38,7 +38,7 @@ public class GeminiExplainerTests
     public async Task Italian_request_asks_for_italian()
     {
         var handler = new StubHandler(() => StubHandler.Json(ExplanationTestData.GeminiOkJson));
-        var explainer = ExplanationTestData.Gemini(handler, "chiave-finta");
+        var explainer = ExplanationTestData.Gemini(handler, "fake-key");
 
         await explainer.ExplainAsync(ExplanationTestData.Facts(), "it");
 
@@ -49,7 +49,7 @@ public class GeminiExplainerTests
     public async Task Http_error_becomes_explanation_unavailable()
     {
         var handler = new StubHandler(() => StubHandler.Json("{}", HttpStatusCode.TooManyRequests));
-        var explainer = ExplanationTestData.Gemini(handler, "chiave-finta");
+        var explainer = ExplanationTestData.Gemini(handler, "fake-key");
 
         await Assert.ThrowsAsync<ExplanationUnavailableException>(
             () => explainer.ExplainAsync(ExplanationTestData.Facts(), "it"));
@@ -59,7 +59,7 @@ public class GeminiExplainerTests
     public async Task Response_without_candidates_becomes_explanation_unavailable()
     {
         var handler = new StubHandler(() => StubHandler.Json("{\"promptFeedback\":{}}"));
-        var explainer = ExplanationTestData.Gemini(handler, "chiave-finta");
+        var explainer = ExplanationTestData.Gemini(handler, "fake-key");
 
         await Assert.ThrowsAsync<ExplanationUnavailableException>(
             () => explainer.ExplainAsync(ExplanationTestData.Facts(), "it"));
@@ -69,7 +69,7 @@ public class GeminiExplainerTests
     public async Task Malformed_json_becomes_explanation_unavailable()
     {
         var handler = new StubHandler(() => StubHandler.Json("non e' json"));
-        var explainer = ExplanationTestData.Gemini(handler, "chiave-finta");
+        var explainer = ExplanationTestData.Gemini(handler, "fake-key");
 
         await Assert.ThrowsAsync<ExplanationUnavailableException>(
             () => explainer.ExplainAsync(ExplanationTestData.Facts(), "it"));
@@ -91,7 +91,7 @@ public class GeminiExplainerTests
     {
         var json = "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Le vendite cresceranno del 35% il prossimo mese.\"}]}}]}";
         var handler = new StubHandler(() => StubHandler.Json(json));
-        var explainer = ExplanationTestData.Gemini(handler, "chiave-finta");
+        var explainer = ExplanationTestData.Gemini(handler, "fake-key");
 
         var ex = await Assert.ThrowsAsync<ExplanationUnavailableException>(
             () => explainer.ExplainAsync(ExplanationTestData.Facts(), "it"));
@@ -105,7 +105,7 @@ public class GeminiExplainerTests
     {
         var json = "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Prevedo circa 3.360 unità in 28 giorni, il 20% in più.\"}]}}]}";
         var handler = new StubHandler(() => StubHandler.Json(json));
-        var explainer = ExplanationTestData.Gemini(handler, "chiave-finta");
+        var explainer = ExplanationTestData.Gemini(handler, "fake-key");
 
         var result = await explainer.ExplainAsync(ExplanationTestData.Facts(), "it");
 
@@ -116,7 +116,7 @@ public class GeminiExplainerTests
     public async Task Request_contains_the_zero_days_fact_and_the_rule_about_it()
     {
         var handler = new StubHandler(() => StubHandler.Json(ExplanationTestData.GeminiOkJson));
-        var explainer = ExplanationTestData.Gemini(handler, "chiave-finta");
+        var explainer = ExplanationTestData.Gemini(handler, "fake-key");
 
         await explainer.ExplainAsync(ExplanationTestData.Facts() with { ZeroDaysPercent = 30.0 }, "it");
 
@@ -134,7 +134,7 @@ public class GeminiExplainerTests
     public async Task Request_explains_what_the_blend_method_is()
     {
         var handler = new StubHandler(() => StubHandler.Json(ExplanationTestData.GeminiOkJson));
-        var explainer = ExplanationTestData.Gemini(handler, "chiave-finta");
+        var explainer = ExplanationTestData.Gemini(handler, "fake-key");
 
         await explainer.ExplainAsync(ExplanationTestData.Facts() with { MethodUsed = "blend" }, "it");
 

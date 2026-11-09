@@ -3,25 +3,25 @@ using LumenX.Api.Contracts;
 namespace LumenX.Api.Reorder;
 
 /// <summary>
-/// Calcolo del livello di riordino a revisione periodica ("order-up-to"):
+/// Periodic-review reorder level ("order-up-to"):
 ///
-///   periodo P            = giorni di consegna + giorni tra un ordine e l'altro
-///   domanda nel periodo  = somma delle previsioni dei primi P giorni
-///   scorta di sicurezza  = z * errore giornaliero (RMSE del backtest) * radice di P
-///   livello massimo      = domanda nel periodo + scorta di sicurezza
-///   ordine suggerito     = livello massimo - scorta attuale (mai negativo, arrotondato per eccesso)
+///   period P            = lead time days + days between orders
+///   demand in period    = sum of the forecasts of the first P days
+///   safety stock        = z * daily error (backtest RMSE) * square root of P
+///   maximum level       = demand in period + safety stock
+///   suggested order     = maximum level - current stock (never negative, rounded up)
 ///
-/// Limite dichiarato: la radice di P presume errori indipendenti da un giorno all'altro. Se il livello
-/// delle vendite cambia di colpo, l'errore pesa su tutti i giorni insieme e la scorta risulta un po' bassa.
+/// Declared limit: the square root of P assumes errors are independent from one day to the next. If the level
+/// of sales changes suddenly, the error weighs on all days together and the safety stock turns out a bit low.
 /// </summary>
 public static class ReorderCalculator
 {
     public const int MaxDays = 60;
 
-    /// <summary>Sopra questa percentuale di giorni a zero la serie e' intermittente e il calcolo non e' affidabile.</summary>
+    /// <summary>Above this percentage of zero-sales days the series is intermittent and the calculation is not reliable.</summary>
     public const double IntermittentThresholdPercent = 20;
 
-    // Valori della normale standard (quantile unilaterale) per i livelli di servizio ammessi.
+    // Standard normal values (one-sided quantile) for the allowed service levels.
     private static readonly Dictionary<int, double> ZByServiceLevel = new()
     {
         [90] = 1.2816,
@@ -30,7 +30,7 @@ public static class ReorderCalculator
         [99] = 2.3263
     };
 
-    // Il servizio di forecasting calcola la fascia dell'80% come yhat +- 1,2816 x RMSE.
+    // The forecasting service computes the 80% band as yhat +- 1.2816 x RMSE.
     private const double IntervalZ = 1.2816;
 
     public static IReadOnlyCollection<int> ServiceLevels => ZByServiceLevel.Keys;
@@ -45,19 +45,19 @@ public static class ReorderCalculator
     {
         if (leadTimeDays < 1 || leadTimeDays > MaxDays)
         {
-            return ReorderOutcome.Fail($"I giorni di consegna devono essere tra 1 e {MaxDays}.");
+            return ReorderOutcome.Fail($"Lead time must be between 1 and {MaxDays} days.");
         }
         if (reviewDays < 0 || reviewDays > MaxDays)
         {
-            return ReorderOutcome.Fail($"I giorni tra un ordine e l'altro devono essere tra 0 e {MaxDays}.");
+            return ReorderOutcome.Fail($"Review days must be between 0 and {MaxDays}.");
         }
         if (!ZByServiceLevel.TryGetValue(serviceLevelPercent, out var z))
         {
-            return ReorderOutcome.Fail("Il livello di servizio deve essere 90, 95, 98 oppure 99.");
+            return ReorderOutcome.Fail("The service level must be 90, 95, 98 or 99.");
         }
         if (onHand.HasValue && (double.IsNaN(onHand.Value) || double.IsInfinity(onHand.Value) || onHand.Value < 0))
         {
-            return ReorderOutcome.Fail("La scorta attuale deve essere un numero maggiore o uguale a zero.");
+            return ReorderOutcome.Fail("Current stock must be a number greater than or equal to zero.");
         }
 
         var points = run.Forecast.OrderBy(p => p.Date).ToList();
@@ -65,8 +65,8 @@ public static class ReorderCalculator
         if (period > points.Count)
         {
             return ReorderOutcome.Fail(
-                $"Il periodo da coprire ({period} giorni) supera l'orizzonte del forecast ({points.Count} giorni): " +
-                $"ricalcola il forecast con un orizzonte di almeno {period} giorni.");
+                $"The period to cover ({period} days) exceeds the forecast horizon ({points.Count} days): " +
+                $"recompute the forecast with a horizon of at least {period} days.");
         }
 
         var demand = points.Take(period).Sum(p => p.Yhat);
@@ -100,7 +100,7 @@ public static class ReorderCalculator
             Warnings: warnings));
     }
 
-    /// <summary>RMSE del backtest del metodo usato; se manca, lo ricava dalla fascia dell'80% del forecast.</summary>
+    /// <summary>Backtest RMSE of the method used; if missing, derived from the forecast's 80% band.</summary>
     private static double DailyErrorStdDev(ForecastRunDto run, List<ForecastPointView> points)
     {
         if (run.Backtest is not null)

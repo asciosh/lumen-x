@@ -1,8 +1,8 @@
 namespace LumenX.Api.Explanations;
 
 /// <summary>
-/// Fatti calcolati dal codice (non dall'AI) a partire da vendite e forecast.
-/// Sono l'unica cosa che viene passata a un eventuale LLM.
+/// Facts computed by the code (not by the AI) from sales and forecast.
+/// They are the only thing passed to an LLM, if one is used.
 /// </summary>
 public sealed record ExplanationFacts(
     string ProductName,
@@ -45,7 +45,7 @@ public static class ExplanationLanguage
     public const string Italian = "it";
     public const string English = "en";
 
-    /// <summary>Vuoto = italiano. Restituisce null se la lingua non e' supportata.</summary>
+    /// <summary>Empty = Italian. Returns null if the language is not supported.</summary>
     public static string? Normalize(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return Italian;
@@ -60,7 +60,7 @@ public interface IExplainer
         ExplanationFacts facts, string language, CancellationToken cancellationToken = default);
 }
 
-/// <summary>Il provider AI non ha prodotto un testo utilizzabile (rete, limiti, risposta vuota...).</summary>
+/// <summary>The AI provider did not produce a usable text (network, limits, empty answer...).</summary>
 public sealed class ExplanationUnavailableException : Exception
 {
     public ExplanationUnavailableException(string message, Exception? inner = null, string note = "ai_unavailable")
@@ -69,6 +69,6 @@ public sealed class ExplanationUnavailableException : Exception
         Note = note;
     }
 
-    /// <summary>Codice mostrato in dashboard: "ai_unavailable" (errore, limiti) o "ai_rejected" (numeri non verificabili).</summary>
+    /// <summary>Code shown in the dashboard: "ai_unavailable" (error, limits) or "ai_rejected" (numbers that cannot be verified).</summary>
     public string Note { get; }
 }

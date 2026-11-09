@@ -1,8 +1,8 @@
 <Project>
   <!--
-    UNICO PUNTO in cui cambiare versione di framework e pacchetti.
-    Per .NET 10: PackagesMajor = 10.
-    (Nei Dockerfile/compose la stessa versione arriva da DOTNET_MAJOR, vedi README.)
+    SINGLE PLACE to change the framework and package version.
+    For .NET 10: PackagesMajor = 10.
+    (In the Dockerfiles/compose the same version comes from DOTNET_MAJOR, see the README.)
   -->
   <PropertyGroup>
     <PackagesMajor Condition="'$(PackagesMajor)' == ''">10</PackagesMajor>

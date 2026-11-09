@@ -29,13 +29,13 @@ public static class ForecastEndpoints
     {
         if (!await db.Products.AnyAsync(p => p.Id == productId, ct))
         {
-            return Problems.NotFound($"Prodotto {productId} non trovato.");
+            return Problems.NotFound($"Product {productId} not found.");
         }
 
         var horizon = body?.Horizon;
         if (horizon is < 1 or > MaxHorizon)
         {
-            return Problems.Unprocessable($"'horizon' deve essere compreso tra 1 e {MaxHorizon}.");
+            return Problems.Unprocessable($"'horizon' must be between 1 and {MaxHorizon}.");
         }
 
         string? method = body?.Method?.Trim().ToLowerInvariant();
@@ -45,7 +45,7 @@ public static class ForecastEndpoints
         }
         else if (!AllowedMethods.Contains(method))
         {
-            return Problems.Unprocessable($"'method' deve essere uno tra: {string.Join(", ", AllowedMethods)}.");
+            return Problems.Unprocessable($"'method' must be one of: {string.Join(", ", AllowedMethods)}.");
         }
 
         var series = await db.SalesRecords
@@ -58,7 +58,7 @@ public static class ForecastEndpoints
         if (series.Count < MinSeriesDays)
         {
             return Problems.Unprocessable(
-                $"Servono almeno {MinSeriesDays} giorni di vendite: ne risultano {series.Count}.");
+                $"At least {MinSeriesDays} days of sales are required: found {series.Count}.");
         }
 
         var request = new ForecastingRequest
@@ -75,11 +75,11 @@ public static class ForecastEndpoints
         }
         catch (ForecastingInputException ex)
         {
-            return Problems.Unprocessable($"Il servizio di forecasting ha rifiutato i dati: {ex.Message}");
+            return Problems.Unprocessable($"The forecasting service rejected the data: {ex.Message}");
         }
         catch (ForecastingUnavailableException)
         {
-            return Problems.ServiceUnavailable("Il servizio di forecasting non è raggiungibile. Riprova più tardi.");
+            return Problems.ServiceUnavailable("The forecasting service is unreachable. Try again later.");
         }
         catch (ForecastingFailedException ex)
         {
@@ -98,7 +98,7 @@ public static class ForecastEndpoints
     {
         if (!await db.Products.AnyAsync(p => p.Id == productId, ct))
         {
-            return Problems.NotFound($"Prodotto {productId} non trovato.");
+            return Problems.NotFound($"Product {productId} not found.");
         }
 
         var run = await db.ForecastRuns
@@ -109,7 +109,7 @@ public static class ForecastEndpoints
             .FirstOrDefaultAsync(ct);
 
         return run is null
-            ? Problems.NotFound($"Nessun forecast salvato per il prodotto {productId}.")
+            ? Problems.NotFound($"No forecast saved for product {productId}.")
             : Results.Ok(ForecastMapper.ToDto(run));
     }
 }

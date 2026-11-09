@@ -28,7 +28,7 @@ public static class ReorderEndpoints
         var productExists = await db.Products.AsNoTracking().AnyAsync(p => p.Id == productId, ct);
         if (!productExists)
         {
-            return Problems.NotFound($"Prodotto {productId} non trovato.");
+            return Problems.NotFound($"Product {productId} not found.");
         }
 
         var run = await db.ForecastRuns
@@ -39,7 +39,7 @@ public static class ReorderEndpoints
             .FirstOrDefaultAsync(ct);
         if (run is null)
         {
-            return Problems.NotFound($"Nessun forecast salvato per il prodotto {productId}.");
+            return Problems.NotFound($"No forecast saved for product {productId}.");
         }
 
         var totalDays = await db.SalesRecords.AsNoTracking().CountAsync(s => s.ProductId == productId, ct);
@@ -56,6 +56,6 @@ public static class ReorderEndpoints
 
         return outcome.Suggestion is not null
             ? Results.Ok(outcome.Suggestion)
-            : Problems.Unprocessable(outcome.Error ?? "Parametri non validi.");
+            : Problems.Unprocessable(outcome.Error ?? "Invalid parameters.");
     }
 }

@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace LumenX.Dashboard.Services;
 
-// DTO che rispecchiano le risposte JSON del backend (camelCase, date yyyy-MM-dd).
+// DTOs mirroring the backend's JSON responses (camelCase, dates yyyy-MM-dd).
 
 public sealed record ProductDto(int Id, string Name, string? Sku, DateTime CreatedAtUtc);
 
