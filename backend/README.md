@@ -220,3 +220,37 @@ Limiti: la radice di P presuppone errori indipendenti da un giorno all'altro, qu
 curl "http://localhost:8080/products/1/reorder?leadTimeDays=7&reviewDays=7&serviceLevel=95&onHand=300"
 ```
 
+## Domande sui dati (senza AI)
+
+`POST /products/{id}/ask` risponde a domande in italiano o in inglese sulle vendite e sul forecast di un prodotto.
+
+```bash
+curl -X POST http://localhost:8080/products/1/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Quanto ho venduto negli ultimi 30 giorni?"}'
+```
+
+Corpo: `question` (da 3 a 300 caratteri) e `language` (`it` o `en`, facoltativa: se manca la si riconosce dalla domanda).
+Risposta: `question`, `language`, `intent`, `understood`, `answer` e `suggestions` (esempi di domande, piena solo se la domanda non è stata capita).
+
+**Come funziona.** Non c'è nessuna AI e nessun numero è inventato: la domanda viene ricondotta a una di queste, per parole chiave, e la risposta è calcolata dal codice sui dati e scritta con frasi fisse.
+
+| `intent` | Esempio | Cosa calcola |
+| --- | --- | --- |
+| `sales_total` | "Quanto ho venduto negli ultimi 30 giorni?" | totale e media al giorno in un periodo |
+| `compare_periods` | "Come vanno le vendite rispetto al mese scorso?" | periodo recente contro quello precedente, con la variazione |
+| `weekday_pattern` | "Qual è il giorno più forte della settimana?" | giorno più forte e più debole sulle ultime 12 settimane |
+| `peak_day` | "Qual è stato il giorno record?" | giorno migliore e peggiore del periodo |
+| `forecast_total` | "Quanto prevedo di vendere nelle prossime 2 settimane?" | somma delle previsioni dei giorni richiesti |
+| `reorder` | "Cosa conviene ordinare?" | livello di riordino con tempi di default (7 + 7 giorni, servizio 95%) |
+| `reliability` | "Quanto è affidabile la previsione?" | metodo, errore medio, fascia probabile, confronto col naive |
+| `summary` | "Spiegami la previsione" | la spiegazione a regole del forecast |
+| `unknown` | qualsiasi altra cosa | dice cosa si può chiedere, con esempi |
+
+**Periodi.** Sono sempre riferiti all'ultimo giorno di dati, non a oggi: "ultimi 30 giorni" sono i 30 giorni che finiscono lì; una settimana vale 7 giorni, un mese 30, un anno 365.
+"A marzo" è il mese di calendario (senza anno, il più recente non successivo all'ultimo giorno di dati); "a marzo 2025" usa l'anno indicato. Senza periodo: 30 giorni per le vendite, 90 per il giorno record, 28 per i confronti.
+
+**Limiti.** Il riconoscimento è per parole chiave: una domanda scritta in modo molto diverso dagli esempi può non essere capita (e la risposta lo dice, invece di indovinare). Il sistema ha solo le quantità e non i prezzi: se chiedi di incassi, fatturato o guadagni risponde con le unità vendute e lo dice all'inizio della risposta. Non si confrontano due mesi nominati, non si filtra per giorno della settimana ("vendite del sabato") e non si può scegliere il periodo del riordino: per quello c'è il riquadro Riordino.
+
+Se la domanda non è tra quelle riconosciute, la risposta ha `understood: false` e in `suggestions` ci sono otto domande di esempio che funzionano sicuramente.
+

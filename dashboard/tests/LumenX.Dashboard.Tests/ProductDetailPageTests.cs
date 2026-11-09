@@ -217,7 +217,7 @@ public class ProductDetailPageTests : DashboardTestBase
         var cut = RenderWithForecast();
 
         Assert.Contains("Riordino", cut.FindAll("h3").Select(h => h.TextContent));
-        Assert.Empty(cut.FindAll("tr").Where(r => r.TextContent.Contains("Periodo da coprire")));
+        Assert.DoesNotContain(cut.FindAll("tr"), r => r.TextContent.Contains("Periodo da coprire"));
     }
 
     [Fact]
@@ -338,7 +338,7 @@ public class ProductDetailPageTests : DashboardTestBase
 
         var headings = cut.FindAll("h2").Select(h => h.TextContent).ToList();
 
-        Assert.Equal(new[] { "Previsione", "Vendite", "Importa vendite da CSV" }, headings.ToArray());
+        Assert.Equal(new[] { "Previsione", "Chiedi ai tuoi dati", "Vendite", "Importa vendite da CSV" }, headings.ToArray());
     }
 
     [Fact]

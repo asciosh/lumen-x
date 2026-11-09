@@ -71,6 +71,10 @@ public sealed class LumenApiClient : ILumenApiClient
         return SendAsync<ReorderSuggestionDto>(() => _http.GetAsync(url, ct), ct);
     }
 
+    public Task<ApiResult<AskResponseDto>> AskAsync(int productId, string question, CancellationToken ct = default) =>
+        SendAsync<AskResponseDto>(
+            () => _http.PostAsJsonAsync($"products/{productId}/ask", new AskRequest(question, null), Json, ct), ct);
+
     public Task<ApiResult<ForecastRunDto>> CreateForecastAsync(
         int productId, int? horizon, string? method, CancellationToken ct = default) =>
         SendAsync<ForecastRunDto>(

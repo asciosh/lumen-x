@@ -45,6 +45,7 @@ app.MapSalesEndpoints();
 app.MapForecastEndpoints();
 app.MapExplanationEndpoints();
 app.MapReorderEndpoints();
+app.MapChatEndpoints();
 
 app.Run();
 

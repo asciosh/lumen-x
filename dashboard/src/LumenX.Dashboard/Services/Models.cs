@@ -55,6 +55,15 @@ public sealed record ReorderSuggestionDto(
     double? SuggestedOrder,
     List<string> Warnings);
 
+public sealed record AskResponseDto(
+    string Question,
+    string Language,
+    string Intent,
+    bool Understood,
+    string Answer,
+    List<string> Suggestions);
+
 // Body di POST /products e POST /products/{id}/forecast
 public sealed record CreateProductRequest(string Name, string? Sku);
 public sealed record ForecastRequest(int? Horizon, string? Method);
+public sealed record AskRequest(string Question, string? Language);

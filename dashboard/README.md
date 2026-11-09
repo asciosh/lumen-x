@@ -35,6 +35,7 @@ l'argomento `DOTNET_MAJOR` (compose: variabile `DOTNET_MAJOR`, default 10). Va t
 - `Components/Pages/Products.razor` elenco e creazione prodotti
 - `Components/Pages/ProductDetail.razor` import CSV, vendite con filtro, forecast
 - `Components/ForecastChart.razor` grafico SVG (storico + previsione + intervallo)
+- Nella pagina del prodotto il riquadro **Chiedi ai tuoi dati** manda le domande a `POST /products/{id}/ask` (vedi `backend/README.md`) e mostra le ultime otto risposte, le più recenti in alto
 
 ## Test
 

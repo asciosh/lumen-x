@@ -90,6 +90,47 @@ public class LumenApiClientTests
     }
 
     [Fact]
+    public async Task Question_is_posted_as_json_to_the_ask_endpoint()
+    {
+        var handler = new StubHandler(_ => Json(new AskResponseDto("Quanto ho venduto?", "it", "sales_total", true, "Hai venduto 100 unità.", new List<string>())));
+
+        var result = await ClientFor(handler).AskAsync(5, "Quanto ho venduto?");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("/products/5/ask", handler.Urls.Single());
+        Assert.Equal("{\"question\":\"Quanto ho venduto?\",\"language\":null}", handler.LastBody);
+        Assert.Equal("Hai venduto 100 unità.", result.Value!.Answer);
+        Assert.Equal("sales_total", result.Value.Intent);
+    }
+
+    [Fact]
+    public async Task Question_with_accents_and_quotes_survives_the_round_trip()
+    {
+        var handler = new StubHandler(_ => Json(new AskResponseDto("q", "it", "unknown", false, "ok", new List<string> { "Esempio uno", "Esempio due" })));
+
+        var result = await ClientFor(handler).AskAsync(5, "Qual è il giorno \"più forte\"?");
+
+        // Sul filo gli accenti viaggiano come sequenze \uXXXX: conta che il server riceva la domanda identica.
+        using var sent = JsonDocument.Parse(handler.LastBody!);
+        Assert.Equal("Qual è il giorno \"più forte\"?", sent.RootElement.GetProperty("question").GetString());
+        Assert.Equal(new[] { "Esempio uno", "Esempio due" }, result.Value!.Suggestions.ToArray());
+    }
+
+    [Fact]
+    public async Task Rejected_question_shows_the_backend_message()
+    {
+        var handler = new StubHandler(_ => Json(
+            new { title = "Dati non validi", detail = "Scrivi una domanda di almeno 3 e al massimo 300 caratteri.", status = 422 },
+            System.Net.HttpStatusCode.UnprocessableEntity));
+
+        var result = await ClientFor(handler).AskAsync(5, "ab");
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(422, result.StatusCode);
+        Assert.Contains("almeno 3", result.ErrorText);
+    }
+
+    [Fact]
     public async Task Forecast_request_is_sent_as_camel_case_json()
     {
         var handler = new StubHandler(_ => Json(Samples.Forecast()));

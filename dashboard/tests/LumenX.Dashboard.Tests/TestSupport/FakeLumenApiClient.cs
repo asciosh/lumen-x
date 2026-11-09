@@ -16,12 +16,14 @@ public sealed class FakeLumenApiClient : ILumenApiClient
     public ApiResult<ForecastRunDto> CreateForecastResult { get; set; } = ApiResult<ForecastRunDto>.Ok(Samples.Forecast());
     public Func<string, bool, ApiResult<ExplanationDto>>? ExplanationFactory { get; set; }
     public Func<ReorderCall, ApiResult<ReorderSuggestionDto>>? ReorderFactory { get; set; }
+    public Func<string, ApiResult<AskResponseDto>>? AskFactory { get; set; }
 
     // ---- chiamate ricevute ----
     public List<(string Name, string? Sku)> CreatedProducts { get; } = new();
     public List<(DateOnly? From, DateOnly? To)> SalesCalls { get; } = new();
     public List<(string Language, bool UseAi)> ExplanationCalls { get; } = new();
     public List<ReorderCall> ReorderCalls { get; } = new();
+    public List<(int ProductId, string Question)> AskCalls { get; } = new();
     public List<(int ProductId, int? Horizon, string? Method)> ForecastCalls { get; } = new();
 
     public Task<ApiResult<List<ProductDto>>> GetProductsAsync(CancellationToken ct = default) =>
@@ -87,6 +89,16 @@ public sealed class FakeLumenApiClient : ILumenApiClient
         return Task.FromResult(ApiResult<ReorderSuggestionDto>.Ok(new ReorderSuggestionDto(
             1, "blend", leadTimeDays, reviewDays, leadTimeDays + reviewDays, serviceLevel, 1.6449,
             1400, 20, 123.09, level, onHand, suggested, new List<string>())));
+    }
+
+    public Task<ApiResult<AskResponseDto>> AskAsync(int productId, string question, CancellationToken ct = default)
+    {
+        AskCalls.Add((productId, question));
+        var result = AskFactory is not null
+            ? AskFactory(question)
+            : ApiResult<AskResponseDto>.Ok(new AskResponseDto(
+                question, "it", "sales_total", true, $"Risposta a: {question}", new List<string>()));
+        return Task.FromResult(result);
     }
 
     public Task<ApiResult<ForecastRunDto>> CreateForecastAsync(

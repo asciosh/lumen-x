@@ -188,6 +188,34 @@ else
         }
     </section>
 
+    <section class="card chat">
+        <h2>Chiedi ai tuoi dati</h2>
+        <p class="muted">Domande sulle vendite, sulla previsione e su cosa ordinare. Le risposte sono calcolate dal codice sui tuoi dati, senza inventare nulla.</p>
+        <form class="ask" @onsubmit="AskAsync">
+            <label>La tua domanda
+                <input @bind="questionText" @bind:event="oninput" maxlength="300" placeholder="Per esempio: quanto ho venduto negli ultimi 30 giorni?" />
+            </label>
+            <button type="button" class="btn" @onclick="AskAsync" disabled="@asking">@(asking ? "Un attimo…" : "Chiedi")</button>
+        </form>
+        <div class="chips">
+            @foreach (var example in ExampleQuestions)
+            {
+                <button type="button" class="chip" @onclick="() => AskExampleAsync(example)" disabled="@asking">@example</button>
+            }
+        </div>
+        @if (askError is not null)
+        {
+            <div class="alert alert-error">@askError</div>
+        }
+        @foreach (var turn in conversation)
+        {
+            <div class="turn">
+                <p class="q">@turn.Question</p>
+                <p class="a">@turn.Answer</p>
+            </div>
+        }
+    </section>
+
     <details class="card fold" open="@dataOpen">
         <summary><h2>Vendite</h2></summary>
         <div class="row">
@@ -326,6 +354,9 @@ else
         explanation = null;
         reorder = null;
         importResult = null;
+        conversation.Clear();
+        questionText = "";
+        askError = null;
 
         var p = await Api.GetProductAsync(Id);
         if (!p.IsSuccess)
@@ -500,6 +531,66 @@ else
         "intermittent" => "Molti giorni a zero nello storico: il calcolo presuppone vendite regolari, quindi la scorta suggerita non è affidabile.",
         _ => code
     };
+
+    private static readonly string[] ExampleQuestions =
+    {
+        "Quanto ho venduto negli ultimi 30 giorni?",
+        "Come vanno le vendite rispetto al mese scorso?",
+        "Qual è il giorno più forte della settimana?",
+        "Quanto prevedo di vendere nelle prossime 2 settimane?",
+        "Cosa conviene ordinare?",
+        "Quanto è affidabile la previsione?"
+    };
+
+    private sealed record ChatTurn(string Question, string Answer);
+
+    private readonly List<ChatTurn> conversation = new();
+    private string questionText = "";
+    private bool asking;
+    private string? askError;
+
+    private Task AskAsync() => SubmitQuestionAsync(questionText);
+
+    private Task AskExampleAsync(string example)
+    {
+        questionText = example;
+        return SubmitQuestionAsync(example);
+    }
+
+    private async Task SubmitQuestionAsync(string text)
+    {
+        askError = null;
+        var question = (text ?? "").Trim();
+        if (question.Length < 3)
+        {
+            askError = "Scrivi una domanda (almeno 3 caratteri).";
+            return;
+        }
+
+        asking = true;
+        try
+        {
+            var result = await Api.AskAsync(Id, question);
+            if (result.IsSuccess)
+            {
+                conversation.Insert(0, new ChatTurn(question, result.Value!.Answer));
+                if (conversation.Count > 8)
+                {
+                    conversation.RemoveAt(conversation.Count - 1);
+                }
+
+                questionText = "";
+            }
+            else
+            {
+                askError = result.ErrorText;
+            }
+        }
+        finally
+        {
+            asking = false;
+        }
+    }
 
     private async Task LoadExplanationAsync(bool useAi)
     {

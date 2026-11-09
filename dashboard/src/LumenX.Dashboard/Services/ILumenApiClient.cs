@@ -23,6 +23,9 @@ public interface ILumenApiClient
     Task<ApiResult<ReorderSuggestionDto>> GetReorderAsync(
         int productId, int leadTimeDays, int reviewDays, int serviceLevel, double? onHand, CancellationToken ct = default);
 
+    /// <summary>Domanda in linguaggio naturale sui dati del prodotto. La lingua si riconosce dalla domanda.</summary>
+    Task<ApiResult<AskResponseDto>> AskAsync(int productId, string question, CancellationToken ct = default);
+
     Task<ApiResult<ForecastRunDto>> CreateForecastAsync(
         int productId, int? horizon, string? method, CancellationToken ct = default);
 }
