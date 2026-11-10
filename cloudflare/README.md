@@ -3,8 +3,10 @@
 A second implementation of Lumen-X that runs on the **free** Cloudflare plan, with no credit card: a Worker, a D1 database
 and a sign-in with GitHub. The full stack in the rest of the repo (.NET + Python + PostgreSQL) stays as it is.
 
-**Status: work in progress.** Done: the forecasting engine and the Worker (sign-in with GitHub, database, CSV import, forecast,
-reorder), tested in Node and in the real Workers runtime. Next: the dashboard, the explanations and the questions. Nothing is deployed yet.
+**Status: private beta, work in progress.** Done: the forecasting engine, the Worker (sign-in with GitHub, database, CSV import,
+forecast, reorder) and the dashboard (English and Italian): products, CSV upload with the list of rejected rows, forecast with chart
+and backtest, reorder suggestion. Next: the plain-language explanations and the questions about the data. It is invite only, so there is
+no public address.
 
 ## Why a second implementation
 
@@ -88,7 +90,7 @@ never reach the repo): `SESSION_SECRET` (random text, at least 32 characters), `
 ```bash
 cd cloudflare
 npm install
-npm test          # 181 tests (vitest): engine, sessions, GitHub sign-in, API on a real SQLite database
+npm test          # 187 tests (vitest): engine, sessions, GitHub sign-in, API on a real SQLite database, dashboard files
 npm run typecheck # tsc
 npm run e2e       # the Worker in the real Workers runtime (workerd), locally, with the real Bread series
 ```
@@ -106,7 +108,7 @@ src/engine/   csv.ts (import rules), series.ts (daily series, gaps filled), mode
 src/worker/   index.ts (entry point), login.ts (GitHub sign-in), session.ts (signed cookie), auth.ts (who is calling),
               allowlist.ts, api.ts (routes), db.ts (queries), limits.ts, http.ts
 migrations/   0001_init.sql (the D1 schema)
-public/       the dashboard (a placeholder for now: sign in, sign out, and who you are)
+public/       the dashboard: index.html, app.js (no framework), app.css and fonts shared with the demo
 test/         one test file per module, a real SQLite database for the API, the Python reference numbers
 scripts/      e2e-local.mjs
 wrangler.jsonc  the Worker configuration (names, D1 binding, which routes run the Worker first)

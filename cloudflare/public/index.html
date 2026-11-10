@@ -2,71 +2,55 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0f1117">
+<meta name="robots" content="noindex">
 <title>Lumen-X</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
 <style>
-  body { font-family: system-ui, sans-serif; background: #0f1117; color: #fef4e2; margin: 0; padding: 3rem 1.25rem; }
-  main { max-width: 38rem; margin: 0 auto; }
-  h1 { color: #fcbb47; margin: 0 0 .25rem; }
-  p { line-height: 1.5; }
-  .muted { color: #b8ad98; }
-  .ok { color: #fcd479; }
-  a.button, button { display: inline-block; background: #fcbb47; color: #0f1117; border: 0; border-radius: .5rem; padding: .6rem 1rem; font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; }
-  button.quiet { background: transparent; color: #fcd479; border: 1px solid #36280d; }
-  [hidden] { display: none; }
+  .topbar { justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .topbar .left, .topbar .right { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
+  .toggle { display: inline-flex; padding: 3px; gap: 2px; background: var(--ink-0); border: 1px solid var(--line); border-radius: 999px; }
+  .toggle button { font: inherit; font-size: 0.88rem; padding: 0.3rem 0.85rem; border: 0; border-radius: 999px; background: transparent; color: var(--muted); cursor: pointer; }
+  .toggle button.on { background: var(--amber); color: #1a1204; font-weight: 650; }
+  .who { color: var(--amber-soft); font-size: 0.92rem; }
+  .btn-small { min-height: 2rem; padding: 0.25rem 0.8rem; font-size: 0.9rem; }
+  .btn-link { display: inline-flex; align-items: center; text-decoration: none; }
+  .product-list { list-style: none; margin: 0 0 1.5rem; padding: 0; display: grid; gap: 0.6rem; }
+  .product-list a { display: flex; justify-content: space-between; gap: 1rem; padding: 0.85rem 1.1rem; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--ink-2); text-decoration: none; color: var(--cream); }
+  .product-list a:hover { border-color: var(--amber); }
+  .product-list .meta { color: var(--muted); font-size: 0.88rem; }
+  .card + .card, .card + p { margin-top: 1.25rem; }
+  .alert-warn { color: var(--amber-soft); background: rgba(252, 187, 71, 0.07); border-color: var(--amber); }
+  details.fold { margin: 0.5rem 0 1rem; }
+  .danger { color: var(--err); border-color: var(--err); }
+  .hint { max-width: 70ch; }
 </style>
 </head>
 <body>
-<main>
-  <h1>Lumen-X</h1>
-  <p class="muted">Cloudflare edition: the dashboard is coming. This page only checks that the login and the API work.</p>
-  <p id="status">Checking the login…</p>
-  <p id="products" class="muted"></p>
-  <p>
-    <a id="signin" class="button" href="/auth/login" hidden>Sign in with GitHub</a>
-    <button id="signout" class="quiet" type="button" hidden>Sign out</button>
-  </p>
-</main>
-<script>
-  const status = document.getElementById('status');
-  const products = document.getElementById('products');
-  const signin = document.getElementById('signin');
-  const signout = document.getElementById('signout');
+<header class="topbar">
+  <div class="left">
+    <a class="brand" href="#/" aria-label="Lumen-X">
+      <svg class="brand-mark" viewBox="0 0 38 24" aria-hidden="true"><path class="m-line" d="M1.5 17 C5 6 8.5 20 13 12 S20 5 24 11"/><circle class="m-dot" cx="24" cy="11" r="3.2"/><path class="m-dash" d="M29 9 C31 5 33.5 11 36.5 4"/></svg>
+      Lumen-X
+    </a>
+    <span class="tagline" id="tagline"></span>
+  </div>
+  <div class="right">
+    <span class="who" id="who" hidden></span>
+    <button id="signout" class="btn btn-secondary btn-small" type="button" hidden></button>
+    <span class="toggle" role="group" aria-label="Language">
+      <button id="btn-en" type="button" class="on">EN</button><button id="btn-it" type="button">IT</button>
+    </span>
+  </div>
+</header>
 
-  signout.addEventListener('click', async () => {
-    await fetch('/auth/logout', { method: 'POST' });
-    location.reload();
-  });
+<main class="content" id="content"><p class="muted">Loading…</p></main>
+<footer class="footer" id="footer"></footer>
 
-  async function check() {
-    try {
-      const me = await fetch('/api/me');
-      if (me.status === 401) {
-        status.textContent = 'You are not signed in.';
-        signin.hidden = false;
-        return;
-      }
-      if (me.status === 403) {
-        status.textContent = 'This GitHub account is not allowed to use the app. Ask the owner to add it.';
-        signout.hidden = false;
-        return;
-      }
-      if (me.status === 503) {
-        status.textContent = 'The login is not configured yet.';
-        return;
-      }
-      if (!me.ok) throw new Error('HTTP ' + me.status);
-      const data = await me.json();
-      status.textContent = 'Signed in as @' + data.login + '.';
-      status.className = 'ok';
-      signout.hidden = false;
-      const list = await (await fetch('/api/products')).json();
-      products.textContent = list.length === 0 ? 'You have no products yet.' : 'You have ' + list.length + ' product(s).';
-    } catch (error) {
-      status.textContent = 'Something is not working yet (' + error.message + ').';
-    }
-  }
-  check();
-</script>
+<noscript><p style="padding:2rem">Lumen-X needs JavaScript.</p></noscript>
+<script src="app.js"></script>
 </body>
 </html>
