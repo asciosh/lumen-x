@@ -1,97 +1,62 @@
-import { SignJWT, createLocalJWKSet, exportJWK, generateKeyPair, type JWTVerifyGetKey } from "jose";
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { authenticate } from "../src/worker/auth";
+import { SESSION_COOKIE, createSession } from "../src/worker/session";
 
-const TEAM = "https://myteam.cloudflareaccess.com";
-const AUD = "a".repeat(64);
-const CONFIG = { ACCESS_TEAM_DOMAIN: TEAM, ACCESS_AUD: AUD };
+const SECRET = "s".repeat(40);
+const ALLOWED = "Alice, bob";
+const NOW = 1_800_000_000;
 
-let keys: JWTVerifyGetKey;
-let privateKey: CryptoKey;
-let otherPrivateKey: CryptoKey;
-
-beforeAll(async () => {
-  const pair = await generateKeyPair("RS256");
-  privateKey = pair.privateKey;
-  otherPrivateKey = (await generateKeyPair("RS256")).privateKey;
-  keys = createLocalJWKSet({ keys: [{ ...(await exportJWK(pair.publicKey)), alg: "RS256", use: "sig" }] });
-});
-
-function token(overrides: { email?: unknown; iss?: string; aud?: string; exp?: string | number; key?: CryptoKey; alg?: string } = {}) {
-  const jwt = new SignJWT({ email: "email" in overrides ? overrides.email : "Alice@Example.com" })
-    .setProtectedHeader({ alg: overrides.alg ?? "RS256" })
-    .setIssuer(overrides.iss ?? TEAM)
-    .setAudience(overrides.aud ?? AUD)
-    .setIssuedAt()
-    .setExpirationTime(overrides.exp ?? "1h");
-  return jwt.sign(overrides.key ?? privateKey);
-}
-
-const request = (jwt?: string) =>
-  new Request("https://lumenx.test/api/me", { headers: jwt === undefined ? {} : { "cf-access-jwt-assertion": jwt } });
-
-async function status(result: Awaited<ReturnType<typeof authenticate>>) {
-  return result.ok ? "ok" : result.response.status;
-}
+const request = (cookie?: string) => new Request("https://lumenx.test/api/me", { headers: cookie === undefined ? {} : { cookie } });
 
 describe("authenticate", () => {
-  it("accepts a valid token and returns the email in lower case", async () => {
-    const r = await authenticate(request(await token()), CONFIG, keys);
-    expect(r).toEqual({ ok: true, email: "alice@example.com" });
+  it("accepts a valid session and names the owner after the GitHub id", async () => {
+    const token = await createSession({ id: 42, login: "Alice" }, SECRET, NOW);
+    const r = await authenticate(request(`${SESSION_COOKIE}=${token}`), { SESSION_SECRET: SECRET, ALLOWED_GITHUB_USERS: ALLOWED }, NOW + 5);
+    expect(r).toEqual({ ok: true, owner: "github:42", login: "Alice" });
   });
 
-  it("refuses everything when the settings are missing (closed by default)", async () => {
-    for (const config of [{}, { ACCESS_TEAM_DOMAIN: TEAM }, { ACCESS_AUD: AUD }, { ACCESS_TEAM_DOMAIN: "", ACCESS_AUD: "" }]) {
-      expect(await status(await authenticate(request(await token()), config, keys))).toBe(503);
+  it("refuses everything when the secret is missing or too short (closed by default)", async () => {
+    const token = await createSession({ id: 42, login: "alice" }, SECRET, NOW);
+    for (const config of [{}, { SESSION_SECRET: "" }, { SESSION_SECRET: "short" }]) {
+      const r = await authenticate(request(`${SESSION_COOKIE}=${token}`), config, NOW);
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.response.status).toBe(503);
     }
   });
 
-  it("refuses a request without the token", async () => {
-    expect(await status(await authenticate(request(), CONFIG, keys))).toBe(401);
-    expect(await status(await authenticate(request(""), CONFIG, keys))).toBe(401);
+  it.each([["no cookie", undefined], ["other cookies only", "a=1; b=2"], ["garbage", `${SESSION_COOKIE}=nope`]])("refuses: %s", async (_label, cookie) => {
+    const r = await authenticate(request(cookie), { SESSION_SECRET: SECRET, ALLOWED_GITHUB_USERS: ALLOWED }, NOW);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.response.status).toBe(401);
   });
 
-  it("refuses garbage", async () => {
-    expect(await status(await authenticate(request("not-a-jwt"), CONFIG, keys))).toBe(401);
+  it("refuses an expired session and one signed with another secret", async () => {
+    const old = await createSession({ id: 1, login: "a" }, SECRET, NOW, 10);
+    const other = await createSession({ id: 1, login: "a" }, "z".repeat(40), NOW);
+    for (const token of [old, other]) {
+      const r = await authenticate(request(`${SESSION_COOKIE}=${token}`), { SESSION_SECRET: SECRET, ALLOWED_GITHUB_USERS: ALLOWED }, NOW + 20);
+      expect(r.ok).toBe(false);
+    }
   });
 
-  it("refuses a token signed with another key", async () => {
-    expect(await status(await authenticate(request(await token({ key: otherPrivateKey })), CONFIG, keys))).toBe(401);
+  it("locks out somebody who was removed from the list, even with a valid session", async () => {
+    const token = await createSession({ id: 42, login: "alice" }, SECRET, NOW);
+    for (const list of ["bob", "", undefined, "alic"]) {
+      const r = await authenticate(request(`${SESSION_COOKIE}=${token}`), { SESSION_SECRET: SECRET, ALLOWED_GITHUB_USERS: list }, NOW + 5);
+      expect(r.ok, String(list)).toBe(false);
+      if (!r.ok) expect(r.response.status).toBe(403);
+    }
   });
 
-  it("refuses a token for another application (wrong audience)", async () => {
-    expect(await status(await authenticate(request(await token({ aud: "b".repeat(64) })), CONFIG, keys))).toBe(401);
-  });
-
-  it("refuses a token from another team (wrong issuer)", async () => {
-    expect(await status(await authenticate(request(await token({ iss: "https://evil.cloudflareaccess.com" })), CONFIG, keys))).toBe(401);
-  });
-
-  it("refuses an expired token", async () => {
-    const past = Math.floor(Date.now() / 1000) - 3600;
-    expect(await status(await authenticate(request(await token({ exp: past })), CONFIG, keys))).toBe(401);
-  });
-
-  it("refuses a token without an email", async () => {
-    expect(await status(await authenticate(request(await token({ email: undefined })), CONFIG, keys))).toBe(401);
-    expect(await status(await authenticate(request(await token({ email: 42 })), CONFIG, keys))).toBe(401);
-    expect(await status(await authenticate(request(await token({ email: "  " })), CONFIG, keys))).toBe(401);
-  });
-
-  it("refuses an unsigned token (alg none)", async () => {
-    const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
-    const unsigned = `${b64({ alg: "none", typ: "JWT" })}.${b64({ email: "alice@example.com", iss: TEAM, aud: AUD, exp: 9999999999 })}.`;
-    expect(await status(await authenticate(request(unsigned), CONFIG, keys))).toBe(401);
-  });
-
-  it("accepts the team domain written with a trailing slash", async () => {
-    const r = await authenticate(request(await token()), { ACCESS_TEAM_DOMAIN: `${TEAM}/`, ACCESS_AUD: AUD }, keys);
+  it("compares the usernames without caring for the case", async () => {
+    const token = await createSession({ id: 42, login: "ALICE" }, SECRET, NOW);
+    const r = await authenticate(request(`${SESSION_COOKIE}=${token}`), { SESSION_SECRET: SECRET, ALLOWED_GITHUB_USERS: "alice" }, NOW + 5);
     expect(r.ok).toBe(true);
   });
 
-  it("does not say why a token was refused", async () => {
-    const r = await authenticate(request("not-a-jwt"), CONFIG, keys);
+  it("does not say why it refused", async () => {
+    const r = await authenticate(request(`${SESSION_COOKIE}=v1.a.b`), { SESSION_SECRET: SECRET, ALLOWED_GITHUB_USERS: ALLOWED }, NOW);
     if (r.ok) throw new Error("should have been refused");
-    expect(JSON.stringify(await r.response.json())).not.toMatch(/signature|expired|claim/i);
+    expect(JSON.stringify(await r.response.json())).not.toMatch(/signature|expired|secret/i);
   });
 });

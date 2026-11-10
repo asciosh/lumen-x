@@ -1,14 +1,14 @@
 -- Lumen-X, Cloudflare edition: database schema (D1 is SQLite).
--- Every product belongs to one user (the email Cloudflare Access verified); sales and forecasts belong to a product.
+-- Every product belongs to one user ("github:<numeric id>", from the GitHub login); sales and forecasts belong to a product.
 
 CREATE TABLE products (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
-  owner_email    TEXT NOT NULL,
+  owner          TEXT NOT NULL,
   name           TEXT NOT NULL,
   sku            TEXT,
   created_at_utc TEXT NOT NULL
 );
-CREATE UNIQUE INDEX ux_products_owner_name ON products (owner_email, name COLLATE NOCASE);
+CREATE UNIQUE INDEX ux_products_owner_name ON products (owner, name COLLATE NOCASE);
 
 CREATE TABLE sales (
   product_id INTEGER NOT NULL REFERENCES products (id) ON DELETE CASCADE,

@@ -4,11 +4,11 @@
   "main": "src/worker/index.ts",
   "compatibility_date": "2025-11-01",
 
-  // The dashboard (static files). Only /api/* runs the Worker code first.
+  // The dashboard (static files). The Worker code runs first only for the API and the login.
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/auth/*"]
   },
 
   // The database. Replace the id with the one of the D1 database you create (Storage & databases -> D1).
@@ -20,14 +20,15 @@
     }
   ],
 
-  // Login by Cloudflare Access. Both values are shown when you enable Access for the workers.dev address;
-  // they are identifiers, not secrets. While they are empty every request to /api is refused (closed by default).
-  "vars": {
-    "ACCESS_TEAM_DOMAIN": "",
-    "ACCESS_AUD": ""
-  },
+  // The login settings are NOT here: they are secrets. Set them in the dashboard (the Worker -> Settings ->
+  // Variables and secrets, type "Secret"), so that a deploy never overwrites them and they never reach the repo:
+  //   SESSION_SECRET         random text, at least 32 characters (signs the session cookies)
+  //   GITHUB_CLIENT_ID       from the GitHub OAuth app
+  //   GITHUB_CLIENT_SECRET   from the GitHub OAuth app
+  //   ALLOWED_GITHUB_USERS   the GitHub usernames that may sign in, for example: alice, bob
+  // While they are missing, every request to the API and to the login is refused (closed by default).
 
-  // Only the main address, which Access protects. Preview addresses would be public.
+  // Only the main address. Preview addresses would be public.
   "workers_dev": true,
   "preview_urls": false
 }

@@ -8,8 +8,10 @@ import { LIMITS } from "./limits";
 
 export interface ApiContext {
   db: Db;
-  /** The verified email of the user (lower case). */
+  /** Who owns the data: "github:<numeric id>". */
   owner: string;
+  /** The GitHub username, for display. */
+  login: string;
   now: () => Date;
 }
 
@@ -30,7 +32,7 @@ export async function handle(request: Request, ctx: ApiContext): Promise<Respons
   const store = new Store(ctx.db);
 
   if (url.pathname === "/api/me") {
-    return method === "GET" ? json({ email: ctx.owner }) : methodNotAllowed(["GET"]);
+    return method === "GET" ? json({ login: ctx.login }) : methodNotAllowed(["GET"]);
   }
 
   const match = /^\/api\/products(?:\/(\d+)(?:\/(sales\/import|sales|forecast|reorder))?)?$/.exec(url.pathname);

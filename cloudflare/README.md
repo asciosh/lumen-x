@@ -1,33 +1,39 @@
 # Lumen-X · Cloudflare edition
 
-A second implementation of Lumen-X that runs on the **free** Cloudflare plan: a Worker, a D1 database and
-Cloudflare Access for the login. The full stack in the rest of the repo (.NET + Python + PostgreSQL) stays as it is.
+A second implementation of Lumen-X that runs on the **free** Cloudflare plan, with no credit card: a Worker, a D1 database
+and a sign-in with GitHub. The full stack in the rest of the repo (.NET + Python + PostgreSQL) stays as it is.
 
-**Status: work in progress.** Done: the forecasting engine and the Worker API (login check, database, CSV import,
-forecast, reorder), tested in Node and in the real Workers runtime. Next: the dashboard, the explanations and the questions,
-and the setup guide for Cloudflare. Nothing is deployed yet.
+**Status: work in progress.** Done: the forecasting engine and the Worker (sign-in with GitHub, database, CSV import, forecast,
+reorder), tested in Node and in the real Workers runtime. Next: the dashboard, the explanations and the questions. Nothing is deployed yet.
 
 ## Why a second implementation
 
 The free Cloudflare plan cannot run ASP.NET Core, Python or PostgreSQL. It can run a Worker (JavaScript/TypeScript,
-about 10 ms of CPU per request on the free plan), a D1 database (SQLite) and, in front of them, Cloudflare Access
-(login by email code or Google, free up to 50 users, one click on a `workers.dev` address, no domain needed).
-So the engine had to be rewritten in TypeScript.
+about 10 ms of CPU per request on the free plan) and a D1 database (SQLite). So the engine had to be rewritten in TypeScript.
+
+The login is done by the Worker itself, with GitHub. Cloudflare has its own login service (Access, part of Zero Trust), but
+turning it on asks for a payment method, even on the free plan, and this edition is meant to need none.
 
 ## How it works
 
 ```
-browser ──► Cloudflare Access (login, email code) ──► Worker ──► D1
-                                                       │
-                                                       └─ static files of the dashboard (public/)
+browser ──► Worker ──► D1
+              │  └─ /auth/*  sign-in with GitHub (OAuth)
+              └─ static files of the dashboard (public/), served as they are
 ```
 
-- **Login.** Access logs the user in at the edge and adds a signed token to every request. The Worker checks that token
-  anyway (signature, issuer, audience, expiry) and takes the user's email from it. With the settings missing, every
-  request to the API is refused. Preview URLs are switched off, because they would be public.
-- **Every user sees only his own data.** Each product belongs to an email, and every query goes through it. Another user's
-  product answers *404*, never *403*, so its existence is not revealed.
-- **Cross-site requests are refused** (a POST whose `Origin` is not the site's own), so a page on another site cannot act with the user's login.
+- **Sign-in.** `/auth/login` sends the user to GitHub; GitHub sends him back to `/auth/callback` with a code, which the Worker
+  exchanges for who he is (only the public profile is asked: no permissions). If his GitHub username is on the owner's list,
+  the Worker gives him a signed session cookie (HttpOnly, Secure, SameSite=Lax, 14 days). Nothing is stored on the server.
+  A random `state`, tied to the browser that started the sign-in, stops a forged sign-in.
+- **The list is checked on every request**, not only at sign-in: removing a name locks that person out at once. Changing
+  `SESSION_SECRET` signs everybody out.
+- **Closed by default.** While a secret is missing, every request to the API and to the login is refused. Preview URLs are off,
+  because they would be public. The static page is public, but it holds no data: it only asks the API who you are.
+- **Every user sees only his own data.** Data belongs to the GitHub numeric id (not the username, which can change or be
+  taken by somebody else), and every query goes through it. Another user's product answers *404*, never *403*, so its
+  existence is not revealed.
+- **Cross-site requests are refused** (a POST whose `Origin` is not the site's own), so a page on another site cannot act with the user's session.
 
 ## The API
 
@@ -35,7 +41,7 @@ All answers are JSON; errors have the same shape as the .NET backend (`title`, `
 
 | Route | What it does |
 | --- | --- |
-| `GET /api/me` | the email of the user |
+| `GET /api/me` | the GitHub username of the user |
 | `GET /api/products`, `POST /api/products` | list, create (`{ "name": "...", "sku": "..." }`) |
 | `GET /api/products/:id`, `DELETE /api/products/:id` | read, delete (with its sales and forecasts) |
 | `POST /api/products/:id/sales/import` | upload a CSV (`multipart/form-data`, field `file`); same rules and messages as the .NET backend |
@@ -70,29 +76,38 @@ The TypeScript ETS is about 2.6% worse than statsmodels: it picks its parameters
 numerical optimizer, to stay around a millisecond of CPU. This edition has no average with LightGBM, which is about 10%
 better than its ETS on this series. It is still about 17% better than the naive method.
 
+## Setup on Cloudflare
+
+The Worker needs four **secrets** (Worker → Settings → Variables and secrets → type *Secret*; secrets survive every deploy and
+never reach the repo): `SESSION_SECRET` (random text, at least 32 characters), `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
+(from a GitHub OAuth app whose callback URL is `https://<your worker address>/auth/callback`) and `ALLOWED_GITHUB_USERS`
+(for example `alice, bob`). The database schema is in `migrations/0001_init.sql`; paste it in the D1 console.
+
 ## Run it
 
 ```bash
 cd cloudflare
 npm install
-npm test          # 142 tests (vitest): engine, login, API on a real SQLite database
+npm test          # 181 tests (vitest): engine, sessions, GitHub sign-in, API on a real SQLite database
 npm run typecheck # tsc
 npm run e2e       # the Worker in the real Workers runtime (workerd), locally, with the real Bread series
 ```
 
-`npm run e2e` starts the Worker with a local D1 database, signs login tokens with a throwaway key (a small local server
-plays the role of Cloudflare Access) and checks: login, isolation between users, CSV import of 1684 days, forecast, reorder,
-cross-site POST, tampered token. Nothing leaves your machine.
+`npm run e2e` starts the Worker with a local D1 database; a small local server plays the role of GitHub, so the whole sign-in runs
+for real. It checks: sign-in and cookie flags, a user that is not on the list, a forged sign-in, a tampered cookie, isolation
+between users, CSV import of 1684 days, forecast, reorder, cross-site POST and sign-out. Every run starts from a new temporary
+database. Nothing leaves your machine.
 
 ## Layout
 
 ```
 src/engine/   csv.ts (import rules), series.ts (daily series, gaps filled), models.ts (naive, ETS),
               forecast.ts (backtest, choice of method, interval), reorder.ts (safety stock)
-src/worker/   index.ts (entry point), auth.ts (login check), api.ts (routes), db.ts (queries), limits.ts, http.ts
+src/worker/   index.ts (entry point), login.ts (GitHub sign-in), session.ts (signed cookie), auth.ts (who is calling),
+              allowlist.ts, api.ts (routes), db.ts (queries), limits.ts, http.ts
 migrations/   0001_init.sql (the D1 schema)
-public/       the dashboard (a placeholder for now: it only shows who is signed in)
+public/       the dashboard (a placeholder for now: sign in, sign out, and who you are)
 test/         one test file per module, a real SQLite database for the API, the Python reference numbers
 scripts/      e2e-local.mjs
-wrangler.jsonc  the Worker configuration (names, D1 binding, Access settings)
+wrangler.jsonc  the Worker configuration (names, D1 binding, which routes run the Worker first)
 ```

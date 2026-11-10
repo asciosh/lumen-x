@@ -11,29 +11,59 @@
   p { line-height: 1.5; }
   .muted { color: #b8ad98; }
   .ok { color: #fcd479; }
+  a.button, button { display: inline-block; background: #fcbb47; color: #0f1117; border: 0; border-radius: .5rem; padding: .6rem 1rem; font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; }
+  button.quiet { background: transparent; color: #fcd479; border: 1px solid #36280d; }
+  [hidden] { display: none; }
 </style>
 </head>
 <body>
 <main>
   <h1>Lumen-X</h1>
   <p class="muted">Cloudflare edition: the dashboard is coming. This page only checks that the login and the API work.</p>
-  <p id="who">Checking the login…</p>
+  <p id="status">Checking the login…</p>
   <p id="products" class="muted"></p>
+  <p>
+    <a id="signin" class="button" href="/auth/login" hidden>Sign in with GitHub</a>
+    <button id="signout" class="quiet" type="button" hidden>Sign out</button>
+  </p>
 </main>
 <script>
+  const status = document.getElementById('status');
+  const products = document.getElementById('products');
+  const signin = document.getElementById('signin');
+  const signout = document.getElementById('signout');
+
+  signout.addEventListener('click', async () => {
+    await fetch('/auth/logout', { method: 'POST' });
+    location.reload();
+  });
+
   async function check() {
-    const who = document.getElementById('who');
-    const products = document.getElementById('products');
     try {
       const me = await fetch('/api/me');
+      if (me.status === 401) {
+        status.textContent = 'You are not signed in.';
+        signin.hidden = false;
+        return;
+      }
+      if (me.status === 403) {
+        status.textContent = 'This GitHub account is not allowed to use the app. Ask the owner to add it.';
+        signout.hidden = false;
+        return;
+      }
+      if (me.status === 503) {
+        status.textContent = 'The login is not configured yet.';
+        return;
+      }
       if (!me.ok) throw new Error('HTTP ' + me.status);
       const data = await me.json();
-      who.textContent = 'Signed in as ' + data.email + '.';
-      who.className = 'ok';
+      status.textContent = 'Signed in as @' + data.login + '.';
+      status.className = 'ok';
+      signout.hidden = false;
       const list = await (await fetch('/api/products')).json();
       products.textContent = list.length === 0 ? 'You have no products yet.' : 'You have ' + list.length + ' product(s).';
     } catch (error) {
-      who.textContent = 'The login or the API is not working yet (' + error.message + ').';
+      status.textContent = 'Something is not working yet (' + error.message + ').';
     }
   }
   check();

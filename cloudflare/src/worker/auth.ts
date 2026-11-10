@@ -1,62 +1,39 @@
-import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from "jose";
+import { isAllowed } from "./allowlist";
 import { problem, unauthorized } from "./http";
+import { MIN_SECRET_LENGTH, SESSION_COOKIE, parseCookies, readSession } from "./session";
 
-/** Settings of Cloudflare Access for this Worker (see wrangler.jsonc). */
-export interface AuthConfig {
-  /** For example "https://myteam.cloudflareaccess.com". */
-  ACCESS_TEAM_DOMAIN?: string;
-  /** The "Audience (AUD) tag" of the Access application. */
-  ACCESS_AUD?: string;
+export interface SessionConfig {
+  /** Random text of at least 32 characters, used to sign the session cookies. Keep it secret. */
+  SESSION_SECRET?: string;
+  /** The list of allowed GitHub usernames: checked on every request, so removing a name locks that person out at once. */
+  ALLOWED_GITHUB_USERS?: string;
 }
 
-export type AuthResult = { ok: true; email: string } | { ok: false; response: Response };
+export type AuthResult = { ok: true; owner: string; login: string } | { ok: false; response: Response };
 
-const remoteKeys = new Map<string, JWTVerifyGetKey>();
-
-function keysOf(teamDomain: string): JWTVerifyGetKey {
-  let keys = remoteKeys.get(teamDomain);
-  if (keys === undefined) {
-    keys = createRemoteJWKSet(new URL(`${teamDomain}/cdn-cgi/access/certs`));
-    remoteKeys.set(teamDomain, keys);
+export function sessionSecretProblem(secret: string | undefined): Response | null {
+  if (secret === undefined || secret.length < MIN_SECRET_LENGTH) {
+    return problem(503, "Login is not configured", "The session secret of this Worker is missing or too short.");
   }
-  return keys;
+  return null;
 }
 
 /**
- * Who is calling? Cloudflare Access logs the user in at the edge and adds a signed token to every request
- * (header Cf-Access-Jwt-Assertion). The token is checked here anyway: if someone changes the Access policy by mistake,
- * or reaches the Worker by another address, the requests still cannot pass without a valid token.
- *
- * Closed by default: with the settings missing, every request is refused.
- * `keys` is only for the tests (they sign tokens with their own key).
+ * Who is calling? The user logged in with GitHub and got a signed cookie (see login.ts).
+ * Closed by default: with the secret missing, every request is refused.
  */
-export async function authenticate(request: Request, config: AuthConfig, keys?: JWTVerifyGetKey): Promise<AuthResult> {
-  const teamDomain = config.ACCESS_TEAM_DOMAIN?.trim().replace(/\/+$/, "");
-  const audience = config.ACCESS_AUD?.trim();
-  if (!teamDomain || !audience) {
-    return {
-      ok: false,
-      response: problem(503, "Login is not configured", "The Cloudflare Access settings of this Worker are missing."),
-    };
+export async function authenticate(request: Request, config: SessionConfig, nowSeconds: number): Promise<AuthResult> {
+  const broken = sessionSecretProblem(config.SESSION_SECRET);
+  if (broken !== null) {
+    return { ok: false, response: broken };
   }
-
-  const token = request.headers.get("cf-access-jwt-assertion");
-  if (token === null || token.length === 0) {
-    return { ok: false, response: unauthorized("Missing login token.") };
+  const cookie = parseCookies(request.headers.get("cookie"))[SESSION_COOKIE];
+  const session = await readSession(cookie, config.SESSION_SECRET!, nowSeconds);
+  if (session === null) {
+    return { ok: false, response: unauthorized("You are not signed in.") };
   }
-
-  try {
-    const { payload } = await jwtVerify(token, keys ?? keysOf(teamDomain), {
-      issuer: teamDomain,
-      audience,
-      algorithms: ["RS256"],
-    });
-    const email = typeof payload["email"] === "string" ? payload["email"].trim().toLowerCase() : "";
-    if (email.length === 0) {
-      return { ok: false, response: unauthorized("The login token has no email.") };
-    }
-    return { ok: true, email };
-  } catch {
-    return { ok: false, response: unauthorized("Invalid login token.") };
+  if (!isAllowed(session.login, config.ALLOWED_GITHUB_USERS)) {
+    return { ok: false, response: problem(403, "Forbidden", "This account is not allowed to use the app (any more).") };
   }
+  return { ok: true, owner: `github:${session.id}`, login: session.login };
 }

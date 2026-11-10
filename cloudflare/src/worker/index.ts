@@ -1,8 +1,9 @@
 import { handle } from "./api";
-import { authenticate, type AuthConfig } from "./auth";
+import { authenticate } from "./auth";
 import type { Db } from "./db";
+import { defaultLoginDeps, handleAuth, type LoginConfig } from "./login";
 
-export interface Env extends AuthConfig {
+export interface Env extends LoginConfig {
   /** The D1 database (binding "DB" in wrangler.jsonc). */
   DB: Db;
   /** The static files of the dashboard (folder "public"). */
@@ -12,14 +13,18 @@ export interface Env extends AuthConfig {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(request.url);
+
+    if (pathname.startsWith("/auth/")) {
+      return handleAuth(request, env, defaultLoginDeps());
+    }
     if (!pathname.startsWith("/api/")) {
       return env.ASSETS.fetch(request);
     }
 
-    const auth = await authenticate(request, env);
+    const auth = await authenticate(request, env, Math.floor(Date.now() / 1000));
     if (!auth.ok) {
       return auth.response;
     }
-    return handle(request, { db: env.DB, owner: auth.email, now: () => new Date() });
+    return handle(request, { db: env.DB, owner: auth.owner, login: auth.login, now: () => new Date() });
   },
 };

@@ -8,8 +8,15 @@ const NOW = new Date("2026-11-10T10:00:00.000Z");
 
 let db: Db;
 
-/** Calls the API as a given (already verified) user. */
-async function call(owner: string, method: string, path: string, body?: unknown, headers: Record<string, string> = {}) {
+interface Who {
+  owner: string;
+  login: string;
+}
+const ALICE: Who = { owner: "github:1", login: "alice" };
+const BOB: Who = { owner: "github:2", login: "bob" };
+
+/** Calls the API as a given (already signed-in) user. */
+async function call(who: Who, method: string, path: string, body?: unknown, headers: Record<string, string> = {}) {
   const init: RequestInit = { method, headers };
   if (body instanceof FormData) {
     init.body = body;
@@ -17,13 +24,13 @@ async function call(owner: string, method: string, path: string, body?: unknown,
     init.body = JSON.stringify(body);
     init.headers = { "content-type": "application/json", ...headers };
   }
-  const res = await handle(new Request(`https://lumenx.test${path}`, init), { db, owner, now: () => NOW });
+  const res = await handle(new Request(`https://lumenx.test${path}`, init), { db, ...who, now: () => NOW });
   const text = await res.text();
   return { status: res.status, headers: res.headers, body: text.length > 0 ? JSON.parse(text) : null };
 }
 
-const alice = (method: string, path: string, body?: unknown, headers?: Record<string, string>) => call("alice@example.com", method, path, body, headers);
-const bob = (method: string, path: string, body?: unknown) => call("bob@example.com", method, path, body);
+const alice = (method: string, path: string, body?: unknown, headers?: Record<string, string>) => call(ALICE, method, path, body, headers);
+const bob = (method: string, path: string, body?: unknown) => call(BOB, method, path, body);
 
 function csvForm(text: string, field = "file", filename = "sales.csv"): FormData {
   const form = new FormData();
@@ -62,8 +69,8 @@ beforeEach(() => {
 });
 
 describe("/api/me", () => {
-  it("returns the email of the user", async () => {
-    expect((await alice("GET", "/api/me")).body).toEqual({ email: "alice@example.com" });
+  it("returns the GitHub username of the user", async () => {
+    expect((await alice("GET", "/api/me")).body).toEqual({ login: "alice" });
   });
 });
 
@@ -103,7 +110,7 @@ describe("products", () => {
 
   it("rejects a body that is not a JSON object", async () => {
     expect((await alice("POST", "/api/products", [1, 2])).status).toBe(400);
-    const res = await handle(new Request("https://lumenx.test/api/products", { method: "POST", body: "{oops" }), { db, owner: "alice@example.com", now: () => NOW });
+    const res = await handle(new Request("https://lumenx.test/api/products", { method: "POST", body: "{oops" }), { db, ...ALICE, now: () => NOW });
     expect(res.status).toBe(400);
   });
 

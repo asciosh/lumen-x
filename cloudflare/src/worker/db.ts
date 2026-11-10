@@ -41,7 +41,7 @@ export class Store {
 
   async listProducts(owner: string): Promise<ProductDto[]> {
     const { results } = await this.db
-      .prepare("SELECT id, name, sku, created_at_utc FROM products WHERE owner_email = ? ORDER BY name COLLATE NOCASE")
+      .prepare("SELECT id, name, sku, created_at_utc FROM products WHERE owner = ? ORDER BY name COLLATE NOCASE")
       .bind(owner)
       .all<ProductRow>();
     return results.map(toProduct);
@@ -49,14 +49,14 @@ export class Store {
 
   async getProduct(owner: string, id: number): Promise<ProductDto | null> {
     const row = await this.db
-      .prepare("SELECT id, name, sku, created_at_utc FROM products WHERE id = ? AND owner_email = ?")
+      .prepare("SELECT id, name, sku, created_at_utc FROM products WHERE id = ? AND owner = ?")
       .bind(id, owner)
       .first<ProductRow>();
     return row === null ? null : toProduct(row);
   }
 
   async countProducts(owner: string): Promise<number> {
-    const row = await this.db.prepare("SELECT COUNT(*) AS n FROM products WHERE owner_email = ?").bind(owner).first<{ n: number }>();
+    const row = await this.db.prepare("SELECT COUNT(*) AS n FROM products WHERE owner = ?").bind(owner).first<{ n: number }>();
     return row?.n ?? 0;
   }
 
@@ -64,7 +64,7 @@ export class Store {
   async createProduct(owner: string, name: string, sku: string | null, nowIso: string): Promise<ProductDto | null> {
     try {
       await this.db
-        .prepare("INSERT INTO products (owner_email, name, sku, created_at_utc) VALUES (?, ?, ?, ?)")
+        .prepare("INSERT INTO products (owner, name, sku, created_at_utc) VALUES (?, ?, ?, ?)")
         .bind(owner, name, sku, nowIso)
         .run();
     } catch (error) {
@@ -74,7 +74,7 @@ export class Store {
       throw error;
     }
     const row = await this.db
-      .prepare("SELECT id, name, sku, created_at_utc FROM products WHERE owner_email = ? AND name = ? COLLATE NOCASE")
+      .prepare("SELECT id, name, sku, created_at_utc FROM products WHERE owner = ? AND name = ? COLLATE NOCASE")
       .bind(owner, name)
       .first<ProductRow>();
     return toProduct(row!);
