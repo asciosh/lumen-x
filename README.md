@@ -119,6 +119,15 @@ Then open the dashboard on http://localhost:8081 (in a Codespace: Ports tab, por
 In a Codespace the sample data (a product with 240 days of synthetic sales and a forecast) is loaded for you. Elsewhere, after `docker compose up`, run `bash scripts/seed_demo.sh` to load it.
 
 Tests: `pytest` in `services/forecasting`, `dotnet test backend/tests/LumenX.Api.Tests` and `dotnet test dashboard/tests/LumenX.Dashboard.Tests`.
+`bash scripts/check_dev.sh` checks that the whole development environment is healthy (add `--tests` to run every suite).
+
+## Cloudflare edition (private beta)
+
+A second implementation in [`cloudflare/`](cloudflare/) runs on the **free** Cloudflare plan, with no credit card: a Worker, a D1 database and a
+sign-in with GitHub, so each invited person logs in and sees only his own products. It does the same things as the full stack (CSV upload,
+forecast with backtest, plain-language explanations, questions about the data, reorder suggestions, English and Italian) with two
+differences: it has no LightGBM (the average of ETS and LightGBM is about 10% better on the Bread series) and no Gemini. It is invite only, so
+there is no public address; see [`cloudflare/README.md`](cloudflare/README.md) for how it works, how it was tested and the setup.
 
 ## Roadmap
 
@@ -128,7 +137,8 @@ Tests: `pytest` in `services/forecasting`, `dotnet test backend/tests/LumenX.Api
 - [x] **LLM layer** for forecast explanations (Italian/English, Gemini optional)
 - [x] **Dashboard** (Blazor Server)
 - [x] Trial with real data (Kaggle Store Sales, rolling backtest)
-- [ ] Public deployment: not yet, on purpose (the app has no login). For now: the live demo above and a one-click Codespace.
+- [x] **Cloudflare edition**: free hosting with a login (sign-in with GitHub), the data of each user kept apart; invite-only beta
+- [ ] Open to everyone: not yet, on purpose (limits per user, daily question limit and a privacy review come first). For now: the live demo above, a one-click Codespace and the invite-only beta
 
 ## Results on real data
 

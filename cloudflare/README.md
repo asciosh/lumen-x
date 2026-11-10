@@ -103,7 +103,7 @@ everything of the account. If you change where the data lives (for example the D
 ```bash
 cd cloudflare
 npm install
-npm test          # 376 tests (vitest): engine, sessions, GitHub sign-in, API on a real SQLite database, dashboard files
+npm test          # 380 tests (vitest): engine, sessions, GitHub sign-in, API on a real SQLite database, dashboard files
 npm run typecheck # tsc
 npm run e2e       # the Worker in the real Workers runtime (workerd), locally, with the real Bread series
 ```
