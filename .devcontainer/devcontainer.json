@@ -13,5 +13,6 @@
     "8080": { "label": "Backend API", "onAutoForward": "silent" },
     "8000": { "label": "Forecasting service", "onAutoForward": "silent" }
   },
-  "postCreateCommand": "docker compose up -d --build && bash scripts/seed_demo.sh"
+  "postCreateCommand": "docker compose up -d --build && bash scripts/seed_demo.sh",
+  "postStartCommand": "bash -c 'for i in $(seq 1 30); do docker info >/dev/null 2>&1 && break; sleep 2; done; docker compose up -d'"
 }
