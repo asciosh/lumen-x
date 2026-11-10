@@ -451,7 +451,7 @@ input[type="file"]::file-selector-button {
 
   /* On a phone the chart scales instead of scrolling: the forecast must stay in view. */
   .chart { min-width: 0; }
-  .chart .tick { font-size: 24px; }
+  .chart .tick { font-size: 21px; }
   .chart .line-history, .chart .line-yhat { stroke-width: 4; }
   .chart .line-yhat { stroke-dasharray: 12 12; }
   .chart .dot { stroke-width: 4; }

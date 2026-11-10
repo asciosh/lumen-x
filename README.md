@@ -12,11 +12,11 @@
 
 **Lumen-X** is a sales forecasting system with an AI assistant that explains the numbers in plain language. Built for small businesses: shops, restaurants and small e-commerce stores.
 
-Upload your sales data, get reliable forecasts, and ask questions like:
+Upload your sales data, get forecasts with honest error estimates, and ask questions like:
 
-- *"How much should I reorder next week?"*
-- *"Why are March sales below forecast?"*
-- *"Which products are at risk of stocking out?"*
+- *"How much did I sell in the last 30 days?"*
+- *"What should I order?"*
+- *"How reliable is the forecast?"*
 
 ## Why I built this
 
@@ -128,7 +128,7 @@ Tests: `pytest` in `services/forecasting`, `dotnet test backend/tests/LumenX.Api
 - [x] **LLM layer** for forecast explanations (Italian/English, Gemini optional)
 - [x] **Dashboard** (Blazor Server)
 - [x] Trial with real data (Kaggle Store Sales, rolling backtest)
-- [ ] Deployment
+- [ ] Public deployment: not yet, on purpose (the app has no login). For now: the live demo above and a one-click Codespace.
 
 ## Results on real data
 

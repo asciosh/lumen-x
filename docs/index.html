@@ -28,10 +28,10 @@
   .toggle button { font: inherit; font-size: 0.88rem; padding: 0.3rem 0.85rem; border: 0; border-radius: 999px; background: transparent; color: var(--muted); cursor: pointer; }
   .toggle button.on { background: var(--amber); color: #1a1204; font-weight: 650; }
   .notice { margin: 0 0 1.5rem; padding: 0.7rem 1rem; max-width: 70ch; color: var(--amber-soft); background: rgba(252, 187, 71, 0.07); border: 1px solid rgba(252, 187, 71, 0.25); border-radius: var(--radius-s); font-size: 0.95rem; }
-  .lede { margin-bottom: 1.4rem; }
+  .lede { margin: 0 0 1.4rem; max-width: 62ch; }
   .err { color: var(--err); background: var(--err-bg); border-left: 3px solid var(--err); padding: 0.7rem 1rem; border-radius: var(--radius-s); }
   .source { margin-top: 0.2rem; }
-  #h-name { margin-bottom: 1.1rem; }
+  #h-name { margin-bottom: 0.5rem; }
 </style>
 </head>
 <body>
@@ -61,7 +61,8 @@
   var TEXT = {
     it: {
       tagline: 'Previsione vendite',
-      banner: 'Questa è una demo statica: i numeri sono stati esportati dall\'app vera, in esecuzione su dati di esempio (Kaggle Store Sales), quindi niente qui è calcolato in diretta. <a href="https://codespaces.new/asciosh/lumen-x">Prova l\'app vera in un Codespace di GitHub</a> · <a href="https://github.com/asciosh/lumen-x">Codice sorgente</a>',
+      banner: 'Demo statica: risultati veri dell\'app su dati di esempio, esportati in questa pagina. <a href="https://codespaces.new/asciosh/lumen-x">Prova l\'app vera in un Codespace</a> · <a href="https://github.com/asciosh/lumen-x">Codice sorgente</a>',
+      context: function (d) { return 'Vendite giornaliere di un prodotto di panetteria, dal dataset Kaggle Store Sales. Lo storico finisce il ' + d + '; la previsione parte il giorno dopo.'; },
       loading: 'Caricamento…', loadError: 'Impossibile caricare i dati della demo: ',
       forecast: 'Previsione', lead: function (days, total, avg) { return 'Prossimi ' + days + ' giorni: circa <strong>' + total + '</strong> unità, ' + avg + ' al giorno.'; },
       history: 'Storico', band: 'Fascia probabile (min–max)', chartNote: 'Ultimi 120 giorni di storico e previsione dei giorni successivi.',
@@ -77,7 +78,8 @@
     },
     en: {
       tagline: 'Sales forecasting',
-      banner: 'This is a static demo: the numbers were exported from the real app running on example data (Kaggle Store Sales), so nothing here is computed live. <a href="https://codespaces.new/asciosh/lumen-x">Try the real app in a GitHub Codespace</a> · <a href="https://github.com/asciosh/lumen-x">Source code</a>',
+      banner: 'Static demo: real outputs of the app on example data, exported to this page. <a href="https://codespaces.new/asciosh/lumen-x">Try the real app in a Codespace</a> · <a href="https://github.com/asciosh/lumen-x">Source code</a>',
+      context: function (d) { return 'Daily sales of a bakery product, from the Kaggle Store Sales dataset. The history ends on ' + d + '; the forecast starts the next day.'; },
       loading: 'Loading…', loadError: 'Could not load the demo data: ',
       forecast: 'Forecast', lead: function (days, total, avg) { return 'Next ' + days + ' days: about <strong>' + total + '</strong> units, ' + avg + ' per day.'; },
       history: 'History', band: 'Likely range (min–max)', chartNote: 'The last 120 days of history and the forecast for the days that follow.',
@@ -108,6 +110,11 @@
     var out = parts.length > 1 ? int + dec + parts[1] : int;
     return (neg && Number(s) !== 0 ? '-' : '') + out;
   }
+  // Full date in the language's style (Italian 15/08/2017, English 15 Aug 2017)
+  function fmtDate(iso) {
+    var p = iso.split('-'), months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return state.lang === 'it' ? p[2] + '/' + p[1] + '/' + p[0] : (+p[2]) + ' ' + months[+p[1] - 1] + ' ' + p[0];
+  }
   function dayNumber(iso) { var p = iso.split('-'); return Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000); }
   function shortDate(dn) { var d = new Date(dn * 86400000), pad = function (x) { return (x < 10 ? '0' : '') + x; };
     return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1) + '/' + pad(d.getUTCFullYear() % 100); }
@@ -124,7 +131,7 @@
   }
 
   function chartSvg(sales, fc, maxHist) {
-    var W = 800, H = 340, L = 58, R = 18, T = 18, B = 38;
+    var W = 800, H = 340, L = 72, R = 18, T = 18, B = 38;
     var hist = sales.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
     if (hist.length > maxHist) hist = hist.slice(hist.length - maxHist);
     var days = hist.map(function (p) { return dayNumber(p.date); }).concat(fc.map(function (p) { return dayNumber(p.date); }));
@@ -173,7 +180,8 @@
     var name = (state.expl.it && state.expl.it.facts && state.expl.it.facts.productName) ||
                (state.expl.en && state.expl.en.facts && state.expl.en.facts.productName) || 'Lumen-X';
 
-    var html = '<h1 id="h-name"></h1><section class="card stage"><h2>' + esc(t('forecast')) + '</h2>';
+    var lastDay = (state.sales && state.sales.length) ? state.sales.map(function (p) { return p.date; }).sort().pop() : null;
+    var html = '<h1 id="h-name"></h1>' + (lastDay ? '<p class="lede">' + esc(t('context')(fmtDate(lastDay))) + '</p>' : '') + '<section class="card stage"><h2>' + esc(t('forecast')) + '</h2>';
     if (fc.length) html += '<p class="lead">' + t('lead')(fc.length, num(total, 0), num(total / fc.length, 0)) + '</p>';
     html += '<div class="chart-wrap">' + chartSvg(state.sales || [], fc, 120) + '</div>';
     html += '<div class="legend"><span><i class="sw sw-history"></i> ' + esc(t('history')) + '</span><span><i class="sw sw-yhat"></i> ' + esc(t('forecast')) + '</span><span><i class="sw sw-band"></i> ' + esc(t('band')) + '</span></div>';
