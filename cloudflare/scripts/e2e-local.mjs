@@ -3,8 +3,10 @@
 // It starts the Worker locally with a local D1 database, signs login tokens with a throwaway key (a small local server
 // plays the role of Cloudflare Access), and calls the API with the real Bread series of docs/data/sales.json.
 import { spawn, spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import http from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { SignJWT, exportJWK, generateKeyPair } from "jose";
 
 const TEAM = "http://127.0.0.1:9911";
@@ -20,10 +22,19 @@ const check = (condition, message) => {
 
 const { publicKey, privateKey } = await generateKeyPair("RS256");
 const jwk = { ...(await exportJWK(publicKey)), alg: "RS256", use: "sig", kid: "k1" };
+// If a previous run left a Worker alive, the ports are taken and the results would be those of the old Worker.
+if (await fetch(BASE + "/").then(() => true, () => false)) {
+  console.error("Port 8799 is already in use: a previous run is still alive. Stop it (for example: pkill -x workerd) and try again.");
+  process.exit(1);
+}
 const accessStandIn = http
   .createServer((_, res) => {
     res.setHeader("content-type", "application/json");
     res.end(JSON.stringify({ keys: [jwk] }));
+  })
+  .on("error", (error) => {
+    console.error(`Cannot start the Access stand-in on port 9911: ${error.message}`);
+    process.exit(1);
   })
   .listen(9911);
 const token = (email) =>
@@ -54,17 +65,34 @@ async function call(email, method, path, body) {
   return { status: response.status, data };
 }
 
-// Fresh local database with the real schema.
-spawnSync("npx", ["wrangler", "d1", "execute", "lumenx", "--local", "--file=migrations/0001_init.sql"], { cwd: root, stdio: "ignore" });
+// A fresh, temporary local database every time, with the real schema: the run never depends on a previous one.
+const state = mkdtempSync(join(tmpdir(), "lumenx-e2e-"));
+const schema = spawnSync(
+  "npx",
+  ["wrangler", "d1", "execute", "lumenx", "--local", "--persist-to", state, "--file=migrations/0001_init.sql"],
+  { cwd: root, encoding: "utf8" },
+);
+if (schema.status !== 0) {
+  console.error("Could not create the local database:\n" + schema.stdout + schema.stderr);
+  process.exit(1);
+}
 const worker = spawn(
   "npx",
-  ["wrangler", "dev", "--local", "--port", "8799", "--var", `ACCESS_TEAM_DOMAIN:${TEAM}`, "--var", `ACCESS_AUD:${AUD}`],
-  { cwd: root, stdio: "ignore" },
+  ["wrangler", "dev", "--local", "--port", "8799", "--persist-to", state, "--var", `ACCESS_TEAM_DOMAIN:${TEAM}`, "--var", `ACCESS_AUD:${AUD}`],
+  // Own process group, so that the whole tree (npx, wrangler, workerd) can be stopped together.
+  { cwd: root, stdio: "ignore", detached: true },
 );
+let stopped = false;
 const stop = () => {
-  worker.kill("SIGTERM");
-  spawnSync("pkill", ["-f", "workerd"]);
+  if (stopped) return;
+  stopped = true;
+  try {
+    process.kill(-worker.pid, "SIGKILL");
+  } catch {
+    // already gone
+  }
   accessStandIn.close();
+  rmSync(state, { recursive: true, force: true });
 };
 process.on("exit", stop);
 
@@ -89,7 +117,10 @@ try {
   check(r.status === 200 && r.data.email === "alice@example.com", "valid token: /api/me");
 
   r = await call("alice@example.com", "POST", "/api/products", { name: "Bread" });
-  check(r.status === 201, "creates a product");
+  check(r.status === 201, `creates a product (status ${r.status}${r.data?.detail ? ": " + r.data.detail : ""})`);
+  if (r.status !== 201) {
+    throw new Error("cannot go on without a product");
+  }
   const id = r.data.id;
 
   const form = new FormData();
@@ -118,6 +149,9 @@ try {
   parts[2] = parts[2].slice(0, -4) + "AAAA";
   r = await fetch(BASE + "/api/me", { headers: { "cf-access-jwt-assertion": parts.join(".") } });
   check(r.status === 401, `tampered token: ${r.status} (expected 401)`);
+} catch (error) {
+  failures++;
+  console.log(`FAIL ${error.message}`);
 } finally {
   stop();
 }
