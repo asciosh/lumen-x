@@ -1,0 +1,33 @@
+{
+  // Lumen-X, Cloudflare edition. See README.md for the setup, step by step.
+  "name": "lumen-x",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2025-11-01",
+
+  // The dashboard (static files). Only /api/* runs the Worker code first.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+
+  // The database. Replace the id with the one of the D1 database you create (Storage & databases -> D1).
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "lumenx",
+      "database_id": "PUT-THE-ID-OF-YOUR-D1-DATABASE-HERE"
+    }
+  ],
+
+  // Login by Cloudflare Access. Both values are shown when you enable Access for the workers.dev address;
+  // they are identifiers, not secrets. While they are empty every request to /api is refused (closed by default).
+  "vars": {
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": ""
+  },
+
+  // Only the main address, which Access protects. Preview addresses would be public.
+  "workers_dev": true,
+  "preview_urls": false
+}
