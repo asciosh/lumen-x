@@ -83,4 +83,37 @@ describe("the dashboard files", () => {
     const forecast = runForecast(parsed.rows.map((r) => ({ date: r.date, quantity: r.quantity })), 28);
     expect(forecast.forecast).toHaveLength(28);
   });
+
+  describe("the CSV exports (export.js)", () => {
+    const module = { exports: {} as { salesCsv: (rows: unknown[]) => string; forecastCsv: (points: unknown[]) => string; fileName: (name: string, kind: string) => string } };
+    new Function("module", "window", read("export.js"))(module, undefined);
+    const { salesCsv, forecastCsv, fileName } = module.exports;
+
+    it("a sales file exported by the page can be imported again, exactly", () => {
+      const rows = [{ date: "2025-01-01", quantity: 12.5 }, { date: "2025-01-02", quantity: 0 }, { date: "2025-01-03", quantity: 1234.567 }];
+      const parsed = parseSalesCsv(salesCsv(rows));
+      expect(parsed.errors).toEqual([]);
+      expect(parsed.rows.map((r) => ({ date: r.date, quantity: r.quantity }))).toEqual(rows);
+    });
+
+    it("an empty list gives a valid file with only the header", () => {
+      const parsed = parseSalesCsv(salesCsv([]));
+      expect(parsed.fatalError).toBeUndefined();
+      expect(parsed.rows).toEqual([]);
+    });
+
+    it("the forecast file has the date, the forecast and the range, with two decimals", () => {
+      expect(forecastCsv([{ date: "2025-04-01", yhat: 150.456, lower: 140, upper: 160.999 }])).toBe("date,forecast,min,max\n2025-04-01,150.46,140,161\n");
+    });
+
+    it("file names are safe: lower case, no accents, no symbols, never empty", () => {
+      expect(fileName("Pane integrale", "sales")).toBe("pane-integrale-sales.csv");
+      expect(fileName("Caffè", "forecast")).toBe("caffe-forecast.csv");
+      expect(fileName('<img src=x onerror="a">', "sales")).toBe("img-src-x-onerror-a-sales.csv");
+      expect(fileName("../../etc/passwd", "sales")).toBe("etc-passwd-sales.csv");
+      expect(fileName("", "sales")).toBe("product-sales.csv");
+      expect(fileName("???", "sales")).toBe("product-sales.csv");
+      expect(fileName("x".repeat(100), "sales")).toBe(`${"x".repeat(40)}-sales.csv`);
+    });
+  });
 });

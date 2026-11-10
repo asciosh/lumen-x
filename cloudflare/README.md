@@ -5,8 +5,9 @@ and a sign-in with GitHub. The full stack in the rest of the repo (.NET + Python
 
 **Status: private beta.** Done: the forecasting engine, the Worker (sign-in with GitHub, database, CSV import, forecast, reorder,
 plain-language explanations, questions about the data) and the dashboard (English and Italian): products, CSV upload with the list of
-rejected rows, forecast with chart and backtest, explanation, reorder suggestion, questions with example chips, a privacy notice and a
-"delete all my data" button. It is invite only, so there is no public address.
+rejected rows, the sales day by day with a date filter, forecast with chart (hover a day to read its value), backtest, forecast day by
+day, explanation, reorder suggestion, questions with example chips, downloads of the sales and of the forecast as CSV, a one-click
+example product, a privacy notice and a "delete all my data" button. It is invite only, so there is no public address.
 
 ## Why a second implementation
 
@@ -126,7 +127,7 @@ src/engine/   csv.ts (import rules), series.ts (daily series, gaps filled), mode
 src/worker/   index.ts (entry point), login.ts (GitHub sign-in), session.ts (signed cookie), auth.ts (who is calling),
               allowlist.ts, api.ts (routes), db.ts (queries), limits.ts, http.ts
 migrations/   0001_init.sql (the D1 schema)
-public/       the dashboard: index.html, app.js (no framework), app.css and fonts shared with the demo, sample-sales.csv
+public/       the dashboard: index.html, app.js (no framework), export.js (the CSV files), app.css and fonts shared with the demo, sample-sales.csv
 test/         one test file per module, a real SQLite database for the API, the Python reference numbers
 scripts/      e2e-local.mjs
 wrangler.jsonc  the Worker configuration (names, D1 binding, which routes run the Worker first)

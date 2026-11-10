@@ -50,7 +50,17 @@
         'No AI service receives your data: the explanations and the answers are written by the app itself, from your numbers.',
         'Cookies: only the one that keeps you signed in (14 days) and a short one used during the sign-in.',
         'Deleting: you can delete a product from its page, or everything with the button below. Cloudflare may keep automatic database backups for a few days.'],
-      deleteAll: 'Delete all my data', confirmDeleteAll: 'Delete ALL your products, sales and forecasts? This cannot be undone.', deletedAll: 'All your data was deleted.'
+      deleteAll: 'Delete all my data', confirmDeleteAll: 'Delete ALL your products, sales and forecasts? This cannot be undone.', deletedAll: 'All your data was deleted.',
+      salesDaily: 'Sales day by day', from: 'From', to: 'To', apply: 'Apply', clear: 'Clear', date: 'Date', quantity: 'Quantity',
+      noSalesInPeriod: 'No sales in this period.',
+      showingLast: function (n) { return 'Showing the last ' + n + ' days.'; },
+      showingFirst: function (n, total) { return 'Showing ' + n + ' of ' + total + ' days (the most recent first).'; },
+      downloadSales: 'Download sales (CSV)', downloadForecast: 'Download forecast (CSV)',
+      forecastDaily: 'Forecast day by day', minCol: 'Min', maxCol: 'Max',
+      daysFilled: 'Days filled in', interval: 'Interval', computedOn: 'Computed on',
+      intervalText: function (level) { return 'about ' + Math.round(level * 100) + '% of the days should fall in the range'; },
+      exampleTitle: 'Try it with example data', exampleText: 'Creates a product with 240 days of invented sales and computes its forecast, so you can see everything working.',
+      exampleButton: 'Create an example product', exampleName: 'Example', creatingExample: 'Creating…'
     },
     it: {
       tagline: 'Previsione vendite', loading: 'Caricamento…',
@@ -98,7 +108,17 @@
         'Nessun servizio di intelligenza artificiale riceve i tuoi dati: le spiegazioni e le risposte le scrive l\'app stessa, a partire dai tuoi numeri.',
         'Cookie: solo quello che ti tiene collegato (14 giorni) e uno breve usato durante l\'accesso.',
         'Cancellazione: puoi eliminare un prodotto dalla sua pagina, o tutto con il pulsante qui sotto. Cloudflare può conservare per qualche giorno copie di sicurezza automatiche del database.'],
-      deleteAll: 'Cancella tutti i miei dati', confirmDeleteAll: 'Cancellare TUTTI i tuoi prodotti, vendite e previsioni? Non si può annullare.', deletedAll: 'Tutti i tuoi dati sono stati cancellati.'
+      deleteAll: 'Cancella tutti i miei dati', confirmDeleteAll: 'Cancellare TUTTI i tuoi prodotti, vendite e previsioni? Non si può annullare.', deletedAll: 'Tutti i tuoi dati sono stati cancellati.',
+      salesDaily: 'Vendite giorno per giorno', from: 'Dal', to: 'Al', apply: 'Applica', clear: 'Azzera', date: 'Data', quantity: 'Quantità',
+      noSalesInPeriod: 'Nessuna vendita in questo periodo.',
+      showingLast: function (n) { return 'Mostro gli ultimi ' + n + ' giorni.'; },
+      showingFirst: function (n, total) { return 'Mostro ' + n + ' giorni su ' + total + ' (i più recenti per primi).'; },
+      downloadSales: 'Scarica le vendite (CSV)', downloadForecast: 'Scarica la previsione (CSV)',
+      forecastDaily: 'Previsione giorno per giorno', minCol: 'Min', maxCol: 'Max',
+      daysFilled: 'Giorni riempiti', interval: 'Intervallo', computedOn: 'Calcolata il',
+      intervalText: function (level) { return 'circa il ' + Math.round(level * 100) + '% dei giorni dovrebbe cadere nella fascia'; },
+      exampleTitle: 'Provala con dati d\'esempio', exampleText: 'Crea un prodotto con 240 giorni di vendite inventate e ne calcola la previsione, così vedi tutto in funzione.',
+      exampleButton: 'Crea un prodotto d\'esempio', exampleName: 'Esempio', creatingExample: 'Creo…'
     }
   };
 
@@ -135,6 +155,17 @@
   function shortDate(dn) { var d = new Date(dn * 86400000); return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1) + '/' + pad(d.getUTCFullYear() % 100); }
   function fullDate(iso) { var p = iso.split('-'); return state.lang === 'it' ? p[2] + '/' + p[1] + '/' + p[0] : (+p[2]) + ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+p[1] - 1] + ' ' + p[0]; }
   function n2(v) { return String(Math.round(v * 100) / 100); }
+  function fmtDateTime(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    var day = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    return fullDate(day) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function download(filename, text) {
+    var url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
+    var a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
 
   // ---------- talking to the API ----------
   function api(method, path, body) {
@@ -202,6 +233,9 @@
     if (hist.length) s += '<polyline points="' + hist.map(function (p) { return pt(p.date, p.quantity); }).join(' ') + '" pathLength="1" class="line-history"/>';
     if (fc.length) s += '<polyline points="' + fc.map(function (p) { return pt(p.date, p.yhat); }).join(' ') + '" class="line-yhat"/>';
     if (hist.length && fc.length) { var last = hist[hist.length - 1]; s += '<circle cx="' + n2(X(dayNumber(last.date))) + '" cy="' + n2(Y(last.quantity)) + '" r="4.6" class="dot"/>'; }
+    // Invisible points with a tooltip: hover a day to read its value
+    hist.forEach(function (p) { s += '<circle class="hit" cx="' + n2(X(dayNumber(p.date))) + '" cy="' + n2(Y(p.quantity)) + '" r="5"><title>' + esc(fullDate(p.date) + ': ' + qty(p.quantity)) + '</title></circle>'; });
+    fc.forEach(function (p) { s += '<circle class="hit" cx="' + n2(X(dayNumber(p.date))) + '" cy="' + n2(Y(p.yhat)) + '" r="5"><title>' + esc(fullDate(p.date) + ': ' + qty(p.yhat) + ' (' + qty(p.lower) + '–' + qty(p.upper) + ')') + '</title></circle>'; });
     return s + '</svg>';
   }
 
@@ -241,9 +275,14 @@
   // ---------- the list of products ----------
   var MAX_PRODUCTS = 10;
 
+  // Every change of page gets a number: an answer that arrives after the user went elsewhere must not draw the old page on top.
+  var navigation = 0;
+
   function showList(flashHtml) {
+    var token = ++navigation;
     setContent('<p class="muted">' + esc(t('loading')) + '</p>');
     api('GET', '/api/products').then(function (res) {
+      if (token !== navigation) return;
       if (sessionLost(res)) return;
       if (!res.ok) { setContent(alertHtml('error', esc(problemText(res)))); return; }
       var list = res.data || [];
@@ -260,8 +299,10 @@
         '<label>' + esc(t('sku')) + '<input type="text" name="sku" maxlength="50"></label>' +
         '<button class="btn" type="submit">' + esc(t('create')) + '</button></div>' +
         '<p class="muted">' + esc(t('limitNote')(MAX_PRODUCTS)) + '</p><div id="new-product-msg"></div></form></section>';
+      html += '<section class="card"><h2>' + esc(t('exampleTitle')) + '</h2><p class="muted hint">' + esc(t('exampleText')) + '</p><p><button class="btn btn-secondary" type="button" id="example-product">' + esc(t('exampleButton')) + '</button></p><div id="example-msg"></div></section>';
       html += '<section class="card">' + privacyHtml() + '<p><button class="btn btn-secondary danger" type="button" id="delete-all">' + esc(t('deleteAll')) + '</button></p></section>';
       setContent(html);
+      el('example-product').addEventListener('click', createExample);
       el('delete-all').addEventListener('click', function () {
         if (!window.confirm(t('confirmDeleteAll'))) return;
         api('DELETE', '/api/me/data').then(function (r) {
@@ -286,8 +327,10 @@
   var view = null; // what the product page is showing right now
 
   function showProduct(id, flashHtml) {
+    var token = ++navigation;
     setContent('<p class="muted">' + esc(t('loading')) + '</p>');
     Promise.all([api('GET', '/api/products/' + id), api('GET', '/api/products/' + id + '/sales'), api('GET', '/api/products/' + id + '/forecast')]).then(function (r) {
+      if (token !== navigation) return;
       for (var i = 0; i < r.length; i++) if (sessionLost(r[i])) return;
       if (r[0].status === 404) { location.hash = '#/'; return; }
       if (!r[0].ok) { setContent(alertHtml('error', esc(problemText(r[0])))); return; }
@@ -306,6 +349,12 @@
     html += sales.length
       ? '<p>' + esc(t('salesSummary')(num(sales.length, 0), fullDate(sales[0].date), fullDate(sales[sales.length - 1].date))) + '</p>'
       : '<p class="muted">' + esc(t('noSales')) + '</p>';
+    if (sales.length) {
+      html += '<details class="fold" id="sales-fold"><summary><h3 style="margin:0">' + esc(t('salesDaily')) + '</h3></summary>' +
+        '<div class="row"><label>' + esc(t('from')) + '<input type="date" id="sales-from"></label><label>' + esc(t('to')) + '<input type="date" id="sales-to"></label>' +
+        '<button class="btn btn-secondary" type="button" id="sales-apply">' + esc(t('apply')) + '</button><button class="btn btn-secondary" type="button" id="sales-clear">' + esc(t('clear')) + '</button>' +
+        '<button class="btn btn-secondary" type="button" id="sales-download">' + esc(t('downloadSales')) + '</button></div><div id="sales-table"></div></details>';
+    }
     html += '<h3>' + esc(t('importTitle')) + '</h3><p class="muted hint">' + esc(t('importHelp')) + '</p>' +
       '<details class="fold"><summary><h3 style="margin:0">' + esc(t('formatTitle')) + '</h3></summary><pre><code>' + esc(SAMPLE) + '</code></pre><p><a href="sample-sales.csv" download>' + esc(t('sampleLink')) + '</a></p></details>' +
       '<form id="import-form"><div class="row"><label>CSV<input type="file" name="file" accept=".csv,text/csv,text/plain"></label>' +
@@ -343,6 +392,12 @@
     el('forecast-form').addEventListener('submit', onForecast);
     el('reorder-form').addEventListener('submit', function (ev) { ev.preventDefault(); loadReorder(); });
     el('delete-product').addEventListener('click', onDelete);
+    if (el('sales-fold')) {
+      el('sales-apply').addEventListener('click', paintSalesTable);
+      el('sales-clear').addEventListener('click', function () { el('sales-from').value = ''; el('sales-to').value = ''; paintSalesTable(); });
+      el('sales-download').addEventListener('click', function () { download(LumenExport.fileName(view.product.name, 'sales'), LumenExport.salesCsv(view.sales)); });
+      paintSalesTable();
+    }
     el('ask-form').addEventListener('submit', function (ev) { ev.preventDefault(); askQuestion(el('ask-input').value); });
     el('chips').addEventListener('click', function (ev) { var b = ev.target.closest ? ev.target.closest('.chip') : null; if (b) askQuestion(EXAMPLES[state.lang][+b.getAttribute('data-i')]); });
     paintForecast();
@@ -373,6 +428,42 @@
       if (view.turns.length > 8) view.turns.pop();
       el('ask-input').value = '';
       renderTurns();
+    });
+  }
+
+  var SALES_ROWS_SHOWN = 15, SALES_ROWS_MAX = 200;
+  function paintSalesTable() {
+    var from = el('sales-from').value, to = el('sales-to').value, box = el('sales-table');
+    var rows = view.sales.filter(function (r) { return (!from || r.date >= from) && (!to || r.date <= to); }).reverse();   // newest first
+    var filtered = !!(from || to), shown = rows.slice(0, filtered ? SALES_ROWS_MAX : SALES_ROWS_SHOWN);
+    if (rows.length === 0) { box.innerHTML = '<p class="muted">' + esc(t('noSalesInPeriod')) + '</p>'; return; }
+    box.innerHTML = '<div class="scroll"><table class="table"><thead><tr><th>' + esc(t('date')) + '</th><th class="num">' + esc(t('quantity')) + '</th></tr></thead><tbody>' +
+      shown.map(function (r) { return '<tr><td>' + esc(fullDate(r.date)) + '</td><td class="num">' + qty(r.quantity) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+      '<p class="muted">' + esc(rows.length > shown.length ? t('showingFirst')(shown.length, num(rows.length, 0)) : (filtered ? '' : t('showingLast')(shown.length))) + '</p>';
+  }
+
+  // One click: a product with the example file, and its forecast
+  function createExample() {
+    var button = el('example-product'), msg = el('example-msg');
+    button.disabled = true; button.textContent = t('creatingExample'); msg.innerHTML = '';
+    function fail(res) { button.disabled = false; button.textContent = t('exampleButton'); if (!sessionLost(res)) msg.innerHTML = alertHtml('error', esc(problemText(res))); }
+    function create(n) {
+      var name = t('exampleName') + (n > 1 ? ' ' + n : '');
+      return api('POST', '/api/products', { name: name }).then(function (res) { return res.status === 409 && n < 5 ? create(n + 1) : res; });
+    }
+    create(1).then(function (res) {
+      if (res.status !== 201) { fail(res); return; }
+      var id = res.data.id;
+      fetch('sample-sales.csv').then(function (r) { return r.blob(); }).then(function (blob) {
+        var fd = new FormData(); fd.append('file', blob, 'sample-sales.csv');
+        return api('POST', '/api/products/' + id + '/sales/import', fd);
+      }).then(function (imp) {
+        if (!imp.ok) { fail(imp); return; }
+        return api('POST', '/api/products/' + id + '/forecast', { horizon: 28 }).then(function (fc) {
+          if (fc.status !== 201) { fail(fc); return; }
+          location.hash = '#/p/' + id;
+        });
+      }).catch(function () { fail({ status: 0, data: null }); });
     });
   }
 
@@ -425,8 +516,14 @@
     html += '<p class="muted">' + esc(t('chartNote')(Math.min(120, view.sales.length))) + '</p>';
     html += '<dl class="facts"><div><dt>' + esc(t('methodUsed')) + '</dt><dd><strong>' + esc(f.methodUsed) + '</strong></dd></div>' +
       '<div><dt>' + esc(t('horizonLabel')) + '</dt><dd>' + esc(t('daysN')(f.horizon)) + '</dd></div>' +
-      '<div><dt>' + esc(t('checkedOn')) + '</dt><dd>' + esc(t('daysN')(f.holdoutDays)) + '</dd></div></dl>';
+      '<div><dt>' + esc(t('checkedOn')) + '</dt><dd>' + esc(t('daysN')(f.holdoutDays)) + '</dd></div>' +
+      '<div><dt>' + esc(t('daysFilled')) + '</dt><dd>' + esc(num(f.filledMissingDays, 0)) + '</dd></div>' +
+      '<div><dt>' + esc(t('interval')) + '</dt><dd>' + esc(t('intervalText')(f.intervalLevel)) + '</dd></div>' +
+      '<div><dt>' + esc(t('computedOn')) + '</dt><dd>' + esc(fmtDateTime(f.createdAtUtc)) + '</dd></div></dl>';
     if (f.filledMissingDays > 0) html += '<p class="muted">' + esc(t('filled')(f.filledMissingDays)) + '</p>';
+    html += '<details class="fold"><summary><h3 style="margin:0">' + esc(t('forecastDaily')) + '</h3></summary><div class="scroll"><table class="table"><thead><tr><th>' + esc(t('date')) + '</th><th class="num">' + esc(t('forecastWord')) + '</th><th class="num">' + esc(t('minCol')) + '</th><th class="num">' + esc(t('maxCol')) + '</th></tr></thead><tbody>' +
+      fc.map(function (p) { return '<tr><td>' + esc(fullDate(p.date)) + '</td><td class="num">' + qty(p.yhat) + '</td><td class="num">' + qty(p.lower) + '</td><td class="num">' + qty(p.upper) + '</td></tr>'; }).join('') +
+      '</tbody></table></div><p><button class="btn btn-secondary btn-small" type="button" id="forecast-download">' + esc(t('downloadForecast')) + '</button></p></details>';
     html += '<h3>' + esc(t('explanationTitle')) + '</h3><div class="explanation" id="explanation">' + esc(t('loading')) + '</div><p class="muted source">' + esc(t('explanationSource')) + '</p>';
     var names = Object.keys(f.backtest || {});
     if (names.length) {
@@ -438,6 +535,7 @@
       html += '</tbody></table>';
     }
     box.innerHTML = html;
+    el('forecast-download').addEventListener('click', function () { download(LumenExport.fileName(view.product.name, 'forecast'), LumenExport.forecastCsv(f.forecast)); });
     card.hidden = false;
     loadExplanation();
     loadReorder();

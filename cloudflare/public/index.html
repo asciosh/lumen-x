@@ -27,6 +27,8 @@
   details.fold { margin: 0.5rem 0 1rem; }
   .danger { color: var(--err); border-color: var(--err); }
   .hint { max-width: 70ch; }
+  .chart .hit { fill: transparent; stroke: none; }
+  .chart .hit:hover { fill: rgba(252, 187, 71, 0.35); }
 </style>
 </head>
 <body>
@@ -51,6 +53,7 @@
 <footer class="footer" id="footer"></footer>
 
 <noscript><p style="padding:2rem">Lumen-X needs JavaScript.</p></noscript>
+<script src="export.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
