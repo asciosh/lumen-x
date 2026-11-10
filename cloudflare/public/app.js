@@ -8,6 +8,7 @@
       tagline: 'Sales forecasting', loading: 'Loading…',
       signIn: 'Sign in with GitHub', signOut: 'Sign out',
       signedOutTitle: 'Sign in',
+      demoLink: 'No invitation? See the public demo (example data, no sign-in).',
       signedOutText: 'Lumen-X is in private beta. Sign in with your GitHub account: only the people invited by the owner can enter.',
       forbidden: 'This GitHub account is not allowed to use the app. Ask the owner to add it.',
       notConfigured: 'The login is not configured yet.',
@@ -66,6 +67,7 @@
       tagline: 'Previsione vendite', loading: 'Caricamento…',
       signIn: 'Accedi con GitHub', signOut: 'Esci',
       signedOutTitle: 'Accedi',
+      demoLink: 'Non hai un invito? Guarda la demo pubblica (dati d\'esempio, senza accedere).',
       signedOutText: 'Lumen-X è in beta privata. Accedi con il tuo account GitHub: possono entrare solo le persone invitate dal proprietario.',
       forbidden: 'Questo account GitHub non può usare l\'app. Chiedi al proprietario di aggiungerlo.',
       notConfigured: 'Il login non è ancora configurato.',
@@ -121,6 +123,9 @@
       exampleButton: 'Crea un prodotto d\'esempio', exampleName: 'Esempio', creatingExample: 'Creo…'
     }
   };
+
+  // The public demo (GitHub Pages): real outputs of the full app on example data, readable without signing in.
+  var DEMO_URL = 'https://asciosh.github.io/lumen-x/';
 
   var SAMPLE = 'date,quantity\n2025-01-01,12\n2025-01-02,15\n2025-01-03,9\n…';
 
@@ -259,7 +264,8 @@
 
   function showSignedOut() {
     state.user = null; paintChrome();
-    setContent('<section class="card"><h2>' + esc(t('signedOutTitle')) + '</h2><p class="muted hint">' + esc(t('signedOutText')) + '</p><p><a class="btn btn-link" href="/auth/login">' + esc(t('signIn')) + '</a></p>' + privacyHtml() + '</section>');
+    setContent('<section class="card"><h2>' + esc(t('signedOutTitle')) + '</h2><p class="muted hint">' + esc(t('signedOutText')) + '</p><p><a class="btn btn-link" href="/auth/login">' + esc(t('signIn')) + '</a></p>' +
+      '<p class="muted"><a href="' + DEMO_URL + '" rel="noopener">' + esc(t('demoLink')) + '</a></p>' + privacyHtml() + '</section>');
   }
   function showForbidden() {
     state.user = null; paintChrome();
