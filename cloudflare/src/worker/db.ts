@@ -89,6 +89,15 @@ export class Store {
     ]);
   }
 
+  /** Deletes every product of a user, with its sales and forecasts: "delete all my data". */
+  async deleteAllForOwner(owner: string): Promise<void> {
+    await this.db.batch([
+      this.db.prepare("DELETE FROM forecast_runs WHERE product_id IN (SELECT id FROM products WHERE owner = ?)").bind(owner),
+      this.db.prepare("DELETE FROM sales WHERE product_id IN (SELECT id FROM products WHERE owner = ?)").bind(owner),
+      this.db.prepare("DELETE FROM products WHERE owner = ?").bind(owner),
+    ]);
+  }
+
   async countSales(productId: number): Promise<number> {
     const row = await this.db.prepare("SELECT COUNT(*) AS n FROM sales WHERE product_id = ?").bind(productId).first<{ n: number }>();
     return row?.n ?? 0;

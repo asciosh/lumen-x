@@ -1,4 +1,7 @@
+import { answer } from "../engine/chat/answer";
+import { detectLanguage, normalize } from "../engine/chat/question";
 import { parseSalesCsv } from "../engine/csv";
+import { buildFacts, explain, normalizeLanguage, type Language } from "../engine/explain";
 import { runForecast } from "../engine/forecast";
 import { calculateReorder } from "../engine/reorder";
 import { SeriesError, type MethodRequest } from "../engine/types";
@@ -18,7 +21,10 @@ export interface ApiContext {
 const METHODS: readonly MethodRequest[] = ["auto", "naive", "ets"];
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-/** Routes of the API: /api/me, /api/products, /api/products/:id, .../sales, .../sales/import, .../forecast, .../reorder */
+/**
+ * Routes of the API: /api/me, /api/me/data, /api/products, /api/products/:id, .../sales, .../sales/import, .../forecast,
+ * .../forecast/explanation, .../reorder, .../ask
+ */
 export async function handle(request: Request, ctx: ApiContext): Promise<Response> {
   const url = new URL(request.url);
   const method = request.method.toUpperCase();
@@ -34,8 +40,14 @@ export async function handle(request: Request, ctx: ApiContext): Promise<Respons
   if (url.pathname === "/api/me") {
     return method === "GET" ? json({ login: ctx.login }) : methodNotAllowed(["GET"]);
   }
+  if (url.pathname === "/api/me/data") {
+    // "Delete all my data": every product of this user, with its sales and forecasts.
+    if (method !== "DELETE") return methodNotAllowed(["DELETE"]);
+    await store.deleteAllForOwner(ctx.owner);
+    return new Response(null, { status: 204 });
+  }
 
-  const match = /^\/api\/products(?:\/(\d+)(?:\/(sales\/import|sales|forecast|reorder))?)?$/.exec(url.pathname);
+  const match = /^\/api\/products(?:\/(\d+)(?:\/(sales\/import|sales|forecast\/explanation|forecast|reorder|ask))?)?$/.exec(url.pathname);
   if (match === null) {
     return notFound();
   }
@@ -69,8 +81,12 @@ export async function handle(request: Request, ctx: ApiContext): Promise<Respons
       if (method === "GET") return latestForecast(store, product);
       if (method === "POST") return createForecast(request, ctx, store, product);
       return methodNotAllowed(["GET", "POST"]);
+    case "forecast/explanation":
+      return method === "GET" ? explanation(url, store, product) : methodNotAllowed(["GET"]);
     case "reorder":
       return method === "GET" ? reorder(url, store, product) : methodNotAllowed(["GET"]);
+    case "ask":
+      return method === "POST" ? ask(request, store, product) : methodNotAllowed(["POST"]);
     default:
       return notFound();
   }
@@ -245,4 +261,57 @@ async function reorder(url: URL, store: Store, product: ProductDto): Promise<Res
 
   const outcome = calculateReorder(run, lead, review, level, onHand, zeroPercent);
   return outcome.ok ? json({ forecastRunId: run.id, ...outcome.suggestion }) : invalid(outcome.error);
+}
+
+/** The explanation of the latest forecast, written by the code (no AI): ?lang=it|en (default it). */
+async function explanation(url: URL, store: Store, product: ProductDto): Promise<Response> {
+  const language = normalizeLanguage(url.searchParams.get("lang"));
+  if (language === null) {
+    return invalid("'lang' must be 'it' or 'en'.");
+  }
+  const run = await store.latestForecast(product.id);
+  if (run === null) {
+    return notFound("No forecast has been computed for this product yet.");
+  }
+  const sales = await store.listSales(product.id, null, null);
+  if (sales.length === 0 || run.forecast.length === 0) {
+    return invalid("Sales or forecast points are missing: the explanation cannot be built.");
+  }
+  const facts = buildFacts(product.name, sales, run);
+  return json({ forecastRunId: run.id, language, text: explain(facts, language), source: "template", note: null, facts });
+}
+
+const MIN_QUESTION_LENGTH = 3;
+const MAX_QUESTION_LENGTH = 300;
+
+/** Questions about the data, answered by rules (no AI). Body: { "question": "...", "language": "it" | "en" } (the language is optional). */
+async function ask(request: Request, store: Store, product: ProductDto): Promise<Response> {
+  const body = await readJsonObject(request);
+  if (body instanceof Response) return body;
+
+  const question = typeof body["question"] === "string" ? body["question"].trim() : "";
+  if (question.length < MIN_QUESTION_LENGTH || question.length > MAX_QUESTION_LENGTH) {
+    return invalid(`Write a question of at least ${MIN_QUESTION_LENGTH} and at most ${MAX_QUESTION_LENGTH} characters.`);
+  }
+
+  let language: Language;
+  const requested = body["language"];
+  if (requested === undefined || requested === null || (typeof requested === "string" && requested.trim().length === 0)) {
+    language = detectLanguage(normalize(question));
+  } else {
+    const normalized = typeof requested === "string" ? normalizeLanguage(requested) : null;
+    if (normalized === null) return invalid("'language' must be 'it' or 'en'.");
+    language = normalized;
+  }
+
+  const sales = await store.listSales(product.id, null, null);
+  const run = await store.latestForecast(product.id);
+  const zeroDays = sales.filter((s) => s.quantity === 0).length;
+  const result = answer(question, language, {
+    productName: product.name,
+    sales,
+    forecast: run,
+    zeroDaysPercent: sales.length === 0 ? 0 : (zeroDays * 100) / sales.length,
+  });
+  return json({ question, language, intent: result.intent, understood: result.understood, answer: result.text, suggestions: result.suggestions });
 }

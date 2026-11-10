@@ -12,3 +12,6 @@ export {
   type ReorderOutcome,
   type ReorderSuggestion,
 } from "./reorder";
+export * from "./explain";
+export { answer, examples, type AskAnswer, type AskContext } from "./chat/answer";
+export { type DataIntent } from "./chat/intent";

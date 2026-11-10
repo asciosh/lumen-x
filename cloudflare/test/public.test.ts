@@ -1,5 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { examples } from "../src/engine/chat/answer";
+import { parseSalesCsv } from "../src/engine/csv";
+import { runForecast } from "../src/engine/forecast";
 
 const read = (file: string) => readFileSync(new URL(`../public/${file}`, import.meta.url), "utf8");
 const app = read("app.js");
@@ -50,5 +53,34 @@ describe("the dashboard files", () => {
   it("never builds the page from user text without escaping", () => {
     // Every place that puts a product name, a SKU or a server message into HTML goes through esc().
     expect(app).not.toMatch(/innerHTML\s*=\s*[^;]*\b(p\.name|view\.product\.name|e\.message)\b(?![^;]*esc\()/);
+  });
+
+  it("the example questions of the page are the ones the engine understands", () => {
+    const from = app.indexOf("var EXAMPLES = ");
+    const to = app.indexOf("\n  };", from);
+    const chips = new Function(`return ${app.slice(from + "var EXAMPLES = ".length, to + 4)}`)() as Record<string, string[]>;
+    expect(chips["en"]).toEqual([...examples("en")]);
+    expect(chips["it"]).toEqual([...examples("it")]);
+  });
+
+  it("the privacy notice has the same points in both languages and says what matters", () => {
+    const { en, it } = dictionary();
+    const [a, b] = [en["privacy"] as string[], it["privacy"] as string[]];
+    expect(a.length).toBe(b.length);
+    expect(a.length).toBeGreaterThanOrEqual(5);
+    const text = a.join(" ");
+    for (const piece of ["What is stored", "Where", "No AI service", "Cookies", "Deleting"]) expect(text).toContain(piece);
+    expect(text).toContain("could technically read it");
+  });
+
+  it("the example CSV is valid and enough for a forecast", () => {
+    expect(existsSync(new URL("../public/sample-sales.csv", import.meta.url))).toBe(true);
+    expect(app).toContain('href="sample-sales.csv"');
+    const parsed = parseSalesCsv(read("sample-sales.csv"));
+    expect(parsed.fatalError).toBeUndefined();
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.rows).toHaveLength(240);
+    const forecast = runForecast(parsed.rows.map((r) => ({ date: r.date, quantity: r.quantity })), 28);
+    expect(forecast.forecast).toHaveLength(28);
   });
 });

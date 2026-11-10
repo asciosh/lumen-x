@@ -39,7 +39,18 @@
       leadTime: 'Days for delivery', reviewDays: 'Days between orders', serviceLevel: 'Service level', onHand: 'Current stock (optional)', calculate: 'Calculate',
       rPeriod: 'Period to cover', rDemand: 'Expected demand in the period', rSafety: function (p) { return 'Safety stock (' + p + '%)'; }, rLevel: 'Maximum level', rOrder: 'Suggested order',
       intermittent: 'This product often sells nothing for whole days: its forecast and this suggestion are less reliable.',
-      footer: 'Lumen-X · Cloudflare edition · private beta'
+      footer: 'Lumen-X · Cloudflare edition · private beta',
+      explanationTitle: 'Explanation', explanationSource: 'Written by the app from the numbers above (no AI).',
+      askTitle: 'Ask your data', askNote: 'Questions about this product\'s sales and forecast, answered by the app with fixed rules (no AI): it only uses your numbers.',
+      askLabel: 'Your question', askPlaceholder: 'For example: How much did I sell in the last 30 days?', askButton: 'Ask', asking: 'Thinking…',
+      sampleLink: 'Download an example file (240 days)',
+      privacyTitle: 'Privacy',
+      privacy: ['What is stored: the products you create, their daily sales and forecasts, and the numeric id of your GitHub account (to know whose they are). Not your email, and no analytics or tracking.',
+        'Where: in a database of Cloudflare, the service this app runs on. Each account only sees its own data in the app, but the owner of this beta runs the database and could technically read it: upload only data you are comfortable sharing.',
+        'No AI service receives your data: the explanations and the answers are written by the app itself, from your numbers.',
+        'Cookies: only the one that keeps you signed in (14 days) and a short one used during the sign-in.',
+        'Deleting: you can delete a product from its page, or everything with the button below. Cloudflare may keep automatic database backups for a few days.'],
+      deleteAll: 'Delete all my data', confirmDeleteAll: 'Delete ALL your products, sales and forecasts? This cannot be undone.', deletedAll: 'All your data was deleted.'
     },
     it: {
       tagline: 'Previsione vendite', loading: 'Caricamento…',
@@ -76,11 +87,28 @@
       leadTime: 'Giorni di consegna', reviewDays: 'Giorni tra un ordine e l\'altro', serviceLevel: 'Livello di servizio', onHand: 'Scorta attuale (facoltativa)', calculate: 'Calcola',
       rPeriod: 'Periodo da coprire', rDemand: 'Domanda prevista nel periodo', rSafety: function (p) { return 'Scorta di sicurezza (' + p + '%)'; }, rLevel: 'Livello massimo', rOrder: 'Ordine suggerito',
       intermittent: 'Questo prodotto spesso non vende niente per giorni interi: la sua previsione e questo suggerimento sono meno affidabili.',
-      footer: 'Lumen-X · edizione Cloudflare · beta privata'
+      footer: 'Lumen-X · edizione Cloudflare · beta privata',
+      explanationTitle: 'Spiegazione', explanationSource: 'Scritta dall\'app a partire dai numeri qui sopra (senza AI).',
+      askTitle: 'Chiedi ai tuoi dati', askNote: 'Domande sulle vendite e sulla previsione di questo prodotto, a cui l\'app risponde con regole fisse (senza AI): usa solo i tuoi numeri.',
+      askLabel: 'La tua domanda', askPlaceholder: 'Per esempio: Quanto ho venduto negli ultimi 30 giorni?', askButton: 'Chiedi', asking: 'Sto pensando…',
+      sampleLink: 'Scarica un file d\'esempio (240 giorni)',
+      privacyTitle: 'Privacy',
+      privacy: ['Cosa viene salvato: i prodotti che crei, le loro vendite giornaliere e le previsioni, e l\'id numerico del tuo account GitHub (per sapere di chi sono). Non la tua email, e nessuna analisi o tracciamento.',
+        'Dove: in un database di Cloudflare, il servizio su cui gira questa app. Ogni account vede nell\'app solo i propri dati, ma chi gestisce questa beta amministra il database e potrebbe tecnicamente leggerlo: carica solo dati che ti va di condividere.',
+        'Nessun servizio di intelligenza artificiale riceve i tuoi dati: le spiegazioni e le risposte le scrive l\'app stessa, a partire dai tuoi numeri.',
+        'Cookie: solo quello che ti tiene collegato (14 giorni) e uno breve usato durante l\'accesso.',
+        'Cancellazione: puoi eliminare un prodotto dalla sua pagina, o tutto con il pulsante qui sotto. Cloudflare può conservare per qualche giorno copie di sicurezza automatiche del database.'],
+      deleteAll: 'Cancella tutti i miei dati', confirmDeleteAll: 'Cancellare TUTTI i tuoi prodotti, vendite e previsioni? Non si può annullare.', deletedAll: 'Tutti i tuoi dati sono stati cancellati.'
     }
   };
 
   var SAMPLE = 'date,quantity\n2025-01-01,12\n2025-01-02,15\n2025-01-03,9\n…';
+
+  // Example questions the app is sure to understand (the same as the engine: a test keeps them equal).
+  var EXAMPLES = {
+    en: ['How much did I sell in the last 30 days?', 'How are sales doing compared to last month?', 'Which day of the week sells best?', 'How much will I sell in the next 2 weeks?', 'What should I order?', 'How reliable is the forecast?', 'Explain the forecast', 'What was my record day?'],
+    it: ['Quanto ho venduto negli ultimi 30 giorni?', 'Come vanno le vendite rispetto al mese scorso?', 'Qual è il giorno più forte della settimana?', 'Quanto prevedo di vendere nelle prossime 2 settimane?', 'Cosa conviene ordinare?', 'Quanto è affidabile la previsione?', 'Spiegami la previsione', 'Qual è stato il giorno record?']
+  };
 
   var state = { lang: initialLang(), user: null };
 
@@ -190,9 +218,14 @@
     if (state.user) el('who').textContent = '@' + state.user;
   }
 
+  function privacyHtml() {
+    return '<details class="fold"><summary><h3 style="margin:0">' + esc(t('privacyTitle')) + '</h3></summary><ul class="hint">' +
+      t('privacy').map(function (line) { return '<li>' + esc(line) + '</li>'; }).join('') + '</ul></details>';
+  }
+
   function showSignedOut() {
     state.user = null; paintChrome();
-    setContent('<section class="card"><h2>' + esc(t('signedOutTitle')) + '</h2><p class="muted hint">' + esc(t('signedOutText')) + '</p><p><a class="btn btn-link" href="/auth/login">' + esc(t('signIn')) + '</a></p></section>');
+    setContent('<section class="card"><h2>' + esc(t('signedOutTitle')) + '</h2><p class="muted hint">' + esc(t('signedOutText')) + '</p><p><a class="btn btn-link" href="/auth/login">' + esc(t('signIn')) + '</a></p>' + privacyHtml() + '</section>');
   }
   function showForbidden() {
     state.user = null; paintChrome();
@@ -208,13 +241,13 @@
   // ---------- the list of products ----------
   var MAX_PRODUCTS = 10;
 
-  function showList() {
+  function showList(flashHtml) {
     setContent('<p class="muted">' + esc(t('loading')) + '</p>');
     api('GET', '/api/products').then(function (res) {
       if (sessionLost(res)) return;
       if (!res.ok) { setContent(alertHtml('error', esc(problemText(res)))); return; }
       var list = res.data || [];
-      var html = '<h1>' + esc(t('yourProducts')) + '</h1>';
+      var html = '<h1>' + esc(t('yourProducts')) + '</h1>' + (flashHtml || '');
       if (list.length === 0) {
         html += '<p class="muted hint">' + esc(t('noProducts')) + '</p>';
       } else {
@@ -227,7 +260,16 @@
         '<label>' + esc(t('sku')) + '<input type="text" name="sku" maxlength="50"></label>' +
         '<button class="btn" type="submit">' + esc(t('create')) + '</button></div>' +
         '<p class="muted">' + esc(t('limitNote')(MAX_PRODUCTS)) + '</p><div id="new-product-msg"></div></form></section>';
+      html += '<section class="card">' + privacyHtml() + '<p><button class="btn btn-secondary danger" type="button" id="delete-all">' + esc(t('deleteAll')) + '</button></p></section>';
       setContent(html);
+      el('delete-all').addEventListener('click', function () {
+        if (!window.confirm(t('confirmDeleteAll'))) return;
+        api('DELETE', '/api/me/data').then(function (r) {
+          if (sessionLost(r)) return;
+          if (r.status === 204) { showList(alertHtml('ok', esc(t('deletedAll')))); return; }
+          el('new-product-msg').innerHTML = alertHtml('error', esc(problemText(r)));
+        });
+      });
       el('new-product').addEventListener('submit', function (ev) {
         ev.preventDefault();
         var form = ev.target;
@@ -265,7 +307,7 @@
       ? '<p>' + esc(t('salesSummary')(num(sales.length, 0), fullDate(sales[0].date), fullDate(sales[sales.length - 1].date))) + '</p>'
       : '<p class="muted">' + esc(t('noSales')) + '</p>';
     html += '<h3>' + esc(t('importTitle')) + '</h3><p class="muted hint">' + esc(t('importHelp')) + '</p>' +
-      '<details class="fold"><summary><h3 style="margin:0">' + esc(t('formatTitle')) + '</h3></summary><pre><code>' + esc(SAMPLE) + '</code></pre></details>' +
+      '<details class="fold"><summary><h3 style="margin:0">' + esc(t('formatTitle')) + '</h3></summary><pre><code>' + esc(SAMPLE) + '</code></pre><p><a href="sample-sales.csv" download>' + esc(t('sampleLink')) + '</a></p></details>' +
       '<form id="import-form"><div class="row"><label>CSV<input type="file" name="file" accept=".csv,text/csv,text/plain"></label>' +
       '<button class="btn" type="submit" id="import-button">' + esc(t('importButton')) + '</button></div><div id="import-msg"></div></form></section>';
 
@@ -286,14 +328,52 @@
       '<label>' + esc(t('onHand')) + '<input type="number" name="onhand" min="0" step="any"></label>' +
       '<button class="btn" type="submit">' + esc(t('calculate')) + '</button></div></form><div id="reorder-result"></div></section>';
 
+    // questions about the data
+    html += '<section class="card chat"><h2>' + esc(t('askTitle')) + '</h2><p class="muted">' + esc(t('askNote')) + '</p>' +
+      '<form class="ask" id="ask-form"><label>' + esc(t('askLabel')) + '<input type="text" id="ask-input" maxlength="300" autocomplete="off" placeholder="' + esc(t('askPlaceholder')) + '"></label>' +
+      '<button class="btn" type="submit" id="ask-button">' + esc(t('askButton')) + '</button></form>' +
+      '<div class="chips" id="chips">' + EXAMPLES[state.lang].map(function (q, i) { return '<button type="button" class="chip" data-i="' + i + '">' + esc(q) + '</button>'; }).join('') + '</div>' +
+      '<div id="ask-msg"></div><div id="turns"></div></section>';
+
     html += '<p><button class="btn btn-secondary danger" type="button" id="delete-product">' + esc(t('deleteProduct')) + '</button></p>';
     setContent(html);
+    view.turns = [];
 
     el('import-form').addEventListener('submit', onImport);
     el('forecast-form').addEventListener('submit', onForecast);
     el('reorder-form').addEventListener('submit', function (ev) { ev.preventDefault(); loadReorder(); });
     el('delete-product').addEventListener('click', onDelete);
+    el('ask-form').addEventListener('submit', function (ev) { ev.preventDefault(); askQuestion(el('ask-input').value); });
+    el('chips').addEventListener('click', function (ev) { var b = ev.target.closest ? ev.target.closest('.chip') : null; if (b) askQuestion(EXAMPLES[state.lang][+b.getAttribute('data-i')]); });
     paintForecast();
+  }
+
+  // ---------- questions about the data ----------
+  function renderTurns() {
+    var box = el('turns'); box.textContent = '';
+    view.turns.forEach(function (turn) {
+      var d = document.createElement('div'); d.className = 'turn';
+      var q = document.createElement('p'); q.className = 'q'; q.textContent = turn.q;   // always as text
+      var a = document.createElement('p'); a.className = 'a'; a.textContent = turn.a;
+      d.appendChild(q); d.appendChild(a); box.appendChild(d);
+    });
+  }
+
+  function askQuestion(text) {
+    var question = String(text || '').trim();
+    if (question.length === 0) return;
+    var button = el('ask-button'), chips = el('chips').querySelectorAll('.chip');
+    function busy(on) { button.disabled = on; button.textContent = on ? t('asking') : t('askButton'); chips.forEach(function (c) { c.disabled = on; }); }
+    busy(true); el('ask-msg').innerHTML = '';
+    api('POST', '/api/products/' + view.id + '/ask', { question: question, language: state.lang }).then(function (res) {
+      busy(false);
+      if (sessionLost(res)) return;
+      if (!res.ok) { el('ask-msg').innerHTML = alertHtml('error', esc(problemText(res))); return; }
+      view.turns.unshift({ q: question, a: res.data.answer });
+      if (view.turns.length > 8) view.turns.pop();
+      el('ask-input').value = '';
+      renderTurns();
+    });
   }
 
   function onImport(ev) {
@@ -347,6 +427,7 @@
       '<div><dt>' + esc(t('horizonLabel')) + '</dt><dd>' + esc(t('daysN')(f.horizon)) + '</dd></div>' +
       '<div><dt>' + esc(t('checkedOn')) + '</dt><dd>' + esc(t('daysN')(f.holdoutDays)) + '</dd></div></dl>';
     if (f.filledMissingDays > 0) html += '<p class="muted">' + esc(t('filled')(f.filledMissingDays)) + '</p>';
+    html += '<h3>' + esc(t('explanationTitle')) + '</h3><div class="explanation" id="explanation">' + esc(t('loading')) + '</div><p class="muted source">' + esc(t('explanationSource')) + '</p>';
     var names = Object.keys(f.backtest || {});
     if (names.length) {
       html += '<h3>' + esc(t('reliable')) + '</h3><p class="muted">' + esc(t('reliableNote')) + '</p><table class="table narrow"><thead><tr><th></th><th class="num">MAE</th><th class="num">RMSE</th></tr></thead><tbody>';
@@ -358,7 +439,19 @@
     }
     box.innerHTML = html;
     card.hidden = false;
+    loadExplanation();
     loadReorder();
+  }
+
+  function loadExplanation() {
+    var id = view.id;
+    api('GET', '/api/products/' + id + '/forecast/explanation?lang=' + state.lang).then(function (res) {
+      var target = el('explanation');
+      if (!target || view.id !== id) return;          // the page changed meanwhile
+      if (sessionLost(res)) return;
+      if (res.ok) target.textContent = res.data.text; // always as text
+      else target.textContent = problemText(res);
+    });
   }
 
   function loadReorder() {

@@ -3,10 +3,10 @@
 A second implementation of Lumen-X that runs on the **free** Cloudflare plan, with no credit card: a Worker, a D1 database
 and a sign-in with GitHub. The full stack in the rest of the repo (.NET + Python + PostgreSQL) stays as it is.
 
-**Status: private beta, work in progress.** Done: the forecasting engine, the Worker (sign-in with GitHub, database, CSV import,
-forecast, reorder) and the dashboard (English and Italian): products, CSV upload with the list of rejected rows, forecast with chart
-and backtest, reorder suggestion. Next: the plain-language explanations and the questions about the data. It is invite only, so there is
-no public address.
+**Status: private beta.** Done: the forecasting engine, the Worker (sign-in with GitHub, database, CSV import, forecast, reorder,
+plain-language explanations, questions about the data) and the dashboard (English and Italian): products, CSV upload with the list of
+rejected rows, forecast with chart and backtest, explanation, reorder suggestion, questions with example chips, a privacy notice and a
+"delete all my data" button. It is invite only, so there is no public address.
 
 ## Why a second implementation
 
@@ -50,7 +50,10 @@ All answers are JSON; errors have the same shape as the .NET backend (`title`, `
 | `GET /api/products/:id/sales?from=&to=` | the daily sales |
 | `POST /api/products/:id/forecast` | `{ "horizon": 28, "method": "auto" }` (both optional); saves and returns the forecast with its backtest |
 | `GET /api/products/:id/forecast` | the latest forecast |
+| `GET /api/products/:id/forecast/explanation?lang=it\|en` | the explanation of the latest forecast, written by the code (no AI) |
 | `GET /api/products/:id/reorder?leadTimeDays=7&reviewDays=7&serviceLevel=95&onHand=` | the reorder suggestion (safety stock) |
+| `POST /api/products/:id/ask` | `{ "question": "...", "language": "it" }`: a question about the data (the language is optional), answered by rules |
+| `DELETE /api/me/data` | deletes every product of the user, with its sales and forecasts |
 
 **Limits per user** (so a runaway upload cannot use up the free plan): 10 products, 1 MB and 5,000 rows per upload,
 3,650 days of sales per product; only the last 5 forecasts of a product are kept.
@@ -63,6 +66,8 @@ All answers are JSON; errors have the same shape as the .NET backend (`title`, `
 | Backtest | 3 consecutive windows, pooled errors | the same windows, the same rules |
 | Interval | 80% band: forecast ± 1.2816 × backtest RMSE | the same |
 | CSV import, reorder suggestion | yes | yes, same rules and same messages |
+| Explanations | rewritten by Gemini if a key is set, otherwise written by the code | written by the code (no AI): the same text as the full stack without Gemini |
+| Questions about the data | 8 kinds of questions, answered by rules | the same 8 kinds, the same answers |
 
 **Accuracy.** On the real Bread series of the demo (1684 days, 3 windows of 28 days, the 4 missing Christmas days filled in),
 the error (RMSE) is:
@@ -85,12 +90,19 @@ never reach the repo): `SESSION_SECRET` (random text, at least 32 characters), `
 (from a GitHub OAuth app whose callback URL is `https://<your worker address>/auth/callback`) and `ALLOWED_GITHUB_USERS`
 (for example `alice, bob`). The database schema is in `migrations/0001_init.sql`; paste it in the D1 console.
 
+## Privacy
+
+The dashboard shows a privacy notice before and after the sign-in. In short: the app stores the products, daily sales and forecasts of
+each account and the numeric GitHub id (not the email); there is no analytics; no AI service receives the data; the owner of the
+installation runs the database and could technically read it; every product can be deleted, and the button "Delete all my data" removes
+everything of the account. If you change where the data lives (for example the D1 location), update the text in `public/app.js`.
+
 ## Run it
 
 ```bash
 cd cloudflare
 npm install
-npm test          # 187 tests (vitest): engine, sessions, GitHub sign-in, API on a real SQLite database, dashboard files
+npm test          # 376 tests (vitest): engine, sessions, GitHub sign-in, API on a real SQLite database, dashboard files
 npm run typecheck # tsc
 npm run e2e       # the Worker in the real Workers runtime (workerd), locally, with the real Bread series
 ```
@@ -100,15 +112,21 @@ for real. It checks: sign-in and cookie flags, a user that is not on the list, a
 between users, CSV import of 1684 days, forecast, reorder, cross-site POST and sign-out. Every run starts from a new temporary
 database. Nothing leaves your machine.
 
+`test/reference.test.ts` compares the answers to the questions (16 of them, in Italian and English), the facts of the explanation and
+the reorder suggestions with what the real .NET app computed on the same Bread series (`docs/data/*.json`, exported from the running
+backend): the texts are identical character by character.
+
 ## Layout
 
 ```
 src/engine/   csv.ts (import rules), series.ts (daily series, gaps filled), models.ts (naive, ETS),
-              forecast.ts (backtest, choice of method, interval), reorder.ts (safety stock)
+              forecast.ts (backtest, choice of method, interval), reorder.ts (safety stock),
+              explain.ts (facts and the written explanation, Italian and English),
+              chat/ (the questions about the data: question text, intent, period, answers)
 src/worker/   index.ts (entry point), login.ts (GitHub sign-in), session.ts (signed cookie), auth.ts (who is calling),
               allowlist.ts, api.ts (routes), db.ts (queries), limits.ts, http.ts
 migrations/   0001_init.sql (the D1 schema)
-public/       the dashboard: index.html, app.js (no framework), app.css and fonts shared with the demo
+public/       the dashboard: index.html, app.js (no framework), app.css and fonts shared with the demo, sample-sales.csv
 test/         one test file per module, a real SQLite database for the API, the Python reference numbers
 scripts/      e2e-local.mjs
 wrangler.jsonc  the Worker configuration (names, D1 binding, which routes run the Worker first)

@@ -430,3 +430,169 @@ describe("protection", () => {
     expect((await alice("GET", "/api/products")).body).toHaveLength(1);
   });
 });
+
+describe("explanation", () => {
+  async function productWithForecast(owner: typeof alice = alice, name = "Bread") {
+    const id = await newProduct(owner, name);
+    await owner("POST", `/api/products/${id}/sales/import`, csvForm(noisyCsv(200)));
+    await owner("POST", `/api/products/${id}/forecast`, { horizon: 28 });
+    return id;
+  }
+
+  it("is written by the code, in Italian by default and in English on request", async () => {
+    const id = await productWithForecast();
+    const it = await alice("GET", `/api/products/${id}/forecast/explanation`);
+    expect(it.status).toBe(200);
+    expect(it.body).toMatchObject({ forecastRunId: 1, language: "it", source: "template", note: null });
+    expect(it.body.text).toContain("Per «Bread» prevedo circa");
+    expect(it.body.text).toContain("28 giorni");
+    expect(it.body.facts).toMatchObject({ productName: "Bread", historyDays: 200, horizon: 28 });
+
+    const en = await alice("GET", `/api/products/${id}/forecast/explanation?lang=EN`);
+    expect(en.body.language).toBe("en");
+    expect(en.body.text).toContain("For “Bread” I forecast about");
+  });
+
+  it("the numbers in the text are the ones of the forecast", async () => {
+    const id = await productWithForecast();
+    const run = (await alice("GET", `/api/products/${id}/forecast`)).body;
+    const total = run.forecast.reduce((s: number, p: { yhat: number }) => s + p.yhat, 0);
+    const text = (await alice("GET", `/api/products/${id}/forecast/explanation?lang=en`)).body.text as string;
+    expect(text).toContain(Math.round(total).toLocaleString("en-US"));
+  });
+
+  it("needs a forecast, and a supported language", async () => {
+    const id = await newProduct(alice);
+    expect((await alice("GET", `/api/products/${id}/forecast/explanation`)).status).toBe(404);
+    const withForecast = await productWithForecast(alice, "Pasta");
+    const bad = await alice("GET", `/api/products/${withForecast}/forecast/explanation?lang=fr`);
+    expect(bad.status).toBe(422);
+    expect(bad.body.detail).toBe("'lang' must be 'it' or 'en'.");
+  });
+
+  it("is only for the owner, and only a GET", async () => {
+    const id = await productWithForecast();
+    expect((await bob("GET", `/api/products/${id}/forecast/explanation`)).status).toBe(404);
+    expect((await alice("POST", `/api/products/${id}/forecast/explanation`)).status).toBe(405);
+  });
+});
+
+describe("questions about the data", () => {
+  async function productWithForecast(owner: typeof alice = alice, name = "Bread") {
+    const id = await newProduct(owner, name);
+    await owner("POST", `/api/products/${id}/sales/import`, csvForm(noisyCsv(200)));
+    await owner("POST", `/api/products/${id}/forecast`, { horizon: 28 });
+    return id;
+  }
+  const askIt = (id: number, question: unknown, language?: unknown, owner: typeof alice = alice) => owner("POST", `/api/products/${id}/ask`, { question, language });
+
+  it("answers in the language of the request", async () => {
+    const id = await productWithForecast();
+    const it = await askIt(id, "Quanto ho venduto negli ultimi 30 giorni?", "it");
+    expect(it.status).toBe(200);
+    expect(it.body).toMatchObject({ question: "Quanto ho venduto negli ultimi 30 giorni?", language: "it", intent: "sales_total", understood: true, suggestions: [] });
+    expect(it.body.answer).toMatch(/^Dal \d{2}\/\d{2}\/\d{4} al 19\/07\/2025 \(30 giorni\) hai venduto /);
+
+    const en = await askIt(id, "How much did I sell in the last 30 days?", "en");
+    expect(en.body.answer).toMatch(/^From \d+ \w{3} 2025 to 19 Jul 2025 \(30 days\) you sold /);
+  });
+
+  it("detects the language from the question when it is not given", async () => {
+    const id = await productWithForecast();
+    expect((await askIt(id, "What should I order?")).body.language).toBe("en");
+    expect((await askIt(id, "Cosa conviene ordinare?")).body.language).toBe("it");
+    expect((await askIt(id, "Cosa conviene ordinare?", "")).body.language).toBe("it");
+    expect((await askIt(id, "What should I order?", null)).body.language).toBe("en");
+  });
+
+  it("uses the latest forecast for the reorder and reliability answers", async () => {
+    const id = await productWithForecast();
+    const reorder = (await askIt(id, "What should I order?", "en")).body;
+    expect(reorder.intent).toBe("reorder");
+    expect(reorder.answer).toContain("To cover the next 14 days");
+    const reliable = (await askIt(id, "How reliable is the forecast?", "en")).body;
+    expect(reliable.intent).toBe("reliability");
+    expect(reliable.answer).toContain("The method used is");
+  });
+
+  it("says when there is no forecast or no sales yet", async () => {
+    const empty = await newProduct(alice, "Empty");
+    expect((await askIt(empty, "Quanto ho venduto?", "it")).body.answer).toContain("importa un CSV");
+    const noForecast = await newProduct(alice, "NoForecast");
+    await alice("POST", `/api/products/${noForecast}/sales/import`, csvForm(noisyCsv(60)));
+    expect((await askIt(noForecast, "Cosa conviene ordinare?", "it")).body.answer).toBe("Per questo prodotto non c'è ancora un forecast: calcolalo nella sezione Previsione e poi chiedimi pure.");
+  });
+
+  it("an unknown question gets the list of examples", async () => {
+    const id = await productWithForecast();
+    const r = (await askIt(id, "Che tempo fa oggi?", "it")).body;
+    expect(r).toMatchObject({ intent: "unknown", understood: false });
+    expect(r.suggestions).toHaveLength(8);
+    expect(r.suggestions[0]).toBe("Quanto ho venduto negli ultimi 30 giorni?");
+  });
+
+  it.each([
+    [undefined, "Write a question of at least 3 and at most 300 characters."],
+    ["", "Write a question of at least 3 and at most 300 characters."],
+    ["  ab ", "Write a question of at least 3 and at most 300 characters."],
+    [42, "Write a question of at least 3 and at most 300 characters."],
+    ["x".repeat(301), "Write a question of at least 3 and at most 300 characters."],
+  ])("rejects the question %j", async (question, detail) => {
+    const id = await productWithForecast();
+    const r = await askIt(id, question);
+    expect(r.status).toBe(422);
+    expect(r.body.detail).toBe(detail);
+  });
+
+  it("rejects an unsupported language and a body that is not an object", async () => {
+    const id = await productWithForecast();
+    const r = await askIt(id, "Cosa conviene ordinare?", "fr");
+    expect(r.status).toBe(422);
+    expect(r.body.detail).toBe("'language' must be 'it' or 'en'.");
+    expect((await askIt(id, "Cosa conviene ordinare?", 7)).status).toBe(422);
+    expect((await alice("POST", `/api/products/${id}/ask`, [1, 2])).status).toBe(400);
+  });
+
+  it("accepts a question of exactly 3 and of exactly 300 characters", async () => {
+    const id = await productWithForecast();
+    expect((await askIt(id, "abc")).status).toBe(200);
+    expect((await askIt(id, "x".repeat(300))).status).toBe(200);
+  });
+
+  it("only talks about the data of its owner", async () => {
+    const aliceId = await productWithForecast(alice, "Bread");
+    const bobId = await newProduct(bob, "Bread");
+    expect((await askIt(aliceId, "Quanto ho venduto?", "it", bob)).status).toBe(404);
+    expect((await askIt(bobId, "Quanto ho venduto?", "it", bob)).body.answer).toContain("importa un CSV"); // not Alice's sales
+    expect((await alice("GET", `/api/products/${aliceId}/ask`)).status).toBe(405);
+  });
+});
+
+describe("delete all my data", () => {
+  it("removes every product of the user, and only his", async () => {
+    for (const name of ["Bread", "Pasta"]) {
+      const id = await newProduct(alice, name);
+      await alice("POST", `/api/products/${id}/sales/import`, csvForm(weeklyCsv(60)));
+      await alice("POST", `/api/products/${id}/forecast`, {});
+    }
+    const bobId = await newProduct(bob, "Bread");
+    await bob("POST", `/api/products/${bobId}/sales/import`, csvForm(weeklyCsv(60)));
+
+    const r = await alice("DELETE", "/api/me/data");
+    expect(r.status).toBe(204);
+    expect((await alice("GET", "/api/products")).body).toEqual([]);
+    expect((await bob("GET", "/api/products")).body).toHaveLength(1);
+    expect((await bob("GET", `/api/products/${bobId}/sales`)).body).toHaveLength(60);
+    const left = await db.prepare("SELECT (SELECT COUNT(*) FROM sales) AS s, (SELECT COUNT(*) FROM forecast_runs) AS f, (SELECT COUNT(*) FROM products) AS p").first<{ s: number; f: number; p: number }>();
+    expect(left).toEqual({ s: 60, f: 0, p: 1 });
+  });
+
+  it("works with no data, only accepts DELETE, and refuses a cross-site request", async () => {
+    expect((await alice("DELETE", "/api/me/data")).status).toBe(204);
+    expect((await alice("GET", "/api/me/data")).status).toBe(405);
+    expect((await alice("POST", "/api/me/data")).status).toBe(405);
+    await newProduct(alice);
+    expect((await alice("DELETE", "/api/me/data", undefined, { origin: "https://evil.example" })).status).toBe(403);
+    expect((await alice("GET", "/api/products")).body).toHaveLength(1);
+  });
+});

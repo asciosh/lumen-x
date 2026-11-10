@@ -1,4 +1,4 @@
-import type { ForecastResult } from "./types";
+import type { BacktestMetrics, ForecastPoint, ForecastResult } from "./types";
 
 export const MAX_DAYS = 60;
 
@@ -29,6 +29,13 @@ export interface ReorderSuggestion {
   warnings: string[];
 }
 
+/** What the reorder calculation needs from a forecast run. */
+export interface ReorderRun {
+  methodUsed: string;
+  backtest: Record<string, BacktestMetrics>;
+  forecast: readonly ForecastPoint[];
+}
+
 export type ReorderOutcome = { ok: true; suggestion: ReorderSuggestion } | { ok: false; error: string };
 
 /**
@@ -44,7 +51,7 @@ export type ReorderOutcome = { ok: true; suggestion: ReorderSuggestion } | { ok:
  * of sales changes suddenly, the error weighs on all days together and the safety stock turns out a bit low.
  */
 export function calculateReorder(
-  run: Pick<ForecastResult, "methodUsed" | "backtest" | "forecast">,
+  run: ReorderRun,
   leadTimeDays: number,
   reviewDays: number,
   serviceLevelPercent: number,
@@ -117,7 +124,7 @@ export function zeroDaysPercent(quantities: readonly number[]): number {
 
 /** Backtest RMSE of the method used; if missing, derived from the forecast's 80% band. */
 function dailyErrorStdDev(
-  run: Pick<ForecastResult, "methodUsed" | "backtest">,
+  run: Pick<ReorderRun, "methodUsed" | "backtest">,
   points: ForecastResult["forecast"],
 ): number {
   const metrics = run.backtest[run.methodUsed];
