@@ -294,12 +294,13 @@
           return '<li><a href="#/p/' + p.id + '"><span>' + esc(p.name) + '</span><span class="meta">' + esc(p.sku || '') + '</span></a></li>';
         }).join('') + '</ul>';
       }
-      html += '<section class="card"><h2>' + esc(t('newProduct')) + '</h2><form id="new-product"><div class="row">' +
+      var newCard = '<section class="card"><h2>' + esc(t('newProduct')) + '</h2><form id="new-product"><div class="row">' +
         '<label>' + esc(t('name')) + '<input type="text" name="name" maxlength="100" required></label>' +
         '<label>' + esc(t('sku')) + '<input type="text" name="sku" maxlength="50"></label>' +
         '<button class="btn" type="submit">' + esc(t('create')) + '</button></div>' +
         '<p class="muted">' + esc(t('limitNote')(MAX_PRODUCTS)) + '</p><div id="new-product-msg"></div></form></section>';
-      html += '<section class="card"><h2>' + esc(t('exampleTitle')) + '</h2><p class="muted hint">' + esc(t('exampleText')) + '</p><p><button class="btn btn-secondary" type="button" id="example-product">' + esc(t('exampleButton')) + '</button></p><div id="example-msg"></div></section>';
+      var exampleCard = '<section class="card"><h2>' + esc(t('exampleTitle')) + '</h2><p class="muted hint">' + esc(t('exampleText')) + '</p><p><button class="btn btn-secondary" type="button" id="example-product">' + esc(t('exampleButton')) + '</button></p><div id="example-msg"></div></section>';
+      html += list.length === 0 ? exampleCard + newCard : newCard + exampleCard;   // nothing yet: the example comes first
       html += '<section class="card">' + privacyHtml() + '<p><button class="btn btn-secondary danger" type="button" id="delete-all">' + esc(t('deleteAll')) + '</button></p></section>';
       setContent(html);
       el('example-product').addEventListener('click', createExample);
@@ -350,10 +351,10 @@
       ? '<p>' + esc(t('salesSummary')(num(sales.length, 0), fullDate(sales[0].date), fullDate(sales[sales.length - 1].date))) + '</p>'
       : '<p class="muted">' + esc(t('noSales')) + '</p>';
     if (sales.length) {
+      html += '<p><button class="btn btn-secondary btn-small" type="button" id="sales-download">' + esc(t('downloadSales')) + '</button></p>';
       html += '<details class="fold" id="sales-fold"><summary><h3 style="margin:0">' + esc(t('salesDaily')) + '</h3></summary>' +
         '<div class="row"><label>' + esc(t('from')) + '<input type="date" id="sales-from"></label><label>' + esc(t('to')) + '<input type="date" id="sales-to"></label>' +
-        '<button class="btn btn-secondary" type="button" id="sales-apply">' + esc(t('apply')) + '</button><button class="btn btn-secondary" type="button" id="sales-clear">' + esc(t('clear')) + '</button>' +
-        '<button class="btn btn-secondary" type="button" id="sales-download">' + esc(t('downloadSales')) + '</button></div><div id="sales-table"></div></details>';
+        '<button class="btn btn-secondary" type="button" id="sales-apply">' + esc(t('apply')) + '</button><button class="btn btn-secondary" type="button" id="sales-clear">' + esc(t('clear')) + '</button></div><div id="sales-table"></div></details>';
     }
     html += '<h3>' + esc(t('importTitle')) + '</h3><p class="muted hint">' + esc(t('importHelp')) + '</p>' +
       '<details class="fold"><summary><h3 style="margin:0">' + esc(t('formatTitle')) + '</h3></summary><pre><code>' + esc(SAMPLE) + '</code></pre><p><a href="sample-sales.csv" download>' + esc(t('sampleLink')) + '</a></p></details>' +
@@ -521,9 +522,10 @@
       '<div><dt>' + esc(t('interval')) + '</dt><dd>' + esc(t('intervalText')(f.intervalLevel)) + '</dd></div>' +
       '<div><dt>' + esc(t('computedOn')) + '</dt><dd>' + esc(fmtDateTime(f.createdAtUtc)) + '</dd></div></dl>';
     if (f.filledMissingDays > 0) html += '<p class="muted">' + esc(t('filled')(f.filledMissingDays)) + '</p>';
+    html += '<p><button class="btn btn-secondary btn-small" type="button" id="forecast-download">' + esc(t('downloadForecast')) + '</button></p>';
     html += '<details class="fold"><summary><h3 style="margin:0">' + esc(t('forecastDaily')) + '</h3></summary><div class="scroll"><table class="table"><thead><tr><th>' + esc(t('date')) + '</th><th class="num">' + esc(t('forecastWord')) + '</th><th class="num">' + esc(t('minCol')) + '</th><th class="num">' + esc(t('maxCol')) + '</th></tr></thead><tbody>' +
       fc.map(function (p) { return '<tr><td>' + esc(fullDate(p.date)) + '</td><td class="num">' + qty(p.yhat) + '</td><td class="num">' + qty(p.lower) + '</td><td class="num">' + qty(p.upper) + '</td></tr>'; }).join('') +
-      '</tbody></table></div><p><button class="btn btn-secondary btn-small" type="button" id="forecast-download">' + esc(t('downloadForecast')) + '</button></p></details>';
+      '</tbody></table></div></details>';
     html += '<h3>' + esc(t('explanationTitle')) + '</h3><div class="explanation" id="explanation">' + esc(t('loading')) + '</div><p class="muted source">' + esc(t('explanationSource')) + '</p>';
     var names = Object.keys(f.backtest || {});
     if (names.length) {
