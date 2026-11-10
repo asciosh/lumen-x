@@ -1,0 +1,15 @@
+{
+  "name": "lumen-x-cloudflare",
+  "private": true,
+  "type": "module",
+  "description": "Lumen-X, Cloudflare edition: the forecasting engine in TypeScript and (soon) the Worker that serves it.",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}

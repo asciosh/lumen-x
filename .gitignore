@@ -428,3 +428,8 @@ FodyWeavers.xsd
 #*.lscache
 data_real/
 *.zip
+
+# Cloudflare edition
+cloudflare/node_modules/
+cloudflare/.wrangler/
+cloudflare/.dev.vars

@@ -92,7 +92,7 @@ public static class SalesCsvParser
 
             if (cells.Count <= Math.Max(dateIdx, qtyIdx))
             {
-                result.Errors.Add(new RowError(lineNo, "Colonne insufficienti."));
+                result.Errors.Add(new RowError(lineNo, "Not enough columns."));
                 continue;
             }
 
