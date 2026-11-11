@@ -3,9 +3,14 @@ export const SESSION_COOKIE = "lumenx_session";
 export const SESSION_TTL_SECONDS = 14 * 24 * 60 * 60;
 export const MIN_SECRET_LENGTH = 32;
 
+export type Provider = "github" | "google";
+
 export interface Session {
-  /** GitHub numeric id: it never changes, even if the user renames the account. */
-  id: number;
+  /** Where the person signed in. A cookie made before Google existed has no provider: it is GitHub. */
+  provider: Provider;
+  /** The id the provider gives to the account, which never changes: a number for GitHub, a string of digits for Google (it does not fit in a JavaScript number). */
+  id: number | string;
+  /** The GitHub username, or the Google email: what the list of invited people is checked against, on every request. */
   login: string;
   /** Expiry, in seconds since 1970. */
   exp: number;
@@ -34,8 +39,13 @@ function hmacKey(secret: string): Promise<CryptoKey> {
   return crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
 }
 
-export async function createSession(user: { id: number; login: string }, secret: string, nowSeconds: number, ttlSeconds = SESSION_TTL_SECONDS): Promise<string> {
-  const payload: Session = { id: user.id, login: user.login, exp: nowSeconds + ttlSeconds };
+export async function createSession(
+  user: { id: number | string; login: string; provider?: Provider },
+  secret: string,
+  nowSeconds: number,
+  ttlSeconds = SESSION_TTL_SECONDS,
+): Promise<string> {
+  const payload: Session = { provider: user.provider ?? "github", id: user.id, login: user.login, exp: nowSeconds + ttlSeconds };
   const body = `${VERSION}.${toBase64Url(encoder.encode(JSON.stringify(payload)))}`;
   const signature = new Uint8Array(await crypto.subtle.sign("HMAC", await hmacKey(secret), encoder.encode(body)));
   return `${body}.${toBase64Url(signature)}`;
@@ -58,11 +68,13 @@ export async function readSession(token: string | null | undefined, secret: stri
   try {
     const data: unknown = JSON.parse(new TextDecoder().decode(raw));
     if (typeof data !== "object" || data === null) return null;
-    const { id, login, exp } = data as Record<string, unknown>;
-    if (typeof id !== "number" || !Number.isInteger(id) || id <= 0) return null;
+    const { id, login, exp, provider = "github" } = data as Record<string, unknown>;
+    if (provider !== "github" && provider !== "google") return null;
+    if (provider === "github" && (typeof id !== "number" || !Number.isInteger(id) || id <= 0)) return null;
+    if (provider === "google" && (typeof id !== "string" || !/^\d{5,40}$/.test(id))) return null;
     if (typeof login !== "string" || login.length === 0) return null;
     if (typeof exp !== "number" || !(exp > nowSeconds)) return null;
-    return { id, login, exp };
+    return { provider, id: id as number | string, login, exp };
   } catch {
     return null;
   }

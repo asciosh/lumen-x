@@ -8,7 +8,7 @@ const alice = { id: 42, login: "alice" };
 describe("sessions", () => {
   it("a session we created is read back", async () => {
     const token = await createSession(alice, SECRET, NOW);
-    expect(await readSession(token, SECRET, NOW + 10)).toEqual({ id: 42, login: "alice", exp: NOW + 14 * 24 * 3600 });
+    expect(await readSession(token, SECRET, NOW + 10)).toEqual({ provider: "github", id: 42, login: "alice", exp: NOW + 14 * 24 * 3600 });
   });
 
   it("expires", async () => {
@@ -71,3 +71,34 @@ describe("cookies", () => {
     expect(clearCookie("lumenx_session")).toContain("Max-Age=0");
   });
 });
+
+describe("sessions with Google, and cookies made before Google existed", () => {
+  const sign = async (payload: unknown) => {
+    // A cookie as the previous version made it: v1.<payload>.<signature>, with no provider.
+    const body = `v1.${btoa(JSON.stringify(payload)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")}`;
+    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const signature = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body)));
+    return `${body}.${btoa(String.fromCharCode(...signature)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")}`;
+  };
+
+  it("a Google session keeps the 21-digit id as text and the email as the login", async () => {
+    const token = await createSession({ provider: "google", id: "110169484474386276334", login: "carol@example.com" }, SECRET, NOW);
+    expect(await readSession(token, SECRET, NOW + 1)).toEqual({ provider: "google", id: "110169484474386276334", login: "carol@example.com", exp: NOW + 14 * 24 * 3600 });
+  });
+
+  it("a cookie of the previous version (no provider) is still a valid GitHub session", async () => {
+    const token = await sign({ id: 42, login: "alice", exp: NOW + 1000 });
+    expect(await readSession(token, SECRET, NOW)).toEqual({ provider: "github", id: 42, login: "alice", exp: NOW + 1000 });
+  });
+
+  it.each([
+    ["a GitHub session with a text id", { provider: "github", id: "42", login: "a" }],
+    ["a Google session with a number id", { provider: "google", id: 42, login: "a@b.c" }],
+    ["a Google id that is not digits", { provider: "google", id: "abc", login: "a@b.c" }],
+    ["a Google id that is far too long", { provider: "google", id: "1".repeat(41), login: "a@b.c" }],
+    ["an unknown provider", { provider: "facebook", id: 1, login: "a" }],
+  ])("refuses %s", async (_label, payload) => {
+    expect(await readSession(await sign({ ...payload, exp: NOW + 1000 }), SECRET, NOW)).toBeNull();
+  });
+});
+

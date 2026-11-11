@@ -10,7 +10,7 @@
       signedOutTitle: 'Sign in',
       demoLink: 'No invitation? See the public demo (example data, no sign-in).',
       signedOutText: 'Lumen-X is in private beta. Sign in with your GitHub account: only the people invited by the owner can enter.',
-      forbidden: 'This GitHub account is not allowed to use the app. Ask the owner to add it.',
+      forbidden: 'This account is not allowed to use the app. Ask the owner to add it.',
       notConfigured: 'The login is not configured yet.',
       generic: 'Something went wrong. Try again.',
       yourProducts: 'Your products', noProducts: 'You have no products yet. Create one, then import its daily sales from a CSV file.',
@@ -46,11 +46,11 @@
       askLabel: 'Your question', askPlaceholder: 'For example: How much did I sell in the last 30 days?', askButton: 'Ask', asking: 'Thinking…',
       sampleLink: 'Download an example file (240 days)',
       privacyTitle: 'Privacy',
-      privacy: ['What is stored: the products you create, their daily sales and forecasts, the numeric id of your GitHub account (to know whose they are) and how many AI rewrites you did today (a counter kept for a few days). Not your email, and no analytics or tracking.',
+      privacy: ['What is stored: the products you create, their daily sales and forecasts, the numeric id of your GitHub or Google account (to know whose they are) and how many AI rewrites you did today (a counter kept for a few days). Not your email: if you sign in with Google, the address is only checked against the list of invited people and kept in your session cookie, never in the database. No analytics or tracking.',
         'Where: in a database of Cloudflare, the service this app runs on. Each account only sees its own data in the app, but the owner of this beta runs the database and could technically read it: upload only data you are comfortable sharing.',
         'AI: only if you press "Rewrite with AI", and only when the owner has switched it on. Then only summary numbers are sent, never your sales rows and never the product name, to the providers listed here after you sign in. The result is checked so that it has no figures that are not in your data. Up to 20 rewrites a day. Everything else (explanations, answers) is written by the app itself.',
         'Cookies: only the one that keeps you signed in (14 days) and a short one used during the sign-in.',
-        'Deleting: you can delete a product from its page, or everything with the button below. Cloudflare may keep automatic database backups for a few days.'],
+        'Deleting: you can delete a product from its page, or everything with the button in Settings. Cloudflare may keep automatic database backups for a few days.'],
       deleteAll: 'Delete all my data', confirmDeleteAll: 'Delete ALL your products, sales and forecasts? This cannot be undone.', deletedAll: 'All your data was deleted.',
       salesDaily: 'Sales day by day', from: 'From', to: 'To', apply: 'Apply', clear: 'Clear', date: 'Date', quantity: 'Quantity',
       noSalesInPeriod: 'No sales in this period.',
@@ -93,6 +93,16 @@
       computeNow: 'Work out the forecast', needMoreDays: function (n) { return 'A forecast needs at least 42 days of sales: you have ' + n + '. Upload more.'; },
       forecastUpdated: 'The forecast was updated.', productName: 'Product name', createGo: 'Create and continue',
       startHere: 'Start here: try the example, or add your own product.',
+      pitchTitle: 'How much will you sell? How much should you order?', pitchText: 'Upload the sales of a product and Lumen-X tells you in plain words how much you will sell in the coming weeks, how much to order, and how far you can trust the forecast.',
+      pitch1: 'You upload your sales: a CSV file, or two columns copied from Excel.', pitch2: 'You read three answers: how much to order, how much you will sell, how much to trust it.', pitch3: 'Want to see it first? The public demo needs no sign-in.',
+      signInGoogle: 'Sign in with Google', privateBeta: 'Lumen-X is in private beta: only the people invited by the owner can enter.', noLoginMethod: 'No way to sign in is set up yet.',
+      settings: 'Settings', settingsAccount: 'Your account', signedInAs: function (who, via) { return 'You are signed in as ' + who + ' (' + via + ').'; }, viaGoogle: 'with Google', viaGithub: 'with GitHub',
+      settingsData: 'Your data', settingsDataText: 'Your sales are yours: you can download them at any time, one product at a time.', settingsNoProducts: 'You have no products yet.',
+      settingsAi: 'AI rewrite', settingsAiOff: 'Not available: the owner has not switched it on.',
+      settingsAiOn: function (names, left, limit) { return 'On, with ' + names + '. You have ' + left + ' of ' + limit + ' rewrites left today.'; },
+      settingsDanger: 'Delete everything', dangerText: 'This deletes all your products, sales and forecasts. It cannot be undone.',
+      howTitle: 'How it works', how1: 'Add a product (or try the example).', how2: 'Upload its sales: a file or cells pasted from Excel.', how3: 'Read three answers: how much to order, how much you will sell, how much to trust it.',
+      privacyInSettings: 'Your data and the full privacy notice are in Settings.',
       dzTitle: 'Drop your file here', dzOr: 'or', chooseFileButton: 'Choose a file', fileTooBig: 'The file is too large: at most 1 MB.',
       pasteTitle: 'Or paste from Excel', pasteHelp: 'In Excel select the two columns (the date and the quantity, with the header if there is one), copy them and paste them here.',
       pastePlaceholder: 'Paste here…', pasteButton: 'Check', pasteEmpty: 'Paste the cells first.', checking: 'Checking the file…',
@@ -123,7 +133,7 @@
       signedOutTitle: 'Accedi',
       demoLink: 'Non hai un invito? Guarda la demo pubblica (dati d\'esempio, senza accedere).',
       signedOutText: 'Lumen-X è in beta privata. Accedi con il tuo account GitHub: possono entrare solo le persone invitate dal proprietario.',
-      forbidden: 'Questo account GitHub non può usare l\'app. Chiedi al proprietario di aggiungerlo.',
+      forbidden: 'Questo account non può usare l\'app. Chiedi al proprietario di aggiungerlo.',
       notConfigured: 'Il login non è ancora configurato.',
       generic: 'Qualcosa è andato storto. Riprova.',
       yourProducts: 'I tuoi prodotti', noProducts: 'Non hai ancora prodotti. Creane uno, poi importa le sue vendite giornaliere da un file CSV.',
@@ -159,11 +169,11 @@
       askLabel: 'La tua domanda', askPlaceholder: 'Per esempio: Quanto ho venduto negli ultimi 30 giorni?', askButton: 'Chiedi', asking: 'Sto pensando…',
       sampleLink: 'Scarica un file d\'esempio (240 giorni)',
       privacyTitle: 'Privacy',
-      privacy: ['Cosa viene salvato: i prodotti che crei, le loro vendite giornaliere e le previsioni, l\'id numerico del tuo account GitHub (per sapere di chi sono) e quante riscritture con AI hai fatto oggi (un contatore tenuto per qualche giorno). Non la tua email, e nessuna analisi o tracciamento.',
+      privacy: ['Cosa viene salvato: i prodotti che crei, le loro vendite giornaliere e le previsioni, l\'id numerico del tuo account GitHub o Google (per sapere di chi sono) e quante riscritture con AI hai fatto oggi (un contatore tenuto per qualche giorno). Non la tua email: se accedi con Google, l\'indirizzo serve solo a controllare l\'elenco degli invitati e resta nel cookie di sessione, mai nel database. Nessuna analisi o tracciamento.',
         'Dove: in un database di Cloudflare, il servizio su cui gira questa app. Ogni account vede nell\'app solo i propri dati, ma chi gestisce questa beta amministra il database e potrebbe tecnicamente leggerlo: carica solo dati che ti va di condividere.',
         'AI: solo se premi "Riscrivi con AI", e solo quando chi gestisce l\'app l\'ha attivata. Allora vengono inviati solo numeri riassuntivi, mai le righe delle vendite e mai il nome del prodotto, ai fornitori elencati qui dopo l\'accesso. Il risultato viene controllato perché non contenga cifre che non sono nei tuoi dati. Fino a 20 riscritture al giorno. Tutto il resto (spiegazioni, risposte) lo scrive l\'app stessa.',
         'Cookie: solo quello che ti tiene collegato (14 giorni) e uno breve usato durante l\'accesso.',
-        'Cancellazione: puoi eliminare un prodotto dalla sua pagina, o tutto con il pulsante qui sotto. Cloudflare può conservare per qualche giorno copie di sicurezza automatiche del database.'],
+        'Cancellazione: puoi eliminare un prodotto dalla sua pagina, o tutto con il pulsante in Impostazioni. Cloudflare può conservare per qualche giorno copie di sicurezza automatiche del database.'],
       deleteAll: 'Cancella tutti i miei dati', confirmDeleteAll: 'Cancellare TUTTI i tuoi prodotti, vendite e previsioni? Non si può annullare.', deletedAll: 'Tutti i tuoi dati sono stati cancellati.',
       salesDaily: 'Vendite giorno per giorno', from: 'Dal', to: 'Al', apply: 'Applica', clear: 'Azzera', date: 'Data', quantity: 'Quantità',
       noSalesInPeriod: 'Nessuna vendita in questo periodo.',
@@ -206,6 +216,16 @@
       computeNow: 'Calcola la previsione', needMoreDays: function (n) { return 'Per una previsione servono almeno 42 giorni di vendite: ne hai ' + n + '. Carica altri dati.'; },
       forecastUpdated: 'La previsione è stata aggiornata.', productName: 'Nome del prodotto', createGo: 'Crea e continua',
       startHere: 'Parti da qui: prova l\'esempio, oppure aggiungi il tuo prodotto.',
+      pitchTitle: 'Quanto venderai? Quanto ordinare?', pitchText: 'Carichi le vendite di un prodotto e Lumen-X ti dice in parole semplici quanto venderai nelle prossime settimane, quanto ordinare e quanto puoi fidarti della previsione.',
+      pitch1: 'Carichi le vendite: un file CSV, oppure due colonne copiate da Excel.', pitch2: 'Leggi tre risposte: quanto ordinare, quanto venderai, quanto fidarti.', pitch3: 'Vuoi vederlo prima? La demo pubblica non richiede di accedere.',
+      signInGoogle: 'Accedi con Google', privateBeta: 'Lumen-X è in beta privata: possono entrare solo le persone invitate dal proprietario.', noLoginMethod: 'Non è ancora configurato nessun modo di accedere.',
+      settings: 'Impostazioni', settingsAccount: 'Il tuo account', signedInAs: function (who, via) { return 'Hai effettuato l\'accesso come ' + who + ' (' + via + ').'; }, viaGoogle: 'con Google', viaGithub: 'con GitHub',
+      settingsData: 'I tuoi dati', settingsDataText: 'Le tue vendite sono tue: puoi scaricarle quando vuoi, un prodotto alla volta.', settingsNoProducts: 'Non hai ancora prodotti.',
+      settingsAi: 'Riscrittura con AI', settingsAiOff: 'Non disponibile: chi gestisce l\'app non l\'ha attivata.',
+      settingsAiOn: function (names, left, limit) { return 'Attiva, con ' + names + '. Hai ancora ' + left + ' riscritture su ' + limit + ' per oggi.'; },
+      settingsDanger: 'Cancella tutto', dangerText: 'Cancella tutti i tuoi prodotti, vendite e previsioni. Non si può annullare.',
+      howTitle: 'Come funziona', how1: 'Aggiungi un prodotto (oppure prova l\'esempio).', how2: 'Carica le sue vendite: un file o celle incollate da Excel.', how3: 'Leggi tre risposte: quanto ordinare, quanto venderai, quanto fidarti.',
+      privacyInSettings: 'I tuoi dati e l\'informativa completa sulla privacy sono in Impostazioni.',
       dzTitle: 'Trascina qui il tuo file', dzOr: 'oppure', chooseFileButton: 'Scegli il file', fileTooBig: 'Il file è troppo grande: al massimo 1 MB.',
       pasteTitle: 'Oppure incolla da Excel', pasteHelp: 'In Excel seleziona le due colonne (la data e la quantità, con l\'intestazione se c\'è), copia e incolla qui.',
       pastePlaceholder: 'Incolla qui…', pasteButton: 'Controlla', pasteEmpty: 'Incolla prima le celle.', checking: 'Controllo il file…',
@@ -243,7 +263,7 @@
     it: ['Quanto ho venduto negli ultimi 30 giorni?', 'Come vanno le vendite rispetto al mese scorso?', 'Qual è il giorno più forte della settimana?', 'Quanto prevedo di vendere nelle prossime 2 settimane?', 'Cosa conviene ordinare?', 'Quanto è affidabile la previsione?', 'Spiegami la previsione', 'Qual è stato il giorno record?']
   };
 
-  var state = { lang: initialLang(), user: null, ai: null };
+  var state = { lang: initialLang(), user: null, provider: 'github', ai: null };
 
   function initialLang() {
     try { var saved = localStorage.getItem('lumenx_lang'); if (saved === 'it' || saved === 'en') return saved; } catch (e) { /* storage can be blocked */ }
@@ -364,21 +384,37 @@
     el('signout').textContent = t('signOut');
     el('who').hidden = !state.user;
     el('signout').hidden = !state.user;
-    if (state.user) el('who').textContent = '@' + state.user;
+    if (state.user) el('who').textContent = (state.provider === 'google' ? '' : '@') + state.user;
+    el('settings-link').hidden = !state.user;
+    el('settings-link').textContent = t('settings');
   }
 
-  function privacyHtml(withDelete) {
+  function privacyLines() {
     var lines = t('privacy').slice();
     if (state.ai && state.ai.enabled) lines.push(t('aiProviders')(state.ai.providers.map(function (p) { return p.label; }).join(', ')));
+    return lines;
+  }
+  function privacyHtml() {
     return '<details class="fold"><summary><h3 style="margin:0">' + esc(t('privacyTitle')) + '</h3></summary><ul class="hint">' +
-      lines.map(function (line) { return '<li>' + esc(line) + '</li>'; }).join('') + '</ul>' +
-      (withDelete ? '<p><button class="btn btn-secondary danger" type="button" id="delete-all">' + esc(t('deleteAll')) + '</button></p>' : '') + '</details>';
+      privacyLines().map(function (line) { return '<li>' + esc(line) + '</li>'; }).join('') + '</ul></details>';
   }
 
   function showSignedOut() {
     state.user = null; paintChrome();
-    setContent('<section class="card"><h2>' + esc(t('signedOutTitle')) + '</h2><p class="muted hint">' + esc(t('signedOutText')) + '</p><p><a class="btn btn-link" href="/auth/login">' + esc(t('signIn')) + '</a></p>' +
-      '<p class="muted"><a href="' + DEMO_URL + '" rel="noopener">' + esc(t('demoLink')) + '</a></p>' + privacyHtml() + '</section>');
+    setContent('<p class="muted">' + esc(t('loading')) + '</p>');
+    // Which buttons to show: only the ways to sign in that the owner has set up
+    fetch('/auth/providers', { headers: { accept: 'application/json' } }).then(function (r) { return r.ok ? r.json() : { github: true, google: false }; })
+      .catch(function () { return { github: true, google: false }; })
+      .then(function (p) {
+        var buttons = '';
+        if (p.google) buttons += '<a class="btn btn-link" href="/auth/google/login">' + esc(t('signInGoogle')) + '</a> ';
+        if (p.github) buttons += '<a class="btn' + (p.google ? ' btn-secondary' : ' btn-link') + '" href="/auth/login">' + esc(t('signIn')) + '</a>';
+        if (!buttons) buttons = alertHtml('error', esc(t('noLoginMethod')));
+        setContent('<section class="card stage"><h1 class="pitch">' + esc(t('pitchTitle')) + '</h1><p class="pitch-text">' + esc(t('pitchText')) + '</p>' +
+          '<ol class="steps"><li>' + esc(t('pitch1')) + '</li><li>' + esc(t('pitch2')) + '</li><li>' + esc(t('pitch3')) + '</li></ol>' +
+          '<p><a class="btn btn-secondary" href="' + DEMO_URL + '" rel="noopener">' + esc(t('demoLink')) + '</a></p></section>' +
+          '<section class="card"><h2>' + esc(t('signedOutTitle')) + '</h2><p class="muted hint">' + esc(t('privateBeta')) + '</p><p>' + buttons + '</p>' + privacyHtml() + '</section>');
+      });
   }
   function showForbidden() {
     state.user = null; paintChrome();
@@ -407,7 +443,8 @@
       var list = res.data || [];
       var html = '<h1>' + esc(t('yourProducts')) + '</h1>' + (flashHtml || '');
       if (list.length === 0) {
-        html += '<p class="muted hint">' + esc(t('startHere')) + '</p>';
+        html += '<p class="muted hint">' + esc(t('startHere')) + '</p>' +
+          '<section class="card how"><h2>' + esc(t('howTitle')) + '</h2><ol class="steps"><li>' + esc(t('how1')) + '</li><li>' + esc(t('how2')) + '</li><li>' + esc(t('how3')) + '</li></ol></section>';
       } else {
         html += '<ul class="product-list">' + list.map(function (p) {
           return '<li><a href="#/p/' + p.id + '"><span>' + esc(p.name) + '</span><span class="meta">' + esc(p.sku || '') + '</span></a></li>';
@@ -419,17 +456,9 @@
         '<p class="muted">' + esc(t('limitNote')(MAX_PRODUCTS)) + '</p><div id="new-product-msg"></div></form></section>';
       var exampleCard = '<section class="card"><h2>' + esc(t('exampleTitle')) + '</h2><p class="muted hint">' + esc(t('exampleText')) + '</p><p><button class="btn btn-secondary" type="button" id="example-product">' + esc(t('exampleButton')) + '</button></p><div id="example-msg"></div></section>';
       html += list.length === 0 ? exampleCard + newCard : newCard + exampleCard;   // nothing yet: the example comes first
-      html += '<section class="card">' + privacyHtml(true) + '</section>';   // the delete button is inside the notice: not the first thing a newcomer sees
+      html += '<section class="card">' + privacyHtml() + '<p class="muted small"><a href="#/settings">' + esc(t('privacyInSettings')) + '</a></p></section>';
       setContent(html);
       el('example-product').addEventListener('click', createExample);
-      el('delete-all').addEventListener('click', function () {
-        if (!window.confirm(t('confirmDeleteAll'))) return;
-        api('DELETE', '/api/me/data').then(function (r) {
-          if (sessionLost(r)) return;
-          if (r.status === 204) { showList(alertHtml('ok', esc(t('deletedAll')))); return; }
-          el('new-product-msg').innerHTML = alertHtml('error', esc(problemText(r)));
-        });
-      });
       el('new-product').addEventListener('submit', function (ev) {
         ev.preventDefault();
         var form = ev.target;
@@ -437,6 +466,50 @@
           if (sessionLost(r)) return;
           if (r.status === 201) { location.hash = '#/p/' + r.data.id; return; }
           el('new-product-msg').innerHTML = alertHtml('error', esc(problemText(r)));
+        });
+      });
+    });
+  }
+
+  // ---------- settings: the account, your data, the AI, the privacy notice, delete everything ----------
+  function deleteAllData(msgBox) {
+    if (!window.confirm(t('confirmDeleteAll'))) return;
+    api('DELETE', '/api/me/data').then(function (r) {
+      if (sessionLost(r)) return;
+      if (r.status === 204) { history.replaceState(null, '', '#/'); showList(alertHtml('ok', esc(t('deletedAll')))); return; }
+      msgBox.innerHTML = alertHtml('error', esc(problemText(r)));
+    });
+  }
+
+  function showSettings() {
+    var token = ++navigation;
+    setContent('<p class="muted">' + esc(t('loading')) + '</p>');
+    api('GET', '/api/products').then(function (res) {
+      if (token !== navigation) return;
+      if (sessionLost(res)) return;
+      var list = res.ok ? res.data : [];
+      var html = '<p class="crumb"><a href="#/">' + esc(t('allProducts')) + '</a></p><h1>' + esc(t('settings')) + '</h1><div id="settings-msg"></div>';
+      html += '<section class="card"><h2>' + esc(t('settingsAccount')) + '</h2><p>' + esc(t('signedInAs')(state.user, state.provider === 'google' ? t('viaGoogle') : t('viaGithub'))) + '</p>' +
+        '<p><button class="btn btn-secondary" type="button" id="settings-signout">' + esc(t('signOut')) + '</button></p></section>';
+      html += '<section class="card"><h2>' + esc(t('settingsData')) + '</h2><p class="muted hint">' + esc(t('settingsDataText')) + '</p>';
+      html += list.length
+        ? '<ul class="plain" id="data-list">' + list.map(function (p) { return '<li><span>' + esc(p.name) + '</span><button class="btn btn-secondary btn-small" type="button" data-id="' + esc(p.id) + '" data-name="' + esc(p.name) + '">' + esc(t('downloadSales')) + '</button></li>'; }).join('') + '</ul>'
+        : '<p class="muted">' + esc(t('settingsNoProducts')) + '</p>';
+      html += '</section>';
+      html += '<section class="card"><h2>' + esc(t('settingsAi')) + '</h2><p>' + esc(state.ai && state.ai.enabled
+        ? t('settingsAiOn')(state.ai.providers.map(function (p) { return p.label; }).join(', '), state.ai.remaining, state.ai.dailyLimit) : t('settingsAiOff')) + '</p></section>';
+      html += '<section class="card"><h2>' + esc(t('privacyTitle')) + '</h2><ul class="hint">' + privacyLines().map(function (line) { return '<li>' + esc(line) + '</li>'; }).join('') + '</ul></section>';
+      html += '<section class="card"><h2>' + esc(t('settingsDanger')) + '</h2><p class="muted hint">' + esc(t('dangerText')) + '</p><p><button class="btn btn-secondary danger" type="button" id="delete-all">' + esc(t('deleteAll')) + '</button></p></section>';
+      setContent(html);
+      el('settings-signout').addEventListener('click', signOut);
+      el('delete-all').addEventListener('click', function () { deleteAllData(el('settings-msg')); });
+      if (el('data-list')) el('data-list').addEventListener('click', function (ev) {
+        var b = ev.target.closest ? ev.target.closest('button[data-id]') : null;
+        if (!b) return;
+        api('GET', '/api/products/' + b.getAttribute('data-id') + '/sales').then(function (r) {
+          if (sessionLost(r)) return;
+          if (r.ok) download(LumenExport.fileName(b.getAttribute('data-name'), 'sales'), LumenExport.salesCsv(r.data));
+          else el('settings-msg').innerHTML = alertHtml('error', esc(problemText(r)));
         });
       });
     });
@@ -925,7 +998,7 @@
   function route() {
     if (!state.user) return;
     var m = /^#\/p\/(\d+)$/.exec(location.hash);
-    if (m) showProduct(Number(m[1])); else showList();
+    if (m) showProduct(Number(m[1])); else if (location.hash === '#/settings') showSettings(); else showList();
   }
 
   function setLang(lang) {
@@ -945,7 +1018,7 @@
       if (res.status === 403) { showForbidden(); return; }
       if (res.status === 503) { showNotConfigured(); return; }
       if (!res.ok) { setContent(alertHtml('error', esc(t('generic')))); return; }
-      state.user = res.data.login; paintChrome();
+      state.user = res.data.login; state.provider = res.data.provider || 'github'; paintChrome();
       api('GET', '/api/ai').then(function (ai) { state.ai = ai.ok ? ai.data : null; route(); });
     }).catch(function () { setContent(alertHtml('error', esc(t('generic')))); });
   }

@@ -18,6 +18,21 @@ Upload your sales data, get forecasts with honest error estimates, and ask quest
 - *"What should I order?"*
 - *"How reliable is the forecast?"*
 
+## Using it, step by step
+
+No technical knowledge needed (a quick guide in Italian: [`docs/GUIDA.md`](docs/GUIDA.md)):
+
+1. **Add a product**, or try the one-click example.
+2. **Upload its sales**: drop a CSV file on the page or paste two columns copied from Excel (the date and the units sold). The column names can
+   be in English or Italian, the dates `31/01/2025` or `2025-01-31`. Before anything is saved you see what was understood, and any row that
+   was not understood is explained in plain words.
+3. **Read three answers**, in plain words: **how much to order** (highlighted: type how many you already have in stock and it tells you how
+   many to order), **how much you will sell** in the coming weeks, and **how much you can trust** the forecast ("very reliable" ... "not
+   reliable"). Under them the chart and your questions about the data.
+
+Everything technical (the method, the errors, the comparison between methods, day-by-day tables, the full explanation) is folded under
+*Details for experts*. In *Settings* you can download your data and delete everything.
+
 ## Why I built this
 
 I'm a .NET developer with about two years of professional experience, and I got hooked on AI. I wanted to learn by building something real: a project that combines classical forecasting with LLMs, written with the stack I know and the one I want to learn.
@@ -48,7 +63,7 @@ CSV / API  →  .NET Backend  →  Forecasting service (Python)
 | Dashboard | Blazor Server | ✅ available |
 | Deployment | Docker Compose | forecasting, backend, dashboard, PostgreSQL |
 
-Dashboard (Blazor Server, English and Italian): products, CSV import, forecasts with chart, explanations, reorder suggestions and questions about your data.
+Dashboard (Blazor Server, English and Italian): products, CSV import, forecasts with chart, explanations, reorder suggestions and questions about your data. The public demo and the Cloudflare edition (below) have the newer layout, with the three plain answers first.
 
 ![Live demo](docs/demo.png)
 
@@ -66,6 +81,9 @@ Dashboard (Blazor Server, English and Italian): products, CSV import, forecasts 
 - [x] Questions over your data (rule-based, no AI needed)
 - [x] Reorder suggestions (safety stock)
 - [x] Interactive dashboard, bilingual (English / Italian)
+- [x] Three plain answers first (how much to order, how much you will sell, how much to trust it); the technical details folded away
+- [x] Friendly import: Italian Excel files, pasted cells, a preview before saving, repeated days added up if asked (Cloudflare edition)
+- [x] Sign in with GitHub or Google, invite only (Cloudflare edition)
 
 ## Forecasting service
 
@@ -124,7 +142,7 @@ Tests: `pytest` in `services/forecasting`, `dotnet test backend/tests/LumenX.Api
 ## Cloudflare edition (private beta)
 
 A second implementation in [`cloudflare/`](cloudflare/) runs on the **free** Cloudflare plan, with no credit card: a Worker, a D1 database and a
-sign-in with GitHub, so each invited person logs in and sees only his own products. It does the same things as the full stack (CSV upload,
+sign-in with GitHub or Google, so each invited person logs in and sees only his own products. It does the same things as the full stack (CSV upload,
 forecast with backtest, plain-language explanations, questions about the data, reorder suggestions, English and Italian) with one
 difference in the model: it has no LightGBM (the average of ETS and LightGBM is about 10% better on the Bread series). The explanation can
 optionally be rewritten by a free AI provider (Workers AI, Gemini, Groq, OpenRouter) that only ever receives anonymous summary numbers. It is invite only, so
@@ -138,7 +156,7 @@ there is no public address; see [`cloudflare/README.md`](cloudflare/README.md) f
 - [x] **LLM layer** for forecast explanations (Italian/English, Gemini optional)
 - [x] **Dashboard** (Blazor Server)
 - [x] Trial with real data (Kaggle Store Sales, rolling backtest)
-- [x] **Cloudflare edition**: free hosting with a login (sign-in with GitHub), the data of each user kept apart; invite-only beta
+- [x] **Cloudflare edition**: free hosting with a login (sign-in with GitHub or Google), the data of each user kept apart; invite-only beta
 - [ ] Open to everyone: not yet, on purpose (limits per user, daily question limit and a privacy review come first). For now: the live demo above, a one-click Codespace and the invite-only beta
 
 ## Results on real data

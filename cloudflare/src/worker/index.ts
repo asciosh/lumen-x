@@ -26,6 +26,6 @@ export default {
     if (!auth.ok) {
       return auth.response;
     }
-    return handle(request, { db: env.DB, owner: auth.owner, login: auth.login, now: () => new Date(), llm: env, fetch: (input, init) => fetch(input, init) });
+    return handle(request, { db: env.DB, owner: auth.owner, login: auth.login, provider: auth.provider, now: () => new Date(), llm: env, fetch: (input, init) => fetch(input, init) });
   },
 };

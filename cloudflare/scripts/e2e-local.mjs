@@ -28,8 +28,14 @@ if (await fetch(BASE + "/").then(() => true, () => false)) {
   process.exit(1);
 }
 
-// A stand-in for GitHub. `nextUser` is who "types the password" on the stand-in sign-in page.
+// A stand-in for GitHub (and for Google, on other paths). `nextUser` and `nextGoogle` are who "types the password" on the stand-in sign-in pages.
 let nextUser = "alice";
+let nextGoogle = "carol";
+const GOOGLE_PEOPLE = {
+  carol: { sub: "110169484474386276334", email: "Carol@Example.com", email_verified: true },
+  eve: { sub: "110169484474386279999", email: "eve@example.com", email_verified: true },
+  mallory: { sub: "110169484474386270000", email: "mallory@example.com", email_verified: false },
+};
 const readBody = (req) => new Promise((resolve) => { let data = ""; req.on("data", (c) => (data += c)); req.on("end", () => resolve(data)); });
 const github = http
   .createServer(async (req, res) => {
@@ -45,6 +51,17 @@ const github = http
     } else if (url.pathname === "/user") {
       const user = USERS[String(req.headers.authorization).replace("Bearer token-for-", "")];
       res.writeHead(user ? 200 : 401, { "content-type": "application/json" }).end(JSON.stringify(user ?? {}));
+    } else if (url.pathname === "/google/auth") {
+      const back = new URL(url.searchParams.get("redirect_uri"));
+      back.searchParams.set("code", `code-${nextGoogle}`);
+      back.searchParams.set("state", url.searchParams.get("state"));
+      res.writeHead(302, { location: back.toString() }).end();
+    } else if (url.pathname === "/google/token") {
+      const code = new URLSearchParams(await readBody(req)).get("code") ?? "";
+      res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ access_token: `gtoken-for-${code.replace("code-", "")}` }));
+    } else if (url.pathname === "/google/userinfo") {
+      const person = GOOGLE_PEOPLE[String(req.headers.authorization).replace("Bearer gtoken-for-", "")];
+      res.writeHead(person ? 200 : 401, { "content-type": "application/json" }).end(JSON.stringify(person ?? {}));
     } else {
       res.writeHead(404).end();
     }
@@ -114,6 +131,12 @@ const vars = {
   ALLOWED_GITHUB_USERS: "alice, bob",
   GITHUB_URL: GITHUB,
   GITHUB_API_URL: GITHUB,
+  GOOGLE_CLIENT_ID: "e2e-google-client",
+  GOOGLE_CLIENT_SECRET: "e2e-google-secret",
+  ALLOWED_GOOGLE_EMAILS: "carol@example.com",
+  GOOGLE_AUTH_URL: `${GITHUB}/google/auth`,
+  GOOGLE_TOKEN_URL: `${GITHUB}/google/token`,
+  GOOGLE_USERINFO_URL: `${GITHUB}/google/userinfo`,
   GROQ_API_KEY: "e2e-llm-key",
   GROQ_MODEL: "e2e-model",
   LLM_URL_GROQ: `${LLM}/v1`,
@@ -143,6 +166,18 @@ process.on("exit", stop);
 async function signIn(user, { state: stateOverride } = {}) {
   nextUser = user;
   let r = await fetch(BASE + "/auth/login", { redirect: "manual" });
+  const stateCookie = r.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
+  r = await fetch(r.headers.get("location"), { redirect: "manual" });
+  const back = new URL(r.headers.get("location"));
+  if (stateOverride) back.searchParams.set("state", stateOverride);
+  r = await fetch(back, { redirect: "manual", headers: { cookie: stateCookie } });
+  const raw = r.headers.getSetCookie().find((c) => c.startsWith("lumenx_session=") && !c.startsWith("lumenx_session=;"));
+  return { status: r.status, location: r.headers.get("location"), raw, cookie: raw ? raw.split(";")[0] : null };
+}
+
+async function signInGoogle(person, { state: stateOverride } = {}) {
+  nextGoogle = person;
+  let r = await fetch(BASE + "/auth/google/login", { redirect: "manual" });
   const stateCookie = r.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
   r = await fetch(r.headers.get("location"), { redirect: "manual" });
   const back = new URL(r.headers.get("location"));
@@ -191,7 +226,7 @@ try {
   const alice = await signIn("alice");
   check(alice.status === 302 && alice.location === "/" && alice.cookie !== null, "alice signs in through GitHub and gets a session");
   check(/HttpOnly/.test(alice.raw) && /Secure/.test(alice.raw) && /SameSite=Lax/.test(alice.raw), "the session cookie is HttpOnly, Secure and SameSite=Lax");
-  check(JSON.stringify((await call(alice.cookie, "GET", "/api/me")).data) === '{"login":"alice"}', "/api/me says who she is");
+  check(JSON.stringify((await call(alice.cookie, "GET", "/api/me")).data) === '{"login":"alice","provider":"github"}', "/api/me says who she is (alice, GitHub)");
 
   r = await call(alice.cookie, "POST", "/api/products", { name: "Bread" });
   check(r.status === 201, `creates a product (status ${r.status}${r.data?.detail ? ": " + r.data.detail : ""})`);
@@ -277,6 +312,24 @@ try {
   check(mallory.status === 403 && mallory.cookie === null, `mallory (not on the list) is refused: ${mallory.status}, no session`);
   const forged = await signIn("alice", { state: "forged-state" });
   check(forged.status === 400 && forged.cookie === null, `a forged sign-in (wrong state) is refused: ${forged.status}`);
+
+  // ---- Sign in with Google: the same rules, another list (emails), another kind of owner ----
+  r = await fetch(BASE + "/auth/providers");
+  check((await r.json()).google === true, "the page can ask which sign-in buttons to show (GitHub and Google)");
+  const carol = await signInGoogle("carol");
+  check(carol.status === 302 && carol.cookie !== null, `carol signs in with Google (her email is on the list, in another case): ${carol.status}`);
+  r = await call(carol.cookie, "GET", "/api/me");
+  check(r.data.login === "carol@example.com" && r.data.provider === "google", `/api/me says who she is: ${r.data?.login}, ${r.data?.provider}`);
+  check(JSON.stringify((await call(carol.cookie, "GET", "/api/products")).data) === "[]", "carol (Google) does not see alice's products");
+  const carolProduct = (await call(carol.cookie, "POST", "/api/products", { name: "Bread" })).data.id;
+  check(JSON.stringify((await call(alice.cookie, "GET", "/api/products")).data.map((p) => p.id).includes(carolProduct)) === "false", "and alice does not see carol's");
+  const eve = await signInGoogle("eve");
+  check(eve.status === 403 && eve.cookie === null, `eve (a Google account that is not on the list) is refused: ${eve.status}, no session`);
+  const unverified = await signInGoogle("mallory");
+  check(unverified.status === 502 && unverified.cookie === null, `an email that Google has not verified is refused: ${unverified.status}`);
+  const forgedGoogle = await signInGoogle("carol", { state: "forged-state" });
+  check(forgedGoogle.status === 400 && forgedGoogle.cookie === null, `a forged Google sign-in (wrong state) is refused: ${forgedGoogle.status}`);
+  check((await call(alice.cookie, "GET", "/api/me")).data.provider === "github", "a GitHub session still says github");
 
   const parts = alice.cookie.split(".");
   parts[2] = parts[2].slice(0, -4) + "AAAA";

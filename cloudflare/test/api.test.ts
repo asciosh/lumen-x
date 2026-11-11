@@ -70,7 +70,7 @@ beforeEach(() => {
 
 describe("/api/me", () => {
   it("returns the GitHub username of the user", async () => {
-    expect((await alice("GET", "/api/me")).body).toEqual({ login: "alice" });
+    expect((await alice("GET", "/api/me")).body).toEqual({ login: "alice", provider: "github" });
   });
 });
 

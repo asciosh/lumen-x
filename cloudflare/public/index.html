@@ -46,6 +46,14 @@
   .badge.low { color: var(--amber); background: rgba(252, 187, 71, 0.12); border-color: rgba(252, 187, 71, 0.4); }
   .badge.very_low { color: #ff9a8a; background: rgba(255, 154, 138, 0.12); border-color: rgba(255, 154, 138, 0.4); }
   details.expert > summary h2 { font-size: 1.15rem; }
+  h1.pitch { font-size: clamp(1.7rem, 4.5vw, 2.5rem); margin: 0 0 0.6rem; }
+  .pitch-text { font-size: 1.12rem; max-width: 60ch; margin: 0 0 0.6rem; }
+  a.btn { text-decoration: none; }
+  ol.steps { margin: 0.8rem 0 1.2rem; padding-left: 1.3rem; max-width: 62ch; }
+  ol.steps li { margin: 0.4rem 0; }
+  ul.plain { list-style: none; margin: 0.4rem 0 0; padding: 0; }
+  ul.plain li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.55rem 0; border-top: 1px solid var(--line-soft); }
+  .card.how h2 { margin-top: 0; }
   .dropzone { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; border: 2px dashed var(--line); border-radius: var(--radius-s); padding: 1.6rem 1rem; text-align: center; cursor: pointer; background: var(--ink-2); margin-bottom: 1rem; transition: border-color 0.15s, background 0.15s; }
   .dropzone:hover, .dropzone:focus-visible, .dropzone.over { border-color: var(--amber); background: rgba(252, 187, 71, 0.07); outline: none; }
   .dropzone p { margin: 0; max-width: none; }
@@ -72,6 +80,7 @@
   </div>
   <div class="right">
     <span class="who" id="who" hidden></span>
+    <a id="settings-link" class="btn btn-secondary btn-small" href="#/settings" hidden></a>
     <button id="signout" class="btn btn-secondary btn-small" type="button" hidden></button>
     <span class="toggle" role="group" aria-label="Language">
       <button id="btn-en" type="button" class="on">EN</button><button id="btn-it" type="button">IT</button>

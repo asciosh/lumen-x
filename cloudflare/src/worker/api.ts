@@ -18,6 +18,8 @@ export interface ApiContext {
   owner: string;
   /** The GitHub username, for display. */
   login: string;
+  /** Where the person signed in: "github" or "google". */
+  provider?: "github" | "google";
   now: () => Date;
   /** The AI settings (secrets of the Worker) and the way to reach the providers. Without them, the AI is off. */
   llm?: LlmEnv;
@@ -44,7 +46,7 @@ export async function handle(request: Request, ctx: ApiContext): Promise<Respons
   const store = new Store(ctx.db);
 
   if (url.pathname === "/api/me") {
-    return method === "GET" ? json({ login: ctx.login }) : methodNotAllowed(["GET"]);
+    return method === "GET" ? json({ login: ctx.login, provider: ctx.provider ?? "github" }) : methodNotAllowed(["GET"]);
   }
   if (url.pathname === "/api/ai") {
     return method === "GET" ? aiStatus(ctx, store) : methodNotAllowed(["GET"]);

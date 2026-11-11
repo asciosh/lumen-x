@@ -1,9 +1,9 @@
 # Lumen-X · Cloudflare edition
 
 A second implementation of Lumen-X that runs on the **free** Cloudflare plan, with no credit card: a Worker, a D1 database
-and a sign-in with GitHub. The full stack in the rest of the repo (.NET + Python + PostgreSQL) stays as it is.
+and a sign-in with GitHub or Google. The full stack in the rest of the repo (.NET + Python + PostgreSQL) stays as it is.
 
-**Status: private beta.** Done: the forecasting engine, the Worker (sign-in with GitHub, database, CSV import, forecast, reorder,
+**Status: private beta.** Done: the forecasting engine, the Worker (sign-in with GitHub or Google, database, CSV import, forecast, reorder,
 plain-language explanations, questions about the data, an optional AI rewrite of the explanation) and the dashboard (English and Italian): products, sales upload (a CSV file dropped on the page, or cells pasted from Excel) with a preview before anything is saved, and the list of
 rejected rows, an automatic forecast after every upload, and a product page that starts with **three answers in plain words**: how much
 to order (highlighted: a number, with an optional "how many do you already have?"), how much will be sold, and how much to trust it
@@ -24,7 +24,7 @@ turning it on asks for a payment method, even on the free plan, and this edition
 
 ```
 browser ──► Worker ──► D1
-              │  └─ /auth/*  sign-in with GitHub (OAuth)
+              │  └─ /auth/*  sign-in with GitHub or Google (OAuth)
               └─ static files of the dashboard (public/), served as they are
 ```
 
@@ -96,7 +96,30 @@ better than its ETS on this series. It is still about 17% better than the naive 
 The Worker needs four **secrets** (Worker → Settings → Variables and secrets → type *Secret*; secrets survive every deploy and
 never reach the repo): `SESSION_SECRET` (random text, at least 32 characters), `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
 (from a GitHub OAuth app whose callback URL is `https://<your worker address>/auth/callback`) and `ALLOWED_GITHUB_USERS`
-(for example `alice, bob`). The database schema is in `migrations/0001_init.sql`; paste it in the D1 console.
+(for example `alice, bob`). The database schema is in `migrations/0001_init.sql` (and `0002_ai.sql`); paste them in the D1 console.
+
+### Sign in with Google (optional)
+
+GitHub is a wall for someone who is not a developer, so the sign-in can also be done with Google. Each way is switched on by its own
+settings, and the sign-in page shows only the buttons that are set up (`GET /auth/providers`, which says only yes or no).
+
+1. In the Google Cloud console create a project (no billing is needed), configure the OAuth consent screen asking only for the scopes
+   `openid` and `email`, and create an **OAuth client ID** of type *Web application* with the authorized redirect URI
+   `https://<your worker address>/auth/google/callback`. The menus of the console change often: look for *Credentials* and
+   *Create credentials*. While the app is in "Testing", only the test users you list there can sign in; since the list of invited people
+   is checked by the Worker anyway, you can publish it (scopes like these do not need Google's verification).
+2. In the Worker add three secrets: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `ALLOWED_GOOGLE_EMAILS` (the invited people's
+   addresses, for example `carol@example.com, dave@example.com`).
+
+How it works: the same rules as for GitHub (a random `state` tied to the browser, the secret only ever sent to Google, closed by default,
+the list checked on **every** request so that removing an address locks that person out at once). Differences: the identity is the
+`sub` that Google gives to the account (21 digits, kept as text), the owner of the data is `google:<sub>` (so a GitHub account and a Google
+account of the same person are two different owners, with separate data), an address that Google has not verified is refused, and the
+**email is only checked against the list and kept in the signed session cookie: it is never stored in the database**. Only the scopes
+`openid email` are asked for: no name, no photo, no contacts.
+
+**Not tested against the real Google**: the unit tests and the end-to-end run use a stand-in that behaves as the documentation says; the
+first real sign-in is the real test.
 
 ## Importing sales
 
@@ -178,7 +201,7 @@ where the data lives (for example the D1 location) or the AI providers, check th
 ```bash
 cd cloudflare
 npm install
-npm test          # 522 tests (vitest): engine, sessions, GitHub sign-in, API on a real SQLite database, dashboard files
+npm test          # 568 tests (vitest): engine, sessions, GitHub and Google sign-in, API on a real SQLite database, dashboard files
 npm run typecheck # tsc
 npm run e2e       # the Worker in the real Workers runtime (workerd), locally, with the real Bread series
 ```
@@ -199,7 +222,7 @@ src/engine/   csv.ts (import rules), series.ts (daily series, gaps filled), mode
               forecast.ts (backtest, choice of method, interval), reorder.ts (safety stock),
               explain.ts (facts and the written explanation, Italian and English),
               chat/ (the questions about the data: question text, intent, period, answers)
-src/worker/   index.ts (entry point), login.ts (GitHub sign-in), session.ts (signed cookie), auth.ts (who is calling),
+src/worker/   index.ts (entry point), login.ts (GitHub and Google sign-in), session.ts (signed cookie), auth.ts (who is calling),
               allowlist.ts, api.ts (routes), db.ts (queries), limits.ts, http.ts,
               llm/ (the optional AI rewrite: prompt, providers, router)
 migrations/   0001_init.sql (the D1 schema), 0002_ai.sql (the AI counters)
