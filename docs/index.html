@@ -32,6 +32,27 @@
   .err { color: var(--err); background: var(--err-bg); border-left: 3px solid var(--err); padding: 0.7rem 1rem; border-radius: var(--radius-s); }
   .source { margin-top: 0.2rem; }
   #h-name { margin-bottom: 0.5rem; }
+  .summary-grid { display: grid; gap: 1rem; grid-template-columns: 1fr; margin-top: 0.75rem; }
+  @media (min-width: 860px) { .summary-grid { grid-template-columns: 1.35fr 1fr; } .block.order { grid-row: span 2; } }
+  .block { border: 1px solid var(--line); border-radius: var(--radius-s); padding: 1rem 1.15rem; background: var(--ink-2); }
+  .stage .block h3, .block h3 { margin: 0 0 0.5rem; padding-top: 0; border-top: 0; font-size: 0.95rem; font-weight: 650; color: var(--muted); }
+  .block details.fold h3, .stage details.fold > summary h3 { margin: 0; padding-top: 0; border-top: 0; }
+  .block.order { border-color: var(--amber); background: rgba(252, 187, 71, 0.06); }
+  .block p { margin: 0.35rem 0; }
+  .kicker { color: var(--muted); font-size: 0.95rem; margin-bottom: 0 !important; }
+  .bignum { font-family: var(--font-display, inherit); font-size: clamp(1.9rem, 5vw, 2.7rem); font-weight: 700; color: var(--amber); line-height: 1.1; margin: 0.1rem 0 0.3rem !important; }
+  .bignum span { font-size: 0.45em; font-weight: 600; color: var(--amber-soft); }
+  .small { font-size: 0.88rem; }
+  #order-form { margin: 0.9rem 0 0.4rem; }
+  #order-form label { flex: 0 0 auto; }
+  .badge { display: inline-block; padding: 0.2rem 0.75rem; border-radius: 999px; font-size: 0.92rem; font-weight: 650; border: 1px solid transparent; }
+  .badge.high { color: #8be0a6; background: rgba(139, 224, 166, 0.12); border-color: rgba(139, 224, 166, 0.35); }
+  .badge.medium { color: #d6e283; background: rgba(214, 226, 131, 0.12); border-color: rgba(214, 226, 131, 0.35); }
+  .badge.low { color: var(--amber); background: rgba(252, 187, 71, 0.12); border-color: rgba(252, 187, 71, 0.4); }
+  .badge.very_low { color: #ff9a8a; background: rgba(255, 154, 138, 0.12); border-color: rgba(255, 154, 138, 0.4); }
+  details.expert > summary h2 { font-size: 1.15rem; }
+  .chart .hit { fill: transparent; stroke: none; }
+  .chart .hit:hover { fill: rgba(252, 187, 71, 0.35); }
 </style>
 </head>
 <body>
@@ -54,6 +75,7 @@
 </main>
 <footer class="footer" id="footer"></footer>
 
+<script src="summary.js"></script>
 <script>
 (function () {
   'use strict';
@@ -64,8 +86,8 @@
       banner: 'Demo statica: risultati veri dell\'app su dati di esempio, esportati in questa pagina. <a href="https://codespaces.new/asciosh/lumen-x">Prova l\'app vera in un Codespace</a> · <a href="https://github.com/asciosh/lumen-x">Codice sorgente</a>',
       context: function (d) { return 'Vendite giornaliere di un prodotto di panetteria, dal dataset Kaggle Store Sales. Lo storico finisce il ' + d + '; la previsione parte il giorno dopo.'; },
       loading: 'Caricamento…', loadError: 'Impossibile caricare i dati della demo: ',
-      forecast: 'Previsione', lead: function (days, total, avg) { return 'Prossimi ' + days + ' giorni: circa <strong>' + total + '</strong> unità, ' + avg + ' al giorno.'; },
-      history: 'Storico', band: 'Fascia probabile (min–max)', chartNote: 'Ultimi 120 giorni di storico e previsione dei giorni successivi.',
+      forecast: 'Previsione', history: 'Storico', band: 'Fascia probabile (min–max)', chartNote: 'Ultimi 120 giorni di storico e previsione dei giorni successivi.',
+      chartTitle: 'Come andranno le vendite', summaryTitle: 'In breve',
       method: 'Metodo', horizon: 'Orizzonte', days: 'giorni', check: 'Verifica su',
       explanation: 'Spiegazione', source: 'Fonte', srcGemini: 'Gemini (riscritta dall\'AI a partire dai fatti calcolati)', srcTemplate: 'modello a regole (nessuna AI)',
       noExplanation: 'Spiegazione non disponibile in questa lingua.',
@@ -73,16 +95,35 @@
       repo: 'Codice e documentazione su GitHub', footer: 'Lumen-X · il futuro delle tue vendite, in chiaro.',
       askTitle: 'Chiedi ai tuoi dati', askNote: 'Domande vere, con le risposte calcolate dall\'app sui dati di questo prodotto (senza AI). Nell\'app completa puoi scrivere le tue.',
       reorderTitle: 'Riordino', reorderNote: 'Quanto ordinare per non restare senza merce fino al prossimo arrivo (7 giorni di consegna, 7 tra un ordine e l\'altro).',
-      serviceLevel: 'Livello di servizio', rPeriod: 'Periodo da coprire', rDemand: 'Domanda prevista nel periodo',
-      rSafety: function (p) { return 'Scorta di sicurezza (' + p + '%)'; }, rLevel: 'Livello massimo', daysN: function (n) { return n + ' giorni'; }
+      rPeriod: 'Periodo da coprire', rDemand: 'Domanda prevista nel periodo',
+      rSafety: function (p) { return 'Scorta di sicurezza (' + p + '%)'; }, rLevel: 'Livello massimo', daysN: function (n) { return n + ' giorni'; },
+      orderTitle: 'Quanto ordinare', orderKickerOrder: 'Ordina circa', orderKickerNeed: 'Ti servono circa', unitsWord: 'unità',
+      orderSubNeed: function (d) { return 'tra magazzino e ordini, per i prossimi ' + d + ' giorni'; },
+      orderSubOrder: function (total, d, have) { return 'Ti servono ' + total + ' tra magazzino e ordini per i prossimi ' + d + ' giorni, e ne hai già ' + have + '.'; },
+      onHandAsk: 'Quante ne hai già in magazzino?', updateButton: 'Aggiorna',
+      orderAssumptions: function (lead, review, level) { return 'Calcolato per una consegna in ' + lead + ' giorni e un ordine ogni ' + review + ' giorni, con un margine di sicurezza ' + level + '.'; },
+      orderSettings: 'Cambia il margine di sicurezza', safetyLabel: 'Margine di sicurezza',
+      orderDemoNote: 'Nella demo i tempi sono fissi: 7 giorni per la consegna e un ordine ogni 7 giorni. Nell\'app completa puoi cambiarli.',
+      sl90: 'Economico: puoi restare senza merce circa 1 volta su 10', sl95: 'Normale: circa 1 volta su 20', sl98: 'Prudente: circa 1 volta su 50', sl99: 'Molto prudente: circa 1 volta su 100',
+      slName90: 'economico', slName95: 'normale', slName98: 'prudente', slName99: 'molto prudente',
+      sellTitle: 'Quanto venderò', sellKicker: function (d) { return 'Nei prossimi ' + d + ' giorni'; }, sellPerDay: function (a) { return 'cioè ' + a + ' al giorno'; },
+      sellSame: function (n) { return 'In linea con gli ultimi ' + n + ' giorni.'; },
+      sellMore: function (p, n) { return 'Il ' + p + '% in più rispetto agli ultimi ' + n + ' giorni.'; }, sellLess: function (p, n) { return 'Il ' + p + '% in meno rispetto agli ultimi ' + n + ' giorni.'; },
+      sellDays: function (a, b) { return 'Giorno più forte: ' + a + '. Più debole: ' + b + '.'; },
+      trustTitle: 'Quanto posso fidarmi',
+      trust_high: 'Molto affidabile', trust_medium: 'Abbastanza affidabile', trust_low: 'Poco affidabile', trust_very_low: 'Non affidabile',
+      trustError: function (units, pct) { return 'Provata su giorni che non conosceva, ha sbagliato in media di circa ' + units + ' unità al giorno (' + pct + '% delle vendite).'; },
+      trustNaive: 'Non fa meglio che ripetere la settimana scorsa.', trustZero: 'Molti giorni non hanno vendite, quindi i numeri sono difficili da prevedere.', trustCaution: 'Usa la previsione con cautela.',
+      trustBlend: 'Il metodo usato è la media di due metodi (ETS e LightGBM): i dettagli sono sotto, in «Dettagli per esperti».',
+      expertTitle: 'Dettagli per esperti', expertHint: 'Il metodo usato, il confronto tra i metodi, la spiegazione completa e i numeri del riordino.'
     },
     en: {
       tagline: 'Sales forecasting',
       banner: 'Static demo: real outputs of the app on example data, exported to this page. <a href="https://codespaces.new/asciosh/lumen-x">Try the real app in a Codespace</a> · <a href="https://github.com/asciosh/lumen-x">Source code</a>',
       context: function (d) { return 'Daily sales of a bakery product, from the Kaggle Store Sales dataset. The history ends on ' + d + '; the forecast starts the next day.'; },
       loading: 'Loading…', loadError: 'Could not load the demo data: ',
-      forecast: 'Forecast', lead: function (days, total, avg) { return 'Next ' + days + ' days: about <strong>' + total + '</strong> units, ' + avg + ' per day.'; },
-      history: 'History', band: 'Likely range (min–max)', chartNote: 'The last 120 days of history and the forecast for the days that follow.',
+      forecast: 'Forecast', history: 'History', band: 'Likely range (min–max)', chartNote: 'The last 120 days of history and the forecast for the days that follow.',
+      chartTitle: 'How sales will go', summaryTitle: 'At a glance',
       method: 'Method', horizon: 'Horizon', days: 'days', check: 'Checked on',
       explanation: 'Explanation', source: 'Source', srcGemini: 'Gemini (rewritten by AI from the computed facts)', srcTemplate: 'rule-based template (no AI)',
       noExplanation: 'Explanation not available in this language.',
@@ -90,8 +131,27 @@
       repo: 'Code and documentation on GitHub', footer: 'Lumen-X · the future of your sales, in plain sight.',
       askTitle: 'Ask your data', askNote: 'Real questions, answered by the app from this product\'s data (no AI involved). In the full app you can type your own.',
       reorderTitle: 'Reorder', reorderNote: 'How much to order so you do not run out of stock until the next delivery (7 days of lead time, 7 days between orders).',
-      serviceLevel: 'Service level', rPeriod: 'Period to cover', rDemand: 'Expected demand in the period',
-      rSafety: function (p) { return 'Safety stock (' + p + '%)'; }, rLevel: 'Maximum level', daysN: function (n) { return n + ' days'; }
+      rPeriod: 'Period to cover', rDemand: 'Expected demand in the period',
+      rSafety: function (p) { return 'Safety stock (' + p + '%)'; }, rLevel: 'Maximum level', daysN: function (n) { return n + ' days'; },
+      orderTitle: 'How much to order', orderKickerOrder: 'Order about', orderKickerNeed: 'You need about', unitsWord: 'units',
+      orderSubNeed: function (d) { return 'between stock and orders, for the next ' + d + ' days'; },
+      orderSubOrder: function (total, d, have) { return 'You need ' + total + ' between stock and orders for the next ' + d + ' days, and you already have ' + have + '.'; },
+      onHandAsk: 'How many do you already have in stock?', updateButton: 'Update',
+      orderAssumptions: function (lead, review, level) { return 'Worked out for a delivery in ' + lead + ' days and an order every ' + review + ' days, with a ' + level + ' safety margin.'; },
+      orderSettings: 'Change the safety margin', safetyLabel: 'Safety margin',
+      orderDemoNote: 'In the demo the times are fixed: 7 days for the delivery and an order every 7 days. In the full app you can change them.',
+      sl90: 'Economic: you may run out about 1 time in 10', sl95: 'Normal: about 1 time in 20', sl98: 'Careful: about 1 time in 50', sl99: 'Very careful: about 1 time in 100',
+      slName90: 'economic', slName95: 'normal', slName98: 'careful', slName99: 'very careful',
+      sellTitle: 'How much will I sell', sellKicker: function (d) { return 'In the next ' + d + ' days'; }, sellPerDay: function (a) { return 'that is ' + a + ' a day'; },
+      sellSame: function (n) { return 'In line with the last ' + n + ' days.'; },
+      sellMore: function (p, n) { return p + '% more than the last ' + n + ' days.'; }, sellLess: function (p, n) { return p + '% less than the last ' + n + ' days.'; },
+      sellDays: function (a, b) { return 'Best day: ' + a + '. Weakest: ' + b + '.'; },
+      trustTitle: 'How much can I trust it',
+      trust_high: 'Very reliable', trust_medium: 'Fairly reliable', trust_low: 'Not very reliable', trust_very_low: 'Not reliable',
+      trustError: function (units, pct) { return 'Tested on days it had not seen, it was off by about ' + units + ' units a day on average (' + pct + '% of the sales).'; },
+      trustNaive: 'It does no better than simply repeating last week.', trustZero: 'Many days have no sales at all, so the numbers are hard to predict.', trustCaution: 'Use the forecast with caution.',
+      trustBlend: 'The method used is the average of two methods (ETS and LightGBM): the details are below, in “Details for experts”.',
+      expertTitle: 'Details for experts', expertHint: 'The method used, the comparison between methods, the full explanation and the numbers of the reorder.'
     }
   };
 
@@ -165,7 +225,60 @@
     if (hist.length) s += '<polyline points="' + hist.map(function (p) { return pt(p.date, p.quantity); }).join(' ') + '" pathLength="1" class="line-history"/>';
     if (fc.length) s += '<polyline points="' + fc.map(function (p) { return pt(p.date, p.yhat); }).join(' ') + '" class="line-yhat"/>';
     if (hist.length && fc.length) { var last = hist[hist.length - 1]; s += '<circle cx="' + n(X(dayNumber(last.date))) + '" cy="' + n(Y(last.quantity)) + '" r="4.6" class="dot"/>'; }
+    // Invisible points with a tooltip: hover a day to read its value
+    hist.forEach(function (p) { s += '<circle class="hit" cx="' + n(X(dayNumber(p.date))) + '" cy="' + n(Y(p.quantity)) + '" r="5"><title>' + esc(fmtDate(p.date) + ': ' + qty(p.quantity)) + '</title></circle>'; });
+    fc.forEach(function (p) { s += '<circle class="hit" cx="' + n(X(dayNumber(p.date))) + '" cy="' + n(Y(p.yhat)) + '" r="5"><title>' + esc(fmtDate(p.date) + ': ' + qty(p.yhat) + ' (' + qty(p.lower) + '–' + qty(p.upper) + ')') + '</title></circle>'; });
     return s + '</svg>';
+  }
+
+  var WEEKDAYS_IT = { Monday: 'lunedì', Tuesday: 'martedì', Wednesday: 'mercoledì', Thursday: 'giovedì', Friday: 'venerdì', Saturday: 'sabato', Sunday: 'domenica' };
+  function weekdayName(english) { return state.lang === 'it' ? (WEEKDAYS_IT[english] || english) : english; }
+  function percentText(v) { return num(Math.abs(v), Math.abs(v) >= 10 ? 0 : 1); }
+  function safetyName(level) { return t('slName' + level) || (level + '%'); }
+
+  // The facts the summary is made of: the ones exported by the app, or, if they are missing, what the forecast file itself says
+  function factsOf(f) {
+    var ex = state.expl[state.lang] || state.expl.it || state.expl.en;
+    if (ex && ex.facts) return ex.facts;
+    var fc = f.forecast || [], total = fc.reduce(function (a, p) { return a + p.yhat; }, 0), m = f.backtest && f.backtest[f.methodUsed];
+    return { horizon: fc.length, forecastTotal: total, forecastAvgPerDay: fc.length ? total / fc.length : 0, referenceDays: 0, changePercent: null,
+             strongestWeekday: null, weakestWeekday: null, maeUsed: m && m.mae != null ? m.mae : null, methodUsed: f.methodUsed, improvementVsNaivePercent: null, zeroDaysPercent: 0 };
+  }
+
+  function summaryHtml(facts) {
+    var variants = (state.reorder && state.reorder.variants) || [];
+    var html = '<section class="card stage"><h2>' + esc(t('summaryTitle')) + '</h2><div class="summary-grid">';
+    if (variants.length) {
+      var options = variants.map(function (v) { return '<option value="' + esc(v.serviceLevelPercent) + '"' + (v.serviceLevelPercent === state.level ? ' selected' : '') + '>' + esc(t('sl' + v.serviceLevelPercent) || v.serviceLevelPercent + '%') + '</option>'; }).join('');
+      html += '<div class="block order"><h3>' + esc(t('orderTitle')) + '</h3><div id="order-result"></div>' +
+        '<form id="order-form" class="row"><label>' + esc(t('onHandAsk')) + '<input type="number" id="onhand" min="0" step="any"></label><button class="btn btn-secondary btn-small" type="submit">' + esc(t('updateButton')) + '</button></form>' +
+        '<details class="fold"><summary><h3 style="margin:0">' + esc(t('orderSettings')) + '</h3></summary><div class="row"><label>' + esc(t('safetyLabel')) + '<select id="level">' + options + '</select></label></div>' +
+        '<p class="muted small">' + esc(t('orderDemoNote')) + '</p></details></div>';
+    }
+    html += '<div class="block sell"><h3>' + esc(t('sellTitle')) + '</h3><div id="sell-result">' + sellHtml(facts) + '</div></div>' +
+            '<div class="block trust"><h3>' + esc(t('trustTitle')) + '</h3><div id="trust-result">' + trustHtml(facts) + '</div></div></div></section>';
+    return html;
+  }
+
+  function sellHtml(facts) {
+    var html = '<p class="kicker">' + esc(t('sellKicker')(facts.horizon)) + '</p><p class="bignum">' + num(facts.forecastTotal, 0) + ' <span>' + esc(t('unitsWord')) + '</span></p><p class="muted">' + esc(t('sellPerDay')(num(facts.forecastAvgPerDay, 0))) + '</p>';
+    if (facts.changePercent != null) {
+      var c = facts.changePercent;
+      html += '<p>' + esc(Math.abs(c) < 2 ? t('sellSame')(facts.referenceDays) : (c > 0 ? t('sellMore') : t('sellLess'))(percentText(c), facts.referenceDays)) + '</p>';
+    }
+    if (facts.strongestWeekday && facts.weakestWeekday) html += '<p class="muted">' + esc(t('sellDays')(weekdayName(facts.strongestWeekday), weekdayName(facts.weakestWeekday))) + '</p>';
+    return html;
+  }
+
+  function trustHtml(facts) {
+    var tr = LumenSummary.trustVerdict(facts);
+    var html = '<p><span class="badge ' + esc(tr.level) + '">' + esc(t('trust_' + tr.level)) + '</span></p>';
+    if (tr.errorPercent !== null) html += '<p>' + esc(t('trustError')(qty(tr.errorUnits), percentText(tr.errorPercent))) + '</p>';
+    if (tr.beatsNaive === false) html += '<p class="muted">' + esc(t('trustNaive')) + '</p>';
+    if (tr.intermittent) html += '<p class="muted">' + esc(t('trustZero')) + '</p>';
+    if (tr.level === 'low' || tr.level === 'very_low') html += '<p class="muted">' + esc(t('trustCaution')) + '</p>';
+    if (String(facts.methodUsed).toLowerCase() === 'blend') html += '<p class="muted small">' + esc(t('trustBlend')) + '</p>';
+    return html;
   }
 
   function render() {
@@ -175,31 +288,32 @@
     el('btn-it').className = state.lang === 'it' ? 'on' : ''; el('btn-en').className = state.lang === 'en' ? 'on' : '';
     if (!f) return;
 
-    var fc = f.forecast || [];
-    var total = fc.reduce(function (a, p) { return a + p.yhat; }, 0);
+    var fc = f.forecast || [], facts = factsOf(f);
     var name = (state.expl.it && state.expl.it.facts && state.expl.it.facts.productName) ||
                (state.expl.en && state.expl.en.facts && state.expl.en.facts.productName) || 'Lumen-X';
-
     var lastDay = (state.sales && state.sales.length) ? state.sales.map(function (p) { return p.date; }).sort().pop() : null;
-    var html = '<h1 id="h-name"></h1>' + (lastDay ? '<p class="lede">' + esc(t('context')(fmtDate(lastDay))) + '</p>' : '') + '<section class="card stage"><h2>' + esc(t('forecast')) + '</h2>';
-    if (fc.length) html += '<p class="lead">' + t('lead')(fc.length, num(total, 0), num(total / fc.length, 0)) + '</p>';
-    html += '<div class="chart-wrap">' + chartSvg(state.sales || [], fc, 120) + '</div>';
-    html += '<div class="legend"><span><i class="sw sw-history"></i> ' + esc(t('history')) + '</span><span><i class="sw sw-yhat"></i> ' + esc(t('forecast')) + '</span><span><i class="sw sw-band"></i> ' + esc(t('band')) + '</span></div>';
-    html += '<p class="muted">' + esc(t('chartNote')) + '</p>';
+
+    // 1) the answers, 2) the chart, 3) the questions, 4) everything technical, folded
+    var html = '<h1 id="h-name"></h1>' + (lastDay ? '<p class="lede">' + esc(t('context')(fmtDate(lastDay))) + '</p>' : '');
+    html += summaryHtml(facts);
+    html += '<section class="card"><h2>' + esc(t('chartTitle')) + '</h2><div class="chart-wrap">' + chartSvg(state.sales || [], fc, 120) + '</div>' +
+            '<div class="legend"><span><i class="sw sw-history"></i> ' + esc(t('history')) + '</span><span><i class="sw sw-yhat"></i> ' + esc(t('forecast')) + '</span><span><i class="sw sw-band"></i> ' + esc(t('band')) + '</span></div>' +
+            '<p class="muted">' + esc(t('chartNote')) + '</p></section>';
+
+    var askList = state.ask && state.ask.questions && state.ask.questions[state.lang];
+    if (askList && askList.length) {
+      html += '<section class="card chat"><h2>' + esc(t('askTitle')) + '</h2><p class="muted">' + esc(t('askNote')) + '</p><div class="chips" id="chips">';
+      askList.forEach(function (q, i) { html += '<button type="button" class="chip" data-i="' + i + '">' + esc(q.question) + '</button>'; });
+      html += '</div><div id="turns"></div></section>';
+    }
+
+    html += '<section class="card"><details class="fold expert" id="expert"><summary><h2 style="margin:0">' + esc(t('expertTitle')) + '</h2></summary><p class="muted hint">' + esc(t('expertHint')) + '</p>';
     html += '<dl class="facts"><div><dt>' + esc(t('method')) + '</dt><dd><strong>' + esc(f.methodUsed) + '</strong></dd></div>' +
             '<div><dt>' + esc(t('horizon')) + '</dt><dd>' + esc(f.horizon) + ' ' + esc(t('days')) + '</dd></div>' +
             '<div><dt>' + esc(t('check')) + '</dt><dd>' + esc(f.holdoutDays) + ' ' + esc(t('days')) + '</dd></div></dl>';
     html += '<h3>' + esc(t('explanation')) + '</h3>';
     if (ex && ex.text) html += '<div class="explanation" id="h-expl"></div><p class="muted source">' + esc(t('source')) + ': ' + esc(ex.source === 'gemini' ? t('srcGemini') : t('srcTemplate')) + '</p>';
     else html += '<p class="muted">' + esc(t('noExplanation')) + '</p>';
-
-    if (state.reorder && state.reorder.variants && state.reorder.variants.length) {
-      html += '<h3>' + esc(t('reorderTitle')) + '</h3><p class="muted">' + esc(t('reorderNote')) + '</p>';
-      html += '<div class="row"><label>' + esc(t('serviceLevel')) + '<select id="level">';
-      state.reorder.variants.forEach(function (v) { html += '<option value="' + esc(v.serviceLevelPercent) + '"' + (v.serviceLevelPercent === state.level ? ' selected' : '') + '>' + esc(v.serviceLevelPercent) + '%</option>'; });
-      html += '</select></label></div><div id="reorder-box"></div>';
-    }
-
     var bt = f.backtest ? Object.keys(f.backtest) : [];
     if (bt.length) {
       html += '<h3>' + esc(t('reliable')) + '</h3><p class="muted">' + esc(t('reliableNote')) + '</p><table class="table narrow"><thead><tr><th>' + esc(t('metric')) + '</th><th class="num">MAE</th><th class="num">RMSE</th></tr></thead><tbody>';
@@ -209,26 +323,21 @@
       });
       html += '</tbody></table>';
     }
-    html += '</section>';
-    var askList = state.ask && state.ask.questions && state.ask.questions[state.lang];
-    if (askList && askList.length) {
-      html += '<section class="card chat"><h2>' + esc(t('askTitle')) + '</h2><p class="muted">' + esc(t('askNote')) + '</p><div class="chips" id="chips">';
-      askList.forEach(function (q, i) { html += '<button type="button" class="chip" data-i="' + i + '">' + esc(q.question) + '</button>'; });
-      html += '</div><div id="turns"></div></section>';
-    }
+    if (state.reorder && state.reorder.variants && state.reorder.variants.length) html += '<h3>' + esc(t('reorderTitle')) + '</h3><p class="muted">' + esc(t('reorderNote')) + '</p><div id="reorder-box"></div>';
+    html += '</details></section>';
     html += '<p><a href="https://github.com/asciosh/lumen-x">' + esc(t('repo')) + '</a></p>';
 
     root.innerHTML = html;
     el('h-name').textContent = name;                 // texts coming from the data: always as text, never as HTML
     if (el('h-expl')) el('h-expl').textContent = ex.text;
-    renderReorder();
+    renderOrder();
     wire();
     state.turns = [];
     askQuestion(0);                                   // starts with the first example already answered
   }
 
   // ---- questions and reorder: answers are the real ones exported from the app (see scripts/export_demo.py)
-  function qty(v) { return num(v, Math.abs(v) >= 100 ? 0 : 1); }
+  function qty(v) { return num(v, Math.abs(v) >= 100 || Math.round(v) === v ? 0 : 1); }   // a whole number is shown without decimals
 
   function renderTurns() {
     var box = el('turns'); if (!box) return;
@@ -250,11 +359,24 @@
     renderTurns();
   }
 
-  function renderReorder() {
-    var box = el('reorder-box');
+  // How much to order. The numbers (what is needed between stock and orders, for each safety margin) are the real ones of the app; the only
+  // thing computed here is the subtraction of the stock, with the same rule as the app (summary.js, checked by a test).
+  function currentVariant() {
+    return state.reorder.variants.filter(function (x) { return x.serviceLevelPercent === state.level; })[0] || state.reorder.variants[0];
+  }
+
+  function renderOrder() {
+    var box = el('order-result');
     if (!box || !state.reorder) return;
-    var v = state.reorder.variants.filter(function (x) { return x.serviceLevelPercent === state.level; })[0] || state.reorder.variants[0];
-    box.innerHTML = '<table class="table narrow"><tbody>' +
+    var v = currentVariant(), field = el('onhand'), raw = field ? field.value.trim() : '', have = raw === '' ? NaN : Number(raw);
+    var ordering = isFinite(have) && have >= 0;
+    var amount = ordering ? LumenSummary.suggestedOrder(v.orderUpToLevel, have) : v.orderUpToLevel;
+    box.innerHTML = '<p class="kicker">' + esc(ordering ? t('orderKickerOrder') : t('orderKickerNeed')) + '</p>' +
+      '<p class="bignum">' + num(amount, 0) + ' <span>' + esc(t('unitsWord')) + '</span></p>' +
+      '<p class="muted">' + esc(ordering ? t('orderSubOrder')(num(v.orderUpToLevel, 0), v.periodDays, num(have, 0)) : t('orderSubNeed')(v.periodDays)) + '</p>' +
+      '<p class="muted small">' + esc(t('orderAssumptions')(v.leadTimeDays, v.reviewDays, safetyName(v.serviceLevelPercent))) + '</p>';
+    var numbers = el('reorder-box');
+    if (numbers) numbers.innerHTML = '<table class="table narrow"><tbody>' +
       '<tr><td>' + esc(t('rPeriod')) + '</td><td class="num">' + esc(t('daysN')(v.periodDays)) + '</td></tr>' +
       '<tr><td>' + esc(t('rDemand')) + '</td><td class="num">' + qty(v.demandInPeriod) + '</td></tr>' +
       '<tr><td>' + esc(t('rSafety')(v.serviceLevelPercent)) + '</td><td class="num">' + qty(v.safetyStock) + '</td></tr>' +
@@ -265,7 +387,10 @@
     var chips = el('chips');
     if (chips) chips.onclick = function (e) { var b = e.target.closest ? e.target.closest('.chip') : null; if (b) askQuestion(+b.getAttribute('data-i')); };
     var lv = el('level');
-    if (lv) lv.onchange = function () { state.level = +lv.value; renderReorder(); };
+    if (lv) lv.onchange = function () { state.level = +lv.value; renderOrder(); };
+    var form = el('order-form'), stock = el('onhand');
+    if (form) form.onsubmit = function (e) { e.preventDefault(); renderOrder(); };
+    if (stock) stock.oninput = renderOrder;
   }
 
   function getJson(file, optional) {
