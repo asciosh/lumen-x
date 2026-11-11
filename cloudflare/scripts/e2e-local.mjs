@@ -215,7 +215,8 @@ try {
   // ---- "Rewrite with AI": the real Worker, the real database, a stand-in provider ----
   const rewrite = (cookie, lang = "en") => call(cookie, "POST", `/api/products/${id}/forecast/explanation/ai?lang=${lang}`);
   r = await call(alice.cookie, "GET", "/api/ai");
-  check(r.data.enabled === true && r.data.providers[0].id === "groq" && r.data.remaining === 10, "AI status: on, one provider, 10 rewrites left");
+  const limit = r.data.dailyLimit; // the daily limit of AI rewrites, as the Worker states it
+  check(r.data.enabled === true && r.data.providers[0].id === "groq" && r.data.remaining === limit && limit > 3, `AI status: on, one provider, ${limit} rewrites left`);
   r = await rewrite(alice.cookie);
   check(r.status === 200 && r.data.source === "ai" && r.data.provider === "groq" && r.data.text.includes("For Bread I forecast about"), `AI rewrite works, with the real product name: "${r.data?.text}"`);
   check(!llmSeen.body.includes("Bread") && !llmSeen.body.includes("date,quantity") && llmSeen.authorization === "Bearer e2e-llm-key", "the provider received no product name and no sales rows, and the key only in the header");
@@ -226,18 +227,18 @@ try {
   r = await rewrite(alice.cookie, "it");
   check(r.data.source === "ai" && r.data.text.startsWith("Per Bread prevedo circa"), "Italian rewrite works");
   let last;
-  // three done so far (the good one, the discarded one and the Italian one): seven more reach ten
-  for (let i = 0; i < 7; i++) last = await rewrite(alice.cookie);
-  check(last.status === 200 && last.data.remaining === 0, "ten rewrites a day are allowed");
+  // three done so far (the good one, the discarded one and the Italian one): the others reach the limit
+  for (let i = 0; i < limit - 3; i++) last = await rewrite(alice.cookie);
+  check(last.status === 200 && last.data.remaining === 0, `${limit} rewrites a day are allowed`);
   r = await rewrite(alice.cookie);
-  check(r.status === 429, `the eleventh is refused: ${r.status}`);
+  check(r.status === 429, `the next one is refused: ${r.status}`);
 
   const bob = await signIn("bob");
   check(bob.cookie !== null, "bob signs in");
   check((await call(bob.cookie, "GET", `/api/products/${id}`)).status === 404, "bob cannot see alice's product");
   check((await call(bob.cookie, "GET", `/api/products/${id}/sales`)).status === 404, "nor its sales");
   check(JSON.stringify((await call(bob.cookie, "GET", "/api/products")).data) === "[]", "bob's list is empty");
-  check((await call(bob.cookie, "GET", "/api/ai")).data.remaining === 10, "bob has his own count of AI rewrites");
+  check((await call(bob.cookie, "GET", "/api/ai")).data.remaining === limit, "bob has his own count of AI rewrites");
   // a provider that fails is left alone for a while (the pause is kept in the database)
   const bobProduct = (await call(bob.cookie, "POST", "/api/products", { name: "Pasta" })).data.id;
   const bobForm = new FormData();
@@ -247,7 +248,7 @@ try {
   llmMode = "error";
   const before = llmSeen.calls;
   r = await call(bob.cookie, "POST", `/api/products/${bobProduct}/forecast/explanation/ai?lang=en`);
-  check(r.data.source === "template" && r.data.note === "ai_unavailable" && r.data.remaining === 10, "a failing provider: the text written by the app, and no rewrite used");
+  check(r.data.source === "template" && r.data.note === "ai_unavailable" && r.data.remaining === limit, "a failing provider: the text written by the app, and no rewrite used");
   llmMode = "good";
   const afterFail = llmSeen.calls;
   r = await call(bob.cookie, "POST", `/api/products/${bobProduct}/forecast/explanation/ai?lang=en`);

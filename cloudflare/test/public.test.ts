@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { examples } from "../src/engine/chat/answer";
 import { parseSalesCsv } from "../src/engine/csv";
 import { runForecast } from "../src/engine/forecast";
+import { LIMITS } from "../src/worker/limits";
 
 const read = (file: string) => readFileSync(new URL(`../public/${file}`, import.meta.url), "utf8");
 const app = read("app.js");
@@ -72,7 +73,10 @@ describe("the dashboard files", () => {
     for (const piece of ["What is stored", "Where", "AI: only if you press", "Cookies", "Deleting"]) expect(text).toContain(piece);
     expect(text).toContain("could technically read it");
     expect(text).toContain("never the product name");
-    expect(text).toContain("Up to 10 rewrites a day");
+    // The number in the notice is the real limit of the server, in both languages.
+    const limitIn = (lines: string[], pattern: RegExp) => Number(pattern.exec(lines.join(" "))?.[1]);
+    expect(limitIn(a, /Up to (\d+) rewrites a day/)).toBe(LIMITS.aiRewritesPerUserPerDay);
+    expect(limitIn(b, /Fino a (\d+) riscritture al giorno/)).toBe(LIMITS.aiRewritesPerUserPerDay);
   });
 
   it("the example CSV is valid and enough for a forecast", () => {

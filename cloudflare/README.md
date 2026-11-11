@@ -107,7 +107,7 @@ A button "Rewrite with AI" next to the explanation asks an AI provider to write 
   pause is kept in the database) and the next one is used. Each provider has a budget of 200 calls a day. At most three providers are tried for
   one request. It uses **one key per provider, yours**: it does not rotate several accounts of the same provider to multiply a free quota
   (that is usually against the terms and makes everything fragile).
-- **Limits.** 10 rewrites per user per day (UTC); "Delete all my data" does not reset the count. A provider that did answer counts, even if
+- **Limits.** 20 rewrites per user per day (UTC; the number is `aiRewritesPerUserPerDay` in `src/worker/limits.ts`, and a test keeps the privacy notice in step with it); "Delete all my data" does not reset the count. A provider that did answer counts, even if
   its text was discarded; a provider that did not answer does not.
 - **Off by default.** A provider is used only if its settings exist. With none, the button does not appear.
 

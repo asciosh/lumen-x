@@ -34,6 +34,7 @@ const status = (code: number, headers: Record<string, string> = {}) => new Respo
 
 const ENV: LlmEnv = { GROQ_API_KEY: "groq-key", GROQ_MODEL: "groq-model", GEMINI_API_KEY: "gem-key", GEMINI_MODEL: "gem-model" };
 const NOW = new Date("2026-11-10T10:00:00.000Z");
+const LIMIT = LIMITS.aiRewritesPerUserPerDay;
 
 describe("prompt", () => {
   it("never contains the product name, and tells the AI to use a placeholder", () => {
@@ -286,9 +287,9 @@ describe("AI endpoints", () => {
   }
 
   it("GET /api/ai: off without settings, on with the providers that are set, and says how many rewrites are left", async () => {
-    expect((await call(WHO, "GET", "/api/ai")).body).toEqual({ enabled: false, providers: [], dailyLimit: 10, usedToday: 0, remaining: 10 });
+    expect((await call(WHO, "GET", "/api/ai")).body).toEqual({ enabled: false, providers: [], dailyLimit: LIMIT, usedToday: 0, remaining: LIMIT });
     const on = (await call(WHO, "GET", "/api/ai", { env: ENV })).body;
-    expect(on).toMatchObject({ enabled: true, providers: [{ id: "gemini", label: "Google Gemini" }, { id: "groq", label: "Groq" }], remaining: 10 });
+    expect(on).toMatchObject({ enabled: true, providers: [{ id: "gemini", label: "Google Gemini" }, { id: "groq", label: "Groq" }], remaining: LIMIT });
     expect(JSON.stringify(on)).not.toContain("key"); // no key, no model, nothing secret
     expect((await call(WHO, "POST", "/api/ai")).status).toBe(405);
   });
@@ -299,7 +300,7 @@ describe("AI endpoints", () => {
     const f = fakeFetch(() => ok(text));
     const r = await call(WHO, "POST", `/api/products/${id}/forecast/explanation/ai?lang=en`, { env: ENV, fetchFn: f.fn });
     expect(r.status).toBe(200);
-    expect(r.body).toMatchObject({ language: "en", source: "ai", provider: "gemini", providerLabel: "Google Gemini", note: null, remaining: 9 });
+    expect(r.body).toMatchObject({ language: "en", source: "ai", provider: "gemini", providerLabel: "Google Gemini", note: null, remaining: LIMIT - 1 });
     expect(r.body.text).toContain("For “Caffè Segreto” I forecast about");
     for (const c of f.calls) {
       expect(c.body).not.toContain("Caffè");
@@ -313,25 +314,25 @@ describe("AI endpoints", () => {
     const id = await productWithForecast();
     const template = (await call(WHO, "GET", `/api/products/${id}/forecast/explanation?lang=en`)).body.text;
     const r = await call(WHO, "POST", `/api/products/${id}/forecast/explanation/ai?lang=en`, { env: ENV, fetchFn: fakeFetch(() => status(500)).fn });
-    expect(r.body).toMatchObject({ source: "template", provider: null, note: "ai_unavailable", remaining: 10 });
+    expect(r.body).toMatchObject({ source: "template", provider: null, note: "ai_unavailable", remaining: LIMIT });
     expect(r.body.text).toBe(template);
   });
 
   it("a rejected text (invented figures) falls back too, and it does use up one rewrite", async () => {
     const id = await productWithForecast();
     const r = await call(WHO, "POST", `/api/products/${id}/forecast/explanation/ai?lang=en`, { env: ENV, fetchFn: fakeFetch(() => ok(`${PRODUCT_TOKEN} will sell 123456 units`)).fn });
-    expect(r.body).toMatchObject({ source: "template", note: "ai_rejected", remaining: 9 });
+    expect(r.body).toMatchObject({ source: "template", note: "ai_rejected", remaining: LIMIT - 1 });
   });
 
   it("says the AI is not configured, with the text written by the code and no rewrite used", async () => {
     const id = await productWithForecast();
     const r = await call(WHO, "POST", `/api/products/${id}/forecast/explanation/ai`);
     expect(r.status).toBe(200);
-    expect(r.body).toMatchObject({ source: "template", note: "ai_not_configured", remaining: 10, language: "it" });
+    expect(r.body).toMatchObject({ source: "template", note: "ai_not_configured", remaining: LIMIT, language: "it" });
     expect(r.body.text).toContain("prevedo");
   });
 
-  it("allows ten rewrites a day per user, then answers 429; other users and the next day are not affected", async () => {
+  it("allows the daily number of rewrites per user, then answers 429; other users and the next day are not affected", async () => {
     const id = await productWithForecast();
     const otherId = await productWithForecast(OTHER, "Pane");
     const text = await goodAnswer(id);
@@ -342,7 +343,7 @@ describe("AI endpoints", () => {
     }
     const blocked = await call(WHO, "POST", `/api/products/${id}/forecast/explanation/ai?lang=en`, { env: ENV, fetchFn });
     expect(blocked.status).toBe(429);
-    expect(blocked.body.detail).toContain("10 AI rewrites");
+    expect(blocked.body.detail).toContain(`${LIMIT} AI rewrites`);
 
     const bobText = (await call(OTHER, "GET", `/api/products/${otherId}/forecast/explanation?lang=en`)).body.text.replaceAll("Pane", PRODUCT_TOKEN);
     expect((await call(OTHER, "POST", `/api/products/${otherId}/forecast/explanation/ai?lang=en`, { env: ENV, fetchFn: async () => ok(bobText) })).body.source).toBe("ai");
@@ -356,7 +357,7 @@ describe("AI endpoints", () => {
     const text = await goodAnswer(id);
     for (let i = 0; i < LIMITS.aiRewritesPerUserPerDay; i++) await call(WHO, "POST", `/api/products/${id}/forecast/explanation/ai?lang=en`, { env: ENV, fetchFn: async () => ok(text) });
     await call(WHO, "DELETE", "/api/me/data");
-    expect((await call(WHO, "GET", "/api/ai", { env: ENV })).body).toMatchObject({ usedToday: 10, remaining: 0 });
+    expect((await call(WHO, "GET", "/api/ai", { env: ENV })).body).toMatchObject({ usedToday: LIMIT, remaining: 0 });
   });
 
   it("needs a forecast, a supported language, the owner and a POST, and refuses a cross-site request", async () => {
