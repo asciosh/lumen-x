@@ -28,6 +28,8 @@
   //   ALLOWED_GITHUB_USERS   the GitHub usernames that may sign in, for example: alice, bob
   // While they are missing, every request to the API and to the login is refused (closed by default).
 
+  "ai": { "binding": "AI" },
+
   // Only the main address. Preview addresses would be public.
   "workers_dev": true,
   "preview_urls": false
