@@ -21,7 +21,7 @@
       salesTitle: 'Sales', noSales: 'No sales yet. Import a CSV file to start.',
       salesSummary: function (n, from, to) { return n + ' days of sales, from ' + from + ' to ' + to + '.'; },
       importTitle: 'Import sales from a CSV file',
-      importHelp: 'The file needs a header with the columns "date" and "quantity". Dates like 2025-01-31 or 31/01/2025; quantities with a dot or a comma as decimal. If a date is already there, the new quantity replaces it. Other columns are ignored. Up to 5,000 rows and 1 MB per file.',
+      importHelp: 'Dates like 31/01/2025 or 2025-01-31 (also 31-01-2025 and 31.01.2025); quantities with a dot or a comma as decimal. The columns can be called in English or in Italian ("date", "data", "giorno"; "quantity", "quantità", "venduto"...): if I do not recognise them I will ask you. Other columns are ignored. If a day is already there, the new quantity replaces it. Up to 5,000 rows and 1 MB.',
       formatTitle: 'What the file looks like', importButton: 'Import', importing: 'Importing…', chooseFile: 'Choose a CSV file first.',
       imported: function (i, u) { return 'Imported: ' + i + ' new days, ' + u + ' updated.'; },
       dupes: function (n) { return n + ' repeated dates in the file: the last one was used.'; },
@@ -89,10 +89,33 @@
       trustError: function (units, pct) { return 'Tested on days it had not seen, it was off by about ' + units + ' units a day on average (' + pct + '% of the sales).'; },
       trustNaive: 'It does no better than simply repeating last week.', trustZero: 'Many days have no sales at all, so the numbers are hard to predict.', trustCaution: 'Use the forecast with caution.',
       expertTitle: 'Details for experts', expertHint: 'Methods, errors, day-by-day tables, the full explanation, downloads and your sales.',
-      uploadTitle: 'Upload your sales', uploadText: 'Choose a file with one row per day: the date and how many you sold. From Excel: Save as CSV.',
+      uploadTitle: 'Upload your sales', uploadText: 'A CSV file or two columns copied from Excel will do: for each day, the date and how many units you sold. I check everything before importing anything.',
       computeNow: 'Work out the forecast', needMoreDays: function (n) { return 'A forecast needs at least 42 days of sales: you have ' + n + '. Upload more.'; },
       forecastUpdated: 'The forecast was updated.', productName: 'Product name', createGo: 'Create and continue',
-      startHere: 'Start here: try the example, or add your own product.'
+      startHere: 'Start here: try the example, or add your own product.',
+      dzTitle: 'Drop your file here', dzOr: 'or', chooseFileButton: 'Choose a file', fileTooBig: 'The file is too large: at most 1 MB.',
+      pasteTitle: 'Or paste from Excel', pasteHelp: 'In Excel select the two columns (the date and the quantity, with the header if there is one), copy them and paste them here.',
+      pastePlaceholder: 'Paste here…', pasteButton: 'Check', pasteEmpty: 'Paste the cells first.', checking: 'Checking the file…',
+      previewRead: function (n, from, to) { return 'I read ' + n + (n === '1' ? ' day' : ' days') + ' of sales, from ' + from + ' to ' + to + '.'; },
+      previewColumns: function (d, q) { return 'Date column: “' + d + '”. Quantity column: “' + q + '”.'; },
+      previewHeaderless: 'The file has no line with the names of the columns: I took the first column as the date and the second as the quantity.',
+      previewFirst: 'The first days', previewNew: function (i, u) { return 'New days: ' + i + '. Days already there, which will be updated: ' + u + '.'; },
+      previewSkipped: function (n) { return n + (n === 1 ? ' row was' : ' rows were') + ' not understood and will be skipped:'; },
+      dupTitle: function (n) { return n + (n === 1 ? ' day appears' : ' days appear') + ' more than once in the file. What should I do?'; },
+      dupSum: 'Add them up (right for a list of single sales)', dupLast: 'Keep only the last row (right if a day was repeated by mistake)',
+      importConfirm: 'Import these data', importCancel: 'Cancel',
+      mapTitle: 'I could not tell which column is which.', mapDate: 'Which column holds the date?', mapQuantity: 'Which column holds the units sold?',
+      mapRetry: 'Check again', mapSame: 'Choose two different columns.', mapColumn: function (n) { return 'Column ' + n; }, mapOne: 'The file has only one column: I need the date and the quantity.',
+      e_empty_file: 'The file is empty.', e_no_valid_rows: 'I could not understand any row of the file. Here are the first problems:',
+      e_too_many_rows: function (rows, max) { return 'The file has ' + rows + ' rows: at most ' + max + ' can be imported at once. Split it in parts.'; },
+      e_product_full: function (max) { return 'A product can hold at most ' + max + ' days of sales.'; },
+      r_invalid_date: function (l, v) { return 'Row ' + l + ': “' + v + '” does not look like a date. Use for example 31/01/2025 or 2025-01-31.'; },
+      r_missing_quantity: function (l) { return 'Row ' + l + ': the quantity is missing.'; },
+      r_invalid_quantity: function (l, v) { return 'Row ' + l + ': “' + v + '” is not a number.'; },
+      r_ambiguous_quantity: function (l, v) { return 'Row ' + l + ': “' + v + '” is not clear: for decimals use only one comma or one dot.'; },
+      r_negative_quantity: function (l, v) { return 'Row ' + l + ': the quantity cannot be negative (“' + v + '”).'; },
+      r_not_enough_columns: function (l) { return 'Row ' + l + ': some columns are missing.'; },
+      r_too_many_columns: function (l) { return 'Row ' + l + ': there are more columns than expected (if the separator is a comma, decimals written with a comma must be in quotes).'; }
     },
     it: {
       tagline: 'Previsione vendite', loading: 'Caricamento…',
@@ -111,7 +134,7 @@
       salesTitle: 'Vendite', noSales: 'Ancora nessuna vendita. Importa un file CSV per cominciare.',
       salesSummary: function (n, from, to) { return n + ' giorni di vendite, dal ' + from + ' al ' + to + '.'; },
       importTitle: 'Importa le vendite da un file CSV',
-      importHelp: 'Il file deve avere un\'intestazione con le colonne "date" e "quantity". Date come 2025-01-31 o 31/01/2025; quantità con il punto o la virgola come decimale. Se una data c\'è già, la nuova quantità la sostituisce. Le altre colonne vengono ignorate. Fino a 5.000 righe e 1 MB per file.',
+      importHelp: 'Date come 31/01/2025 o 2025-01-31 (anche 31-01-2025 e 31.01.2025); quantità con il punto o la virgola come decimale. Le colonne possono chiamarsi in inglese o in italiano ("date", "data", "giorno"; "quantity", "quantità", "venduto"...): se non le riconosco te lo chiedo. Le altre colonne vengono ignorate. Se un giorno c\'è già, la nuova quantità lo sostituisce. Fino a 5.000 righe e 1 MB.',
       formatTitle: 'Com\'è fatto il file', importButton: 'Importa', importing: 'Importazione…', chooseFile: 'Scegli prima un file CSV.',
       imported: function (i, u) { return 'Importati: ' + i + ' giorni nuovi, ' + u + ' aggiornati.'; },
       dupes: function (n) { return n + ' date ripetute nel file: è stata usata l\'ultima.'; },
@@ -179,10 +202,33 @@
       trustError: function (units, pct) { return 'Provata su giorni che non conosceva, ha sbagliato in media di circa ' + units + ' unità al giorno (' + pct + '% delle vendite).'; },
       trustNaive: 'Non fa meglio che ripetere la settimana scorsa.', trustZero: 'Molti giorni non hanno vendite, quindi i numeri sono difficili da prevedere.', trustCaution: 'Usa la previsione con cautela.',
       expertTitle: 'Dettagli per esperti', expertHint: 'Metodi, errori, tabelle giorno per giorno, spiegazione completa, scarichi e le tue vendite.',
-      uploadTitle: 'Carica le tue vendite', uploadText: 'Scegli un file con una riga per ogni giorno: la data e quante unità hai venduto. Da Excel: Salva con nome, formato CSV.',
+      uploadTitle: 'Carica le tue vendite', uploadText: 'Va bene un file CSV oppure due colonne copiate da Excel: per ogni giorno, la data e quante unità hai venduto. Controllo tutto prima di importare.',
       computeNow: 'Calcola la previsione', needMoreDays: function (n) { return 'Per una previsione servono almeno 42 giorni di vendite: ne hai ' + n + '. Carica altri dati.'; },
       forecastUpdated: 'La previsione è stata aggiornata.', productName: 'Nome del prodotto', createGo: 'Crea e continua',
-      startHere: 'Parti da qui: prova l\'esempio, oppure aggiungi il tuo prodotto.'
+      startHere: 'Parti da qui: prova l\'esempio, oppure aggiungi il tuo prodotto.',
+      dzTitle: 'Trascina qui il tuo file', dzOr: 'oppure', chooseFileButton: 'Scegli il file', fileTooBig: 'Il file è troppo grande: al massimo 1 MB.',
+      pasteTitle: 'Oppure incolla da Excel', pasteHelp: 'In Excel seleziona le due colonne (la data e la quantità, con l\'intestazione se c\'è), copia e incolla qui.',
+      pastePlaceholder: 'Incolla qui…', pasteButton: 'Controlla', pasteEmpty: 'Incolla prima le celle.', checking: 'Controllo il file…',
+      previewRead: function (n, from, to) { return 'Ho letto ' + n + (n === '1' ? ' giorno' : ' giorni') + ' di vendite, dal ' + from + ' al ' + to + '.'; },
+      previewColumns: function (d, q) { return 'Colonna della data: «' + d + '». Colonna della quantità: «' + q + '».'; },
+      previewHeaderless: 'Il file non ha la riga con i nomi delle colonne: ho preso la prima colonna come data e la seconda come quantità.',
+      previewFirst: 'I primi giorni', previewNew: function (i, u) { return 'Giorni nuovi: ' + i + '. Giorni già presenti, che verranno aggiornati: ' + u + '.'; },
+      previewSkipped: function (n) { return n + (n === 1 ? ' riga non l\'ho capita e verrà saltata' : ' righe non le ho capite e verranno saltate') + ':'; },
+      dupTitle: function (n) { return n + (n === 1 ? ' giorno compare' : ' giorni compaiono') + ' più volte nel file. Cosa faccio?'; },
+      dupSum: 'Sommale (giusto per un elenco di singole vendite)', dupLast: 'Tieni solo l\'ultima riga (giusto se un giorno è stato ripetuto per errore)',
+      importConfirm: 'Importa questi dati', importCancel: 'Annulla',
+      mapTitle: 'Non riesco a capire quale colonna è quale.', mapDate: 'Quale colonna contiene la data?', mapQuantity: 'Quale colonna contiene le unità vendute?',
+      mapRetry: 'Controlla di nuovo', mapSame: 'Scegli due colonne diverse.', mapColumn: function (n) { return 'Colonna ' + n; }, mapOne: 'Il file ha una sola colonna: mi servono la data e la quantità.',
+      e_empty_file: 'Il file è vuoto.', e_no_valid_rows: 'Non sono riuscito a capire nessuna riga del file. Ecco i primi problemi:',
+      e_too_many_rows: function (rows, max) { return 'Il file ha ' + rows + ' righe: se ne possono importare al massimo ' + max + ' per volta. Dividilo in parti.'; },
+      e_product_full: function (max) { return 'Un prodotto può contenere al massimo ' + max + ' giorni di vendite.'; },
+      r_invalid_date: function (l, v) { return 'Riga ' + l + ': «' + v + '» non sembra una data. Usa per esempio 31/01/2025 oppure 2025-01-31.'; },
+      r_missing_quantity: function (l) { return 'Riga ' + l + ': manca la quantità.'; },
+      r_invalid_quantity: function (l, v) { return 'Riga ' + l + ': «' + v + '» non è un numero.'; },
+      r_ambiguous_quantity: function (l, v) { return 'Riga ' + l + ': «' + v + '» non è chiaro: per i decimali usa una sola virgola o un solo punto.'; },
+      r_negative_quantity: function (l, v) { return 'Riga ' + l + ': la quantità non può essere negativa («' + v + '»).'; },
+      r_not_enough_columns: function (l) { return 'Riga ' + l + ': mancano delle colonne.'; },
+      r_too_many_columns: function (l) { return 'Riga ' + l + ': ci sono più colonne del previsto (se il separatore è la virgola, i decimali con la virgola vanno tra virgolette).'; }
     }
   };
 
@@ -216,7 +262,9 @@
     var out = parts.length > 1 ? int + dec + parts[1] : int;
     return (neg && Number(s) !== 0 ? '-' : '') + out;
   }
-  function qty(v) { return num(v, Math.abs(v) >= 100 ? 0 : 1); }
+  // The exact number, for the preview of an import (where rounding would hide whether the file was read right): up to two decimals
+  function exact(v) { return new Intl.NumberFormat(state.lang === 'it' ? 'it-IT' : 'en-US', { maximumFractionDigits: 2 }).format(v); }
+  function qty(v) { return num(v, Math.abs(v) >= 100 || Math.round(v) === v ? 0 : 1); }   // a whole number is shown without decimals
   function dayNumber(iso) { var p = iso.split('-'); return Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000); }
   function pad(x) { return (x < 10 ? '0' : '') + x; }
   function shortDate(dn) { var d = new Date(dn * 86400000); return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1) + '/' + pad(d.getUTCFullYear() % 100); }
@@ -414,12 +462,15 @@
   function weekdayName(english) { return state.lang === 'it' ? (WEEKDAYS_IT[english] || english) : english; }
   function percentText(v) { return num(Math.abs(v), Math.abs(v) >= 10 ? 0 : 1); }
 
-  // The import form, once: in the main card while there are no sales, in the expert details afterwards
+  // The import card, once: in the main card while there are no sales, in the expert details afterwards
   function importFormHtml() {
-    return '<p class="muted hint">' + esc(t('importHelp')) + '</p>' +
-      '<details class="fold"><summary><h3 style="margin:0">' + esc(t('formatTitle')) + '</h3></summary><pre><code>' + esc(SAMPLE) + '</code></pre><p><a href="sample-sales.csv" download>' + esc(t('sampleLink')) + '</a></p></details>' +
-      '<form id="import-form"><div class="row"><label>CSV<input type="file" name="file" accept=".csv,text/csv,text/plain"></label>' +
-      '<button class="btn" type="submit" id="import-button">' + esc(t('importButton')) + '</button></div><div id="import-msg"></div></form>';
+    return '<div id="importer" class="importer">' +
+      '<div class="dropzone" id="dropzone" tabindex="0" role="button"><p class="dz-title">' + esc(t('dzTitle')) + '</p><p class="muted small">' + esc(t('dzOr')) + '</p>' +
+      '<span class="btn btn-secondary">' + esc(t('chooseFileButton')) + '</span><input type="file" id="import-file" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden></div>' +
+      '<div id="import-preview"></div>' +
+      '<details class="fold" id="paste-fold"><summary><h3 style="margin:0">' + esc(t('pasteTitle')) + '</h3></summary><p class="muted hint">' + esc(t('pasteHelp')) + '</p>' +
+      '<textarea id="paste-text" rows="6" placeholder="' + esc(t('pastePlaceholder')) + '"></textarea><p><button class="btn btn-secondary" type="button" id="paste-check">' + esc(t('pasteButton')) + '</button></p></details>' +
+      '<details class="fold"><summary><h3 style="margin:0">' + esc(t('formatTitle')) + '</h3></summary><p class="muted hint">' + esc(t('importHelp')) + '</p><pre><code>' + esc(SAMPLE) + '</code></pre><p><a href="sample-sales.csv" download>' + esc(t('sampleLink')) + '</a></p></details></div>';
   }
 
   function summaryShellHtml() {
@@ -485,7 +536,7 @@
     setContent(html);
     view.turns = [];
 
-    if (el('import-form')) el('import-form').addEventListener('submit', onImport);
+    if (el('importer')) wireImporter();
     if (el('forecast-form')) el('forecast-form').addEventListener('submit', onForecast);
     if (el('compute-now')) el('compute-now').addEventListener('click', function () { computeForecast(28, 'auto', el('forecast-msg'), el('compute-now')); });
     if (el('order-form')) {
@@ -568,22 +619,127 @@
     });
   }
 
-  function onImport(ev) {
-    ev.preventDefault();
-    var file = ev.target.file.files[0], msg = el('import-msg');
-    if (!file) { msg.innerHTML = alertHtml('error', esc(t('chooseFile'))); return; }
-    var fd = new FormData(); fd.append('file', file);
-    var button = el('import-button'); button.disabled = true; button.textContent = t('importing');
-    api('POST', '/api/products/' + view.id + '/sales/import', fd).then(function (res) {
+  // ---------- importing sales: choose or paste, check (nothing is saved), then confirm ----------
+  var MAX_FILE_BYTES = 1000000;
+
+  function rowErrorText(e) {
+    var f = TEXT[state.lang]['r_' + e.code];
+    return f ? f(e.line, e.value === undefined ? '' : e.value) : e.message;
+  }
+  function errorsList(errors, more) {
+    if (!errors || !errors.length) return '';
+    return '<ul class="hint">' + errors.slice(0, 10).map(function (e) { return '<li>' + esc(rowErrorText(e)) + '</li>'; }).join('') + '</ul>' +
+      (more || errors.length > 10 ? '<p class="muted">' + esc(t('moreProblems')) + '</p>' : '');
+  }
+  // What went wrong with a whole import, in words
+  function importProblemHtml(res) {
+    var d = res.data || {}, f = TEXT[state.lang]['e_' + d.code], text;
+    if (d.code === 'too_many_rows') text = f(num(d.rows, 0), num(d.maxRows, 0));
+    else if (d.code === 'product_full') text = f(num(d.maxDays, 0));
+    else text = f ? f : problemText(res);
+    return alertHtml('error', esc(text)) + (d.errors ? errorsList(d.errors, d.errorsTruncated) : '');
+  }
+
+  function wireImporter() {
+    var zone = el('dropzone'), input = el('import-file');
+    zone.addEventListener('click', function () { input.click(); });
+    zone.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); input.click(); } });
+    zone.addEventListener('dragover', function (ev) { ev.preventDefault(); zone.classList.add('over'); });
+    zone.addEventListener('dragleave', function () { zone.classList.remove('over'); });
+    zone.addEventListener('drop', function (ev) {
+      ev.preventDefault(); zone.classList.remove('over');
+      var f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+      if (f) chooseSource(f, f.name);
+    });
+    input.addEventListener('change', function () { if (input.files[0]) chooseSource(input.files[0], input.files[0].name); input.value = ''; });
+    el('paste-check').addEventListener('click', function () {
+      var text = el('paste-text').value;
+      if (text.trim() === '') { el('import-preview').innerHTML = alertHtml('error', esc(t('pasteEmpty'))); return; }
+      chooseSource(new Blob([text], { type: 'text/csv' }), 'pasted.csv');
+    });
+  }
+
+  function importUrl(dry) {
+    var p = view.pending, q = [];
+    if (dry) q.push('dryRun=1');
+    if (p.duplicates !== 'last') q.push('duplicates=' + p.duplicates);
+    if (p.dateColumn !== null) q.push('dateColumn=' + p.dateColumn, 'quantityColumn=' + p.quantityColumn);
+    return '/api/products/' + view.id + '/sales/import' + (q.length ? '?' + q.join('&') : '');
+  }
+  function importBody() { var fd = new FormData(); fd.append('file', view.pending.blob, view.pending.name); return fd; }
+
+  function chooseSource(blob, name) {
+    var box = el('import-preview');
+    if (blob.size > MAX_FILE_BYTES) { box.innerHTML = alertHtml('error', esc(t('fileTooBig'))); return; }
+    view.pending = { blob: blob, name: name, duplicates: 'last', dateColumn: null, quantityColumn: null, askedAboutDuplicates: false };
+    checkPending();
+  }
+
+  // The check: the server reads the file as it would for the import and says what it found, without saving anything
+  function checkPending() {
+    var mine = view.pending, box = el('import-preview');
+    box.innerHTML = '<p class="muted">' + esc(t('checking')) + '</p>';
+    api('POST', importUrl(true), importBody()).then(function (res) {
+      if (sessionLost(res) || view.pending !== mine || !el('import-preview')) return;
+      if (!res.ok) { paintImportProblem(res); return; }
+      // A date that appears more than once: a list of single sales is the usual reason, so adding them up is the starting choice.
+      if (res.data.duplicatesInFile > 0 && !mine.askedAboutDuplicates) { mine.askedAboutDuplicates = true; mine.duplicates = 'sum'; checkPending(); return; }
+      paintPreview(res.data);
+    });
+  }
+
+  function paintImportProblem(res) {
+    var box = el('import-preview'), d = res.data || {};
+    if (d.code === 'missing_columns' && d.columns) {
+      if (d.columns.length < 2) { box.innerHTML = alertHtml('error', esc(t('mapOne'))); return; }
+      var options = d.columns.map(function (name, i) { return '<option value="' + i + '">' + esc(name || t('mapColumn')(i + 1)) + '</option>'; }).join('');
+      box.innerHTML = alertHtml('warn', esc(t('mapTitle'))) +
+        '<div class="row"><label>' + esc(t('mapDate')) + '<select id="map-date">' + options + '</select></label>' +
+        '<label>' + esc(t('mapQuantity')) + '<select id="map-quantity">' + options + '</select></label>' +
+        '<button class="btn btn-secondary" type="button" id="map-retry">' + esc(t('mapRetry')) + '</button></div><div id="map-msg"></div>';
+      el('map-quantity').value = '1';
+      el('map-retry').addEventListener('click', function () {
+        var dc = Number(el('map-date').value), qc = Number(el('map-quantity').value);
+        if (dc === qc) { el('map-msg').innerHTML = alertHtml('error', esc(t('mapSame'))); return; }
+        view.pending.dateColumn = dc; view.pending.quantityColumn = qc; view.pending.askedAboutDuplicates = false;
+        checkPending();
+      });
+      return;
+    }
+    box.innerHTML = importProblemHtml(res);
+  }
+
+  function paintPreview(d) {
+    var p = view.pending, box = el('import-preview');
+    var html = '<div class="preview-card"><p><strong>' + esc(t('previewRead')(num(d.days, 0), fullDate(d.firstDate), fullDate(d.lastDate))) + '</strong></p>';
+    html += '<p class="muted small">' + esc(d.headerless ? t('previewHeaderless') : t('previewColumns')(d.dateColumn, d.quantityColumn)) + '</p>';
+    html += '<h3>' + esc(t('previewFirst')) + '</h3><table class="table narrow"><thead><tr><th>' + esc(t('date')) + '</th><th class="num">' + esc(t('quantity')) + '</th></tr></thead><tbody>' +
+      d.preview.map(function (r) { return '<tr><td>' + esc(fullDate(r.date)) + '</td><td class="num">' + exact(r.quantity) + '</td></tr>'; }).join('') + '</tbody></table>';
+    html += '<p class="muted">' + esc(t('previewNew')(num(d.inserted, 0), num(d.updated, 0))) + '</p>';
+    if (d.duplicatesInFile > 0) {
+      html += '<fieldset class="choice"><legend>' + esc(t('dupTitle')(d.duplicatesInFile)) + '</legend>' +
+        '<label class="radio"><input type="radio" name="dup" value="sum"' + (p.duplicates === 'sum' ? ' checked' : '') + '> ' + esc(t('dupSum')) + '</label>' +
+        '<label class="radio"><input type="radio" name="dup" value="last"' + (p.duplicates === 'last' ? ' checked' : '') + '> ' + esc(t('dupLast')) + '</label></fieldset>';
+    }
+    if (d.rejected > 0) html += alertHtml('warn', esc(t('previewSkipped')(d.rejected))) + errorsList(d.errors, d.errorsTruncated);
+    html += '<p><button class="btn" type="button" id="import-confirm">' + esc(t('importConfirm')) + '</button> <button class="btn btn-secondary" type="button" id="import-cancel">' + esc(t('importCancel')) + '</button></p><div id="import-msg"></div></div>';
+    box.innerHTML = html;
+    Array.prototype.forEach.call(box.querySelectorAll('input[name=dup]'), function (r) {
+      r.addEventListener('change', function () { p.duplicates = r.value; checkPending(); });
+    });
+    el('import-cancel').addEventListener('click', function () { view.pending = null; box.innerHTML = ''; });
+    el('import-confirm').addEventListener('click', confirmImport);
+  }
+
+  function confirmImport() {
+    var mine = view.pending, button = el('import-confirm');
+    button.disabled = true; button.textContent = t('importing');
+    api('POST', importUrl(false), importBody()).then(function (res) {
       if (sessionLost(res)) return;
-      button.disabled = false; button.textContent = t('importButton');
-      if (!res.ok) {
-        var extra = res.data && res.data.errors && res.data.errors.length ? errorsTable(res.data.errors, res.data.errorsTruncated) : '';
-        msg.innerHTML = alertHtml('error', esc(problemText(res))) + extra;
-        return;
-      }
+      if (!res.ok) { button.disabled = false; button.textContent = t('importConfirm'); el('import-msg').innerHTML = importProblemHtml(res); return; }
       var d = res.data, html = alertHtml('ok', esc(t('imported')(num(d.inserted, 0), num(d.updated, 0))) + (d.duplicatesInFile ? ' ' + esc(t('dupes')(d.duplicatesInFile)) : ''));
-      if (d.rejected) html += alertHtml('warn', esc(t('skipped')(d.rejected))) + errorsTable(d.errors, d.errorsTruncated);
+      if (d.rejected) html += alertHtml('warn', esc(t('skipped')(d.rejected))) + errorsList(d.errors, d.errorsTruncated);
+      view.pending = null;
       // The forecast follows by itself: nobody should have to know that it has to be asked for.
       api('POST', '/api/products/' + view.id + '/forecast', { horizon: 28, method: 'auto' }).then(function (fc) {
         if (sessionLost(fc)) return;
@@ -591,13 +747,6 @@
         showProduct(view.id, html);
       });
     });
-  }
-
-  function errorsTable(errors, truncated) {
-    if (!errors || !errors.length) return '';
-    var rows = errors.slice(0, 10).map(function (e) { return '<tr><td class="num">' + esc(e.line) + '</td><td>' + esc(e.message) + '</td></tr>'; }).join('');
-    return '<div class="scroll"><table class="table"><thead><tr><th>' + esc(t('line')) + '</th><th>' + esc(t('problem')) + '</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-      (truncated || errors.length > 10 ? '<p class="muted">' + esc(t('moreProblems')) + '</p>' : '');
   }
 
   // Computes a forecast and shows it (shared by the button of the summary and the form of the expert details)
@@ -788,6 +937,9 @@
 
   function start() {
     paintChrome();
+    // A file dropped outside the drop zone must not make the browser leave the page to open it.
+    window.addEventListener('dragover', function (ev) { ev.preventDefault(); });
+    window.addEventListener('drop', function (ev) { ev.preventDefault(); });
     api('GET', '/api/me').then(function (res) {
       if (res.status === 401) { showSignedOut(); return; }
       if (res.status === 403) { showForbidden(); return; }

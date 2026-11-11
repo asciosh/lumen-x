@@ -85,7 +85,7 @@ export async function handle(request: Request, ctx: ApiContext): Promise<Respons
     case "sales":
       return method === "GET" ? listSales(url, store, product) : methodNotAllowed(["GET"]);
     case "sales/import":
-      return method === "POST" ? importSales(request, store, product) : methodNotAllowed(["POST"]);
+      return method === "POST" ? importSales(request, url, store, product) : methodNotAllowed(["POST"]);
     case "forecast":
       if (method === "GET") return latestForecast(store, product);
       if (method === "POST") return createForecast(request, ctx, store, product);
@@ -154,7 +154,41 @@ async function listSales(url: URL, store: Store, product: ProductDto): Promise<R
   return json(await store.listSales(product.id, from, to));
 }
 
-async function importSales(request: Request, store: Store, product: ProductDto): Promise<Response> {
+type ImportOptions =
+  | { ok: false; error: Response }
+  | { ok: true; dryRun: boolean; duplicates: "last" | "sum"; columns: { dateColumn?: number; quantityColumn?: number } };
+
+/**
+ * The options of an import, from the query string:
+ * - dryRun=1: read the file and say what would happen, without saving anything (the preview of the dashboard);
+ * - duplicates=last|sum: what to do with a date that appears more than once in the file (default: the last row wins; "sum" adds them up,
+ *   which is what a list of single sales needs);
+ * - dateColumn and quantityColumn (together, counting from 0): the columns the person chose when the names were not understood.
+ */
+function importOptions(url: URL): ImportOptions {
+  const flag = url.searchParams.get("dryRun");
+  if (flag !== null && !["0", "1", "true", "false"].includes(flag)) return { ok: false, error: invalid("dryRun must be 1 or 0.") };
+  const duplicates = url.searchParams.get("duplicates") ?? "last";
+  if (duplicates !== "last" && duplicates !== "sum") return { ok: false, error: invalid("duplicates must be 'last' or 'sum'.") };
+
+  const rawDate = url.searchParams.get("dateColumn");
+  const rawQuantity = url.searchParams.get("quantityColumn");
+  const columns: { dateColumn?: number; quantityColumn?: number } = {};
+  if (rawDate !== null || rawQuantity !== null) {
+    const isColumn = (v: string | null): v is string => v !== null && /^\d{1,3}$/.test(v);
+    if (!isColumn(rawDate) || !isColumn(rawQuantity)) {
+      return { ok: false, error: invalid("dateColumn and quantityColumn must be given together, as column numbers starting from 0.") };
+    }
+    columns.dateColumn = Number(rawDate);
+    columns.quantityColumn = Number(rawQuantity);
+  }
+  return { ok: true, dryRun: flag === "1" || flag === "true", duplicates, columns };
+}
+
+async function importSales(request: Request, url: URL, store: Store, product: ProductDto): Promise<Response> {
+  const options = importOptions(url);
+  if (!options.ok) return options.error;
+
   const declared = Number(request.headers.get("content-length") ?? 0);
   if (declared > LIMITS.maxCsvBytes + 10_000) {
     return tooLarge(`The file can be at most ${LIMITS.maxCsvBytes / 1_000_000} MB.`);
@@ -174,23 +208,28 @@ async function importSales(request: Request, store: Store, product: ProductDto):
     return tooLarge(`The file can be at most ${LIMITS.maxCsvBytes / 1_000_000} MB.`);
   }
 
-  const parsed = parseSalesCsv(await file.text());
+  const parsed = parseSalesCsv(await file.text(), options.columns);
   if (parsed.fatalError !== undefined) {
-    return invalid(parsed.fatalError);
+    return invalid(parsed.fatalError, { code: parsed.fatalCode, ...(parsed.columns === undefined ? {} : { columns: parsed.columns }) });
   }
   if (parsed.totalRows > LIMITS.maxRowsPerImport) {
-    return invalid(`The file has ${parsed.totalRows} rows: at most ${LIMITS.maxRowsPerImport} can be imported at once.`);
+    return invalid(`The file has ${parsed.totalRows} rows: at most ${LIMITS.maxRowsPerImport} can be imported at once.`, {
+      code: "too_many_rows",
+      rows: parsed.totalRows,
+      maxRows: LIMITS.maxRowsPerImport,
+    });
   }
 
   const listed = parsed.errors.slice(0, LIMITS.maxImportErrorsListed);
   if (parsed.rows.length === 0) {
-    return invalid("No valid rows were found in the file.", { errors: listed, errorsTruncated: parsed.errors.length > listed.length });
+    return invalid("No valid rows were found in the file.", { code: "no_valid_rows", errors: listed, errorsTruncated: parsed.errors.length > listed.length });
   }
 
-  // The same date twice in the file: the last row wins.
+  // The same date more than once in the file: the last row wins, or they are added up.
   const byDate = new Map<string, number>();
   for (const row of parsed.rows) {
-    byDate.set(row.date, row.quantity);
+    const total = options.duplicates === "sum" ? (byDate.get(row.date) ?? 0) + row.quantity : row.quantity;
+    byDate.set(row.date, Math.round(total * 1e6) / 1e6);
   }
   const dates = [...byDate.keys()].sort();
   const existing = await store.existingDates(product.id, dates[0]!, dates[dates.length - 1]!);
@@ -198,12 +237,24 @@ async function importSales(request: Request, store: Store, product: ProductDto):
   const inserted = dates.length - updated;
 
   if ((await store.countSales(product.id)) + inserted > LIMITS.maxDaysPerProduct) {
-    return invalid(`A product can hold at most ${LIMITS.maxDaysPerProduct} days of sales.`);
+    return invalid(`A product can hold at most ${LIMITS.maxDaysPerProduct} days of sales.`, { code: "product_full", maxDays: LIMITS.maxDaysPerProduct });
   }
 
-  await store.upsertSales(product.id, dates.map((date) => ({ date, quantity: byDate.get(date)! })));
+  if (!options.dryRun) {
+    await store.upsertSales(product.id, dates.map((date) => ({ date, quantity: byDate.get(date)! })));
+  }
 
   return json({
+    dryRun: options.dryRun,
+    duplicates: options.duplicates,
+    days: dates.length,
+    firstDate: dates[0],
+    lastDate: dates[dates.length - 1],
+    preview: dates.slice(0, 5).map((date) => ({ date, quantity: byDate.get(date)! })),
+    dateColumn: parsed.dateColumn ?? null,
+    quantityColumn: parsed.quantityColumn ?? null,
+    headerless: parsed.headerless ?? false,
+    delimiter: parsed.delimiter,
     totalRows: parsed.totalRows,
     validRows: parsed.rows.length,
     inserted,

@@ -163,7 +163,14 @@ describe("sales import", () => {
     const id = await newProduct(alice);
     const r = await alice("POST", `/api/products/${id}/sales/import`, csvForm(weeklyCsv(30)));
     expect(r.status).toBe(200);
-    expect(r.body).toEqual({ totalRows: 30, validRows: 30, inserted: 30, updated: 0, duplicatesInFile: 0, rejected: 0, errors: [], errorsTruncated: false });
+    expect(r.body).toEqual({
+      dryRun: false, duplicates: "last", days: 30, firstDate: "2025-01-01", lastDate: "2025-01-30",
+      preview: expect.any(Array),
+      dateColumn: "date", quantityColumn: "quantity", headerless: false, delimiter: ",",
+      totalRows: 30, validRows: 30, inserted: 30, updated: 0, duplicatesInFile: 0, rejected: 0, errors: [], errorsTruncated: false,
+    });
+    expect(r.body.preview).toHaveLength(5);
+    expect(r.body.preview[0]).toEqual({ date: "2025-01-01", quantity: 100 });
     const sales = (await alice("GET", `/api/products/${id}/sales`)).body;
     expect(sales).toHaveLength(30);
     expect(sales[0]).toEqual({ date: "2025-01-01", quantity: 100 });
@@ -660,6 +667,138 @@ describe("summary", () => {
     const id = await productWithForecast();
     expect((await bob("GET", `/api/products/${id}/summary`)).status).toBe(404);
     expect((await alice("POST", `/api/products/${id}/summary`)).status).toBe(405);
+  });
+});
+
+describe("sales import: what the dashboard needs to be friendly", () => {
+  const importPath = (id: number, query = "") => `/api/products/${id}/sales/import${query}`;
+  const italian = "Data;Venduto\n01/03/2025;12,5\n02/03/2025;8\n03/03/2025;1.234,5\n";
+
+  it("reads an Italian file (semicolon, 'Data' and 'Venduto', day first, decimal comma) and says what it understood", async () => {
+    const id = await newProduct(alice);
+    const r = await alice("POST", importPath(id), csvForm(italian));
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ dateColumn: "Data", quantityColumn: "Venduto", headerless: false, delimiter: ";", days: 3, firstDate: "2025-03-01", lastDate: "2025-03-03", inserted: 3 });
+    expect((await alice("GET", `/api/products/${id}/sales`)).body).toEqual([
+      { date: "2025-03-01", quantity: 12.5 }, { date: "2025-03-02", quantity: 8 }, { date: "2025-03-03", quantity: 1234.5 },
+    ]);
+  });
+
+  it("reads what Excel copies: tab-separated cells without a header line", async () => {
+    const id = await newProduct(alice);
+    const r = await alice("POST", importPath(id), csvForm("01/03/2025\t12,5\n02/03/2025\t8\n"));
+    expect(r.body).toMatchObject({ headerless: true, dateColumn: null, quantityColumn: null, delimiter: "\t", days: 2, inserted: 2 });
+  });
+
+  describe("dry run: the preview, saving nothing", () => {
+    it("says what would happen and writes nothing", async () => {
+      const id = await newProduct(alice);
+      await alice("POST", importPath(id), csvForm("date,quantity\n2025-03-01,1\n2025-03-02,2\n"));
+      const r = await alice("POST", importPath(id, "?dryRun=1"), csvForm("date,quantity\n2025-03-02,50\n2025-03-03,60\nbad,1\n"));
+      expect(r.status).toBe(200);
+      expect(r.body).toMatchObject({ dryRun: true, days: 2, inserted: 1, updated: 1, rejected: 1, firstDate: "2025-03-02", lastDate: "2025-03-03" });
+      expect(r.body.preview).toEqual([{ date: "2025-03-02", quantity: 50 }, { date: "2025-03-03", quantity: 60 }]);
+      expect(r.body.errors[0]).toMatchObject({ line: 4, code: "invalid_date", value: "bad" });
+      expect((await alice("GET", `/api/products/${id}/sales`)).body).toEqual([{ date: "2025-03-01", quantity: 1 }, { date: "2025-03-02", quantity: 2 }]); // untouched
+    });
+
+    it("also tells about the problems an import would have (a file that is no good is refused with a dry run too)", async () => {
+      const id = await newProduct(alice);
+      const empty = await alice("POST", importPath(id, "?dryRun=1"), csvForm("\n"));
+      expect(empty.status).toBe(422);
+      expect(empty.body).toMatchObject({ code: "empty_file" });
+      const none = await alice("POST", importPath(id, "?dryRun=1"), csvForm("date,quantity\nx,1\ny,2\n"));
+      expect(none.status).toBe(422);
+      expect(none.body).toMatchObject({ code: "no_valid_rows", errorsTruncated: false });
+      expect(none.body.errors).toHaveLength(2);
+    });
+
+    it("accepts 0, 1, true and false, and refuses anything else", async () => {
+      const id = await newProduct(alice);
+      for (const [flag, dry] of [["1", true], ["true", true], ["0", false], ["false", false]] as const) {
+        const r = await alice("POST", importPath(id, `?dryRun=${flag}`), csvForm("date,quantity\n2025-03-01,1\n"));
+        expect(r.body.dryRun, flag).toBe(dry);
+      }
+      expect((await alice("POST", importPath(id, "?dryRun=maybe"), csvForm("date,quantity\n2025-03-01,1\n"))).status).toBe(422);
+    });
+  });
+
+  describe("a date that appears more than once", () => {
+    const twice = "date,quantity\n2025-03-01,5\n2025-03-01,7\n2025-03-02,1\n";
+    it("by default the last row wins (as before)", async () => {
+      const id = await newProduct(alice);
+      const r = await alice("POST", importPath(id), csvForm(twice));
+      expect(r.body).toMatchObject({ duplicates: "last", duplicatesInFile: 1, days: 2 });
+      expect((await alice("GET", `/api/products/${id}/sales`)).body[0]).toEqual({ date: "2025-03-01", quantity: 7 });
+    });
+    it("duplicates=sum adds them up (a list of single sales)", async () => {
+      const id = await newProduct(alice);
+      const dry = await alice("POST", importPath(id, "?duplicates=sum&dryRun=1"), csvForm(twice));
+      expect(dry.body.preview).toEqual([{ date: "2025-03-01", quantity: 12 }, { date: "2025-03-02", quantity: 1 }]);
+      const r = await alice("POST", importPath(id, "?duplicates=sum"), csvForm(twice));
+      expect(r.body).toMatchObject({ duplicates: "sum", duplicatesInFile: 1 });
+      expect((await alice("GET", `/api/products/${id}/sales`)).body[0]).toEqual({ date: "2025-03-01", quantity: 12 });
+    });
+    it("adds decimals without floating-point noise", async () => {
+      const id = await newProduct(alice);
+      const r = await alice("POST", importPath(id, "?duplicates=sum&dryRun=1"), csvForm("date,quantity\n2025-03-01,0.1\n2025-03-01,0.2\n"));
+      expect(r.body.preview[0].quantity).toBe(0.3);
+    });
+    it("refuses another value", async () => {
+      const id = await newProduct(alice);
+      expect((await alice("POST", importPath(id, "?duplicates=max"), csvForm("date,quantity\n2025-03-01,1\n"))).status).toBe(422);
+    });
+  });
+
+  describe("when the columns are not understood", () => {
+    const strange = "Negozio;Giorno del mese;Cosa\nA;2025-03-01;12\nA;2025-03-02;15\n";
+    it("answers with the columns, so that the person can choose", async () => {
+      const id = await newProduct(alice);
+      const r = await alice("POST", importPath(id, "?dryRun=1"), csvForm(strange));
+      expect(r.status).toBe(422);
+      expect(r.body).toMatchObject({ code: "missing_columns", columns: ["Negozio", "Giorno del mese", "Cosa"] });
+    });
+    it("goes on when they choose (counting from 0)", async () => {
+      const id = await newProduct(alice);
+      const r = await alice("POST", importPath(id, "?dateColumn=1&quantityColumn=2"), csvForm(strange));
+      expect(r.status).toBe(200);
+      expect(r.body).toMatchObject({ dateColumn: "Giorno del mese", quantityColumn: "Cosa", days: 2, inserted: 2 });
+    });
+    it.each(["?dateColumn=1", "?quantityColumn=2", "?dateColumn=a&quantityColumn=2", "?dateColumn=-1&quantityColumn=2", "?dateColumn=1&quantityColumn=1000"])(
+      "refuses odd choices: %s",
+      async (query) => {
+        const id = await newProduct(alice);
+        const r = await alice("POST", importPath(id, query), csvForm(strange));
+        expect([422]).toContain(r.status);
+      },
+    );
+    it("columns that do not exist in the file are refused with the columns again", async () => {
+      const id = await newProduct(alice);
+      const r = await alice("POST", importPath(id, "?dateColumn=7&quantityColumn=8"), csvForm(strange));
+      expect(r.status).toBe(422);
+      expect(r.body.code).toBe("missing_columns");
+    });
+  });
+
+  it("limit errors carry a code and the numbers, so that the dashboard can explain them", async () => {
+    const id = await newProduct(alice);
+    const lines = ["date,quantity"];
+    for (let i = 0; i < 5001; i++) lines.push(`${new Date(Date.UTC(2000, 0, 1 + i)).toISOString().slice(0, 10)},1`);
+    const r = await alice("POST", importPath(id), csvForm(lines.join("\n")));
+    expect(r.status).toBe(422);
+    expect(r.body).toMatchObject({ code: "too_many_rows", rows: 5001, maxRows: 5000 });
+  });
+
+  it("a product that would hold too many days says so with a code", async () => {
+    const id = await newProduct(alice);
+    for (let chunk = 0; chunk < 2; chunk++) {
+      const lines = ["date,quantity"];
+      for (let i = 0; i < 1825; i++) lines.push(`${new Date(Date.UTC(2000, 0, 1 + chunk * 1825 + i)).toISOString().slice(0, 10)},1`);
+      expect((await alice("POST", importPath(id), csvForm(lines.join("\n")))).status).toBe(200);
+    }
+    const r = await alice("POST", importPath(id, "?dryRun=1"), csvForm("date,quantity\n2030-01-01,1\n"));
+    expect(r.status).toBe(422);
+    expect(r.body).toMatchObject({ code: "product_full", maxDays: 3650 });
   });
 });
 

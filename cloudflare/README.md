@@ -4,7 +4,7 @@ A second implementation of Lumen-X that runs on the **free** Cloudflare plan, wi
 and a sign-in with GitHub. The full stack in the rest of the repo (.NET + Python + PostgreSQL) stays as it is.
 
 **Status: private beta.** Done: the forecasting engine, the Worker (sign-in with GitHub, database, CSV import, forecast, reorder,
-plain-language explanations, questions about the data, an optional AI rewrite of the explanation) and the dashboard (English and Italian): products, CSV upload with the list of
+plain-language explanations, questions about the data, an optional AI rewrite of the explanation) and the dashboard (English and Italian): products, sales upload (a CSV file dropped on the page, or cells pasted from Excel) with a preview before anything is saved, and the list of
 rejected rows, an automatic forecast after every upload, and a product page that starts with **three answers in plain words**: how much
 to order (highlighted: a number, with an optional "how many do you already have?"), how much will be sold, and how much to trust it
 ("very reliable" ... "not reliable"). Under them the chart and the questions about the data. Everything technical (the method, the errors
@@ -50,7 +50,7 @@ All answers are JSON; errors have the same shape as the .NET backend (`title`, `
 | `GET /api/me` | the GitHub username of the user |
 | `GET /api/products`, `POST /api/products` | list, create (`{ "name": "...", "sku": "..." }`) |
 | `GET /api/products/:id`, `DELETE /api/products/:id` | read, delete (with its sales and forecasts) |
-| `POST /api/products/:id/sales/import` | upload a CSV (`multipart/form-data`, field `file`); same rules and messages as the .NET backend |
+| `POST /api/products/:id/sales/import` | upload a CSV (`multipart/form-data`, field `file`). It accepts more than the .NET backend: see "Importing sales". Query string: `dryRun=1` (read the file and say what would happen, saving nothing), `duplicates=last\|sum`, `dateColumn` and `quantityColumn` (together, counting from 0) |
 | `GET /api/products/:id/sales?from=&to=` | the daily sales |
 | `POST /api/products/:id/forecast` | `{ "horizon": 28, "method": "auto" }` (both optional); saves and returns the forecast with its backtest |
 | `GET /api/products/:id/forecast` | the latest forecast |
@@ -72,7 +72,8 @@ All answers are JSON; errors have the same shape as the .NET backend (`title`, `
 | Methods | weekly naive, ETS, LightGBM, and the average of ETS and LightGBM | weekly naive and ETS |
 | Backtest | 3 consecutive windows, pooled errors | the same windows, the same rules |
 | Interval | 80% band: forecast ± 1.2816 × backtest RMSE | the same |
-| CSV import, reorder suggestion | yes | yes, same rules and same messages |
+| CSV import | strict: header `date` and `quantity`, `,` or `;`, dates `yyyy-MM-dd` or `dd/MM/yyyy` | wider (see "Importing sales"), with a preview, and error messages with codes |
+| Reorder suggestion | yes | yes, same rules and same messages |
 | Explanations | rewritten by Gemini if a key is set, otherwise written by the code | written by the code (the same text as the full stack without Gemini); optionally rewritten by a free AI provider (Workers AI, Gemini, Groq, OpenRouter) |
 | Questions about the data | 8 kinds of questions, answered by rules | the same 8 kinds, the same answers |
 
@@ -96,6 +97,30 @@ The Worker needs four **secrets** (Worker → Settings → Variables and secrets
 never reach the repo): `SESSION_SECRET` (random text, at least 32 characters), `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
 (from a GitHub OAuth app whose callback URL is `https://<your worker address>/auth/callback`) and `ALLOWED_GITHUB_USERS`
 (for example `alice, bob`). The database schema is in `migrations/0001_init.sql`; paste it in the D1 console.
+
+## Importing sales
+
+The people who use the app export from Excel and do not know what a header is, so the parser (`src/engine/csv.ts`) accepts more than the
+.NET backend (which was not changed). The dashboard never sends a file blindly: the server first reads it with `dryRun=1` and the page
+shows what was understood (how many days, from when to when, which columns, the first days, the rows that will be skipped and why);
+only a confirmation saves it.
+
+- **Columns**, found by name, in English or Italian, ignoring case, accents, spaces and dots: date = `date`, `data`, `giorno`, `day`,
+  `data vendita`...; quantity = `quantity`, `quantità`, `qta`, `venduto`, `pezzi`, `unità`, `sales`... The exact English names win over the
+  synonyms. Money columns (`importo`, `fatturato`, `price`, `totale`...) are deliberately **not** taken for a quantity. If the names are not
+  understood the answer has `code: "missing_columns"` and the `columns` of the file, and the page asks which is which and calls again with
+  `dateColumn` and `quantityColumn`. A file with no header line at all (a first row that is a date and a number) is understood too.
+- **Separator**: `;` if the first line has one, otherwise a tab (what Excel copies), otherwise `,`.
+- **Dates**: `yyyy-MM-dd`, `yyyy/MM/dd`, `dd/MM/yyyy`, `dd-MM-yyyy`, `dd.MM.yyyy` (one-digit days and months too), with or without a time.
+  Two-digit years and month-first dates (`03/31/2025`) are refused: they cannot be told apart safely.
+- **Quantities**: dot or comma as decimal, thousands separators understood (`1.234,5`, `1,234.5`); negative numbers are refused.
+- **A date that appears more than once**: by default the last row wins; `duplicates=sum` adds them up (the page proposes it, because a list of
+  single sales is the usual reason).
+- **Errors** carry a `code` (`invalid_date`, `missing_quantity`, `invalid_quantity`, `ambiguous_quantity`, `negative_quantity`,
+  `not_enough_columns`, `too_many_columns`, and for the whole file `empty_file`, `missing_columns`, `no_valid_rows`, `too_many_rows`,
+  `product_full`) and the `value` written in the cell, so that the dashboard says it in plain words, in the language of the person. The
+  English `message` stays for whoever uses the API directly.
+- **Limits**: 1 MB, 5,000 rows per file, 3,650 days per product.
 
 ## The trust verdict
 
@@ -153,7 +178,7 @@ where the data lives (for example the D1 location) or the AI providers, check th
 ```bash
 cd cloudflare
 npm install
-npm test          # 456 tests (vitest): engine, sessions, GitHub sign-in, API on a real SQLite database, dashboard files
+npm test          # 522 tests (vitest): engine, sessions, GitHub sign-in, API on a real SQLite database, dashboard files
 npm run typecheck # tsc
 npm run e2e       # the Worker in the real Workers runtime (workerd), locally, with the real Bread series
 ```

@@ -217,6 +217,20 @@ try {
     `summary: ${r.data?.sales?.days} days, order ${r.data?.order?.suggestedOrder}, trust ${r.data?.trust?.level}`,
   );
 
+  // A file from Italian Excel (semicolon, "Data;Venduto", day first, decimal comma), and a dry run that saves nothing
+  const pasta = (await call(alice.cookie, "POST", "/api/products", { name: "Pasta" })).data.id;
+  const italian = () => {
+    const form = new FormData();
+    form.set("file", new File(["Data;Venduto\n01/03/2025;12,5\n02/03/2025;8\n"], "it.csv", { type: "text/csv" }));
+    return form;
+  };
+  r = await call(alice.cookie, "POST", `/api/products/${pasta}/sales/import?dryRun=1`, italian());
+  check(r.status === 200 && r.data.dryRun === true && r.data.days === 2 && r.data.dateColumn === "Data" && r.data.quantityColumn === "Venduto", "an Italian Excel file is read, and the dry run says what it understood");
+  check((await call(alice.cookie, "GET", `/api/products/${pasta}/sales`)).data.length === 0, "the dry run saved nothing");
+  r = await call(alice.cookie, "POST", `/api/products/${pasta}/sales/import`, italian());
+  check(r.status === 200 && r.data.inserted === 2 && (await call(alice.cookie, "GET", `/api/products/${pasta}/sales`)).data[0].quantity === 12.5, "the real import saves it, with the decimal comma read right");
+  await call(alice.cookie, "DELETE", `/api/products/${pasta}`);
+
   // ---- "Rewrite with AI": the real Worker, the real database, a stand-in provider ----
   const rewrite = (cookie, lang = "en") => call(cookie, "POST", `/api/products/${id}/forecast/explanation/ai?lang=${lang}`);
   r = await call(alice.cookie, "GET", "/api/ai");
