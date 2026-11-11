@@ -33,6 +33,11 @@ interface ProductRow {
   created_at_utc: string;
 }
 
+/** The ISO date `n` days before another one. */
+function isoDaysBefore(iso: string, n: number): string {
+  return new Date(Date.parse(`${iso}T00:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
+}
+
 const toProduct = (r: ProductRow): ProductDto => ({ id: r.id, name: r.name, sku: r.sku, createdAtUtc: r.created_at_utc });
 
 /** Every product query goes through the owner: a user can never reach the data of somebody else. */
@@ -95,7 +100,49 @@ export class Store {
       this.db.prepare("DELETE FROM forecast_runs WHERE product_id IN (SELECT id FROM products WHERE owner = ?)").bind(owner),
       this.db.prepare("DELETE FROM sales WHERE product_id IN (SELECT id FROM products WHERE owner = ?)").bind(owner),
       this.db.prepare("DELETE FROM products WHERE owner = ?").bind(owner),
+      // ai_usage stays on purpose: otherwise "delete all my data" would reset the daily limit of AI rewrites.
     ]);
+  }
+
+  // ---- AI rewrite: per-user daily count and provider state ----
+
+  async aiUsedToday(owner: string, day: string): Promise<number> {
+    const row = await this.db.prepare("SELECT calls FROM ai_usage WHERE owner = ? AND day = ?").bind(owner, day).first<{ calls: number }>();
+    return row?.calls ?? 0;
+  }
+
+  async addAiUse(owner: string, day: string): Promise<void> {
+    // The counters are only needed for the current day: older rows are removed as we go.
+    await this.db.prepare("DELETE FROM ai_usage WHERE day < ?").bind(isoDaysBefore(day, 7)).run();
+    await this.db
+      .prepare("INSERT INTO ai_usage (owner, day, calls) VALUES (?, ?, 1) ON CONFLICT (owner, day) DO UPDATE SET calls = calls + 1")
+      .bind(owner, day)
+      .run();
+  }
+
+  async providerState(provider: string): Promise<{ blockedUntil: string | null; day: string | null; calls: number } | null> {
+    const row = await this.db
+      .prepare("SELECT blocked_until, day, calls FROM ai_provider_state WHERE provider = ?")
+      .bind(provider)
+      .first<{ blocked_until: string | null; day: string | null; calls: number }>();
+    return row === null ? null : { blockedUntil: row.blocked_until, day: row.day, calls: row.calls };
+  }
+
+  async recordProviderCall(provider: string, day: string): Promise<void> {
+    await this.db
+      .prepare(
+        `INSERT INTO ai_provider_state (provider, day, calls) VALUES (?, ?, 1)
+         ON CONFLICT (provider) DO UPDATE SET calls = CASE WHEN day = excluded.day THEN calls + 1 ELSE 1 END, day = excluded.day`,
+      )
+      .bind(provider, day)
+      .run();
+  }
+
+  async blockProvider(provider: string, untilIso: string): Promise<void> {
+    await this.db
+      .prepare("INSERT INTO ai_provider_state (provider, blocked_until, calls) VALUES (?, ?, 0) ON CONFLICT (provider) DO UPDATE SET blocked_until = excluded.blocked_until")
+      .bind(provider, untilIso)
+      .run();
   }
 
   async countSales(productId: number): Promise<number> {

@@ -1,11 +1,14 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import type { D1Statement, Db } from "../../src/worker/db";
 
 /** A real SQLite database (the engine D1 is built on) behind the same small interface, with the real schema. */
 export function createTestDb(): Db {
   const raw = new DatabaseSync(":memory:");
-  raw.exec(readFileSync(new URL("../../migrations/0001_init.sql", import.meta.url), "utf8"));
+  const folder = new URL("../../migrations/", import.meta.url);
+  for (const file of readdirSync(folder).filter((f) => f.endsWith(".sql")).sort()) {
+    raw.exec(readFileSync(new URL(file, folder), "utf8"));
+  }
 
   const statement = (sql: string, values: unknown[] = []): D1Statement => ({
     bind: (...v) => statement(sql, v),

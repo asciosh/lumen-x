@@ -12,4 +12,10 @@ export const LIMITS = {
   maxImportErrorsListed: 100,
   maxNameLength: 100,
   maxSkuLength: 50,
+  /** "Rewrite with AI": rewrites per user per day (UTC), and calls per provider per day (to stay inside the free quotas). */
+  aiRewritesPerUserPerDay: 10,
+  aiCallsPerProviderPerDay: 200,
+  /** How long to wait for one provider, and how many providers to try for one request. */
+  aiTimeoutMs: 20_000,
+  aiMaxAttempts: 3,
 } as const;

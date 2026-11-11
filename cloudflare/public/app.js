@@ -46,9 +46,9 @@
       askLabel: 'Your question', askPlaceholder: 'For example: How much did I sell in the last 30 days?', askButton: 'Ask', asking: 'Thinking…',
       sampleLink: 'Download an example file (240 days)',
       privacyTitle: 'Privacy',
-      privacy: ['What is stored: the products you create, their daily sales and forecasts, and the numeric id of your GitHub account (to know whose they are). Not your email, and no analytics or tracking.',
+      privacy: ['What is stored: the products you create, their daily sales and forecasts, the numeric id of your GitHub account (to know whose they are) and how many AI rewrites you did today (a counter kept for a few days). Not your email, and no analytics or tracking.',
         'Where: in a database of Cloudflare, the service this app runs on. Each account only sees its own data in the app, but the owner of this beta runs the database and could technically read it: upload only data you are comfortable sharing.',
-        'No AI service receives your data: the explanations and the answers are written by the app itself, from your numbers.',
+        'AI: only if you press "Rewrite with AI", and only when the owner has switched it on. Then only summary numbers are sent, never your sales rows and never the product name, to the providers listed here after you sign in. The result is checked so that it has no figures that are not in your data. Up to 10 rewrites a day. Everything else (explanations, answers) is written by the app itself.',
         'Cookies: only the one that keeps you signed in (14 days) and a short one used during the sign-in.',
         'Deleting: you can delete a product from its page, or everything with the button below. Cloudflare may keep automatic database backups for a few days.'],
       deleteAll: 'Delete all my data', confirmDeleteAll: 'Delete ALL your products, sales and forecasts? This cannot be undone.', deletedAll: 'All your data was deleted.',
@@ -61,7 +61,14 @@
       daysFilled: 'Days filled in', interval: 'Interval', computedOn: 'Computed on',
       intervalText: function (level) { return 'about ' + Math.round(level * 100) + '% of the days should fall in the range'; },
       exampleTitle: 'Try it with example data', exampleText: 'Creates a product with 240 days of invented sales and computes its forecast, so you can see everything working.',
-      exampleButton: 'Create an example product', exampleName: 'Example', creatingExample: 'Creating…'
+      exampleButton: 'Create an example product', exampleName: 'Example', creatingExample: 'Creating…',
+      aiButton: 'Rewrite with AI', aiWorking: 'Writing…', aiOriginal: 'Show the text written by the app',
+      aiLeft: function (n) { return n + (n === 1 ? ' rewrite' : ' rewrites') + ' left today'; },
+      aiSource: function (label) { return 'Rewritten by AI (' + label + ') from the numbers above, without your product name. The figures were checked against your data.'; },
+      aiNote_ai_not_configured: 'The AI is not available right now: this is the text written by the app.',
+      aiNote_ai_unavailable: 'The AI providers did not answer: this is the text written by the app.',
+      aiNote_ai_rejected: 'The AI wrote figures that are not in your data, so its text was discarded: this is the text written by the app.',
+      aiProviders: function (names) { return 'AI providers set up by the owner: ' + names + '.'; }
     },
     it: {
       tagline: 'Previsione vendite', loading: 'Caricamento…',
@@ -105,9 +112,9 @@
       askLabel: 'La tua domanda', askPlaceholder: 'Per esempio: Quanto ho venduto negli ultimi 30 giorni?', askButton: 'Chiedi', asking: 'Sto pensando…',
       sampleLink: 'Scarica un file d\'esempio (240 giorni)',
       privacyTitle: 'Privacy',
-      privacy: ['Cosa viene salvato: i prodotti che crei, le loro vendite giornaliere e le previsioni, e l\'id numerico del tuo account GitHub (per sapere di chi sono). Non la tua email, e nessuna analisi o tracciamento.',
+      privacy: ['Cosa viene salvato: i prodotti che crei, le loro vendite giornaliere e le previsioni, l\'id numerico del tuo account GitHub (per sapere di chi sono) e quante riscritture con AI hai fatto oggi (un contatore tenuto per qualche giorno). Non la tua email, e nessuna analisi o tracciamento.',
         'Dove: in un database di Cloudflare, il servizio su cui gira questa app. Ogni account vede nell\'app solo i propri dati, ma chi gestisce questa beta amministra il database e potrebbe tecnicamente leggerlo: carica solo dati che ti va di condividere.',
-        'Nessun servizio di intelligenza artificiale riceve i tuoi dati: le spiegazioni e le risposte le scrive l\'app stessa, a partire dai tuoi numeri.',
+        'AI: solo se premi "Riscrivi con AI", e solo quando chi gestisce l\'app l\'ha attivata. Allora vengono inviati solo numeri riassuntivi, mai le righe delle vendite e mai il nome del prodotto, ai fornitori elencati qui dopo l\'accesso. Il risultato viene controllato perché non contenga cifre che non sono nei tuoi dati. Fino a 10 riscritture al giorno. Tutto il resto (spiegazioni, risposte) lo scrive l\'app stessa.',
         'Cookie: solo quello che ti tiene collegato (14 giorni) e uno breve usato durante l\'accesso.',
         'Cancellazione: puoi eliminare un prodotto dalla sua pagina, o tutto con il pulsante qui sotto. Cloudflare può conservare per qualche giorno copie di sicurezza automatiche del database.'],
       deleteAll: 'Cancella tutti i miei dati', confirmDeleteAll: 'Cancellare TUTTI i tuoi prodotti, vendite e previsioni? Non si può annullare.', deletedAll: 'Tutti i tuoi dati sono stati cancellati.',
@@ -120,7 +127,14 @@
       daysFilled: 'Giorni riempiti', interval: 'Intervallo', computedOn: 'Calcolata il',
       intervalText: function (level) { return 'circa il ' + Math.round(level * 100) + '% dei giorni dovrebbe cadere nella fascia'; },
       exampleTitle: 'Provala con dati d\'esempio', exampleText: 'Crea un prodotto con 240 giorni di vendite inventate e ne calcola la previsione, così vedi tutto in funzione.',
-      exampleButton: 'Crea un prodotto d\'esempio', exampleName: 'Esempio', creatingExample: 'Creo…'
+      exampleButton: 'Crea un prodotto d\'esempio', exampleName: 'Esempio', creatingExample: 'Creo…',
+      aiButton: 'Riscrivi con AI', aiWorking: 'Scrivo…', aiOriginal: 'Mostra il testo scritto dall\'app',
+      aiLeft: function (n) { return n + (n === 1 ? ' riscrittura rimasta' : ' riscritture rimaste') + ' oggi'; },
+      aiSource: function (label) { return 'Riscritta dall\'AI (' + label + ') a partire dai numeri qui sopra, senza il nome del prodotto. Le cifre sono state controllate sui tuoi dati.'; },
+      aiNote_ai_not_configured: 'L\'AI non è disponibile in questo momento: questo è il testo scritto dall\'app.',
+      aiNote_ai_unavailable: 'I fornitori di AI non hanno risposto: questo è il testo scritto dall\'app.',
+      aiNote_ai_rejected: 'L\'AI ha scritto cifre che non sono nei tuoi dati, quindi il suo testo è stato scartato: questo è il testo scritto dall\'app.',
+      aiProviders: function (names) { return 'Fornitori di AI configurati da chi gestisce l\'app: ' + names + '.'; }
     }
   };
 
@@ -135,7 +149,7 @@
     it: ['Quanto ho venduto negli ultimi 30 giorni?', 'Come vanno le vendite rispetto al mese scorso?', 'Qual è il giorno più forte della settimana?', 'Quanto prevedo di vendere nelle prossime 2 settimane?', 'Cosa conviene ordinare?', 'Quanto è affidabile la previsione?', 'Spiegami la previsione', 'Qual è stato il giorno record?']
   };
 
-  var state = { lang: initialLang(), user: null };
+  var state = { lang: initialLang(), user: null, ai: null };
 
   function initialLang() {
     try { var saved = localStorage.getItem('lumenx_lang'); if (saved === 'it' || saved === 'en') return saved; } catch (e) { /* storage can be blocked */ }
@@ -258,8 +272,10 @@
   }
 
   function privacyHtml() {
+    var lines = t('privacy').slice();
+    if (state.ai && state.ai.enabled) lines.push(t('aiProviders')(state.ai.providers.map(function (p) { return p.label; }).join(', ')));
     return '<details class="fold"><summary><h3 style="margin:0">' + esc(t('privacyTitle')) + '</h3></summary><ul class="hint">' +
-      t('privacy').map(function (line) { return '<li>' + esc(line) + '</li>'; }).join('') + '</ul></details>';
+      lines.map(function (line) { return '<li>' + esc(line) + '</li>'; }).join('') + '</ul></details>';
   }
 
   function showSignedOut() {
@@ -532,7 +548,10 @@
     html += '<details class="fold"><summary><h3 style="margin:0">' + esc(t('forecastDaily')) + '</h3></summary><div class="scroll"><table class="table"><thead><tr><th>' + esc(t('date')) + '</th><th class="num">' + esc(t('forecastWord')) + '</th><th class="num">' + esc(t('minCol')) + '</th><th class="num">' + esc(t('maxCol')) + '</th></tr></thead><tbody>' +
       fc.map(function (p) { return '<tr><td>' + esc(fullDate(p.date)) + '</td><td class="num">' + qty(p.yhat) + '</td><td class="num">' + qty(p.lower) + '</td><td class="num">' + qty(p.upper) + '</td></tr>'; }).join('') +
       '</tbody></table></div></details>';
-    html += '<h3>' + esc(t('explanationTitle')) + '</h3><div class="explanation" id="explanation">' + esc(t('loading')) + '</div><p class="muted source">' + esc(t('explanationSource')) + '</p>';
+    html += '<h3>' + esc(t('explanationTitle')) + '</h3><div class="explanation" id="explanation">' + esc(t('loading')) + '</div><p class="muted source" id="explanation-source">' + esc(t('explanationSource')) + '</p>';
+    if (state.ai && state.ai.enabled) {
+      html += '<p><button class="btn btn-secondary btn-small" type="button" id="ai-rewrite">' + esc(t('aiButton')) + '</button> <span class="muted" id="ai-left">' + esc(t('aiLeft')(state.ai.remaining)) + '</span></p><div id="ai-note"></div>';
+    }
     var names = Object.keys(f.backtest || {});
     if (names.length) {
       html += '<h3>' + esc(t('reliable')) + '</h3><p class="muted">' + esc(t('reliableNote')) + '</p><table class="table narrow"><thead><tr><th></th><th class="num">MAE</th><th class="num">RMSE</th></tr></thead><tbody>';
@@ -543,10 +562,36 @@
       html += '</tbody></table>';
     }
     box.innerHTML = html;
+    if (el('ai-rewrite')) el('ai-rewrite').addEventListener('click', onAiRewrite);
     el('forecast-download').addEventListener('click', function () { download(LumenExport.fileName(view.product.name, 'forecast'), LumenExport.forecastCsv(f.forecast)); });
     card.hidden = false;
     loadExplanation();
     loadReorder();
+  }
+
+  // "Rewrite with AI" / "Show the text written by the app": the second press goes back to the original
+  function onAiRewrite() {
+    var button = el('ai-rewrite'), note = el('ai-note');
+    if (view.aiShown) {
+      view.aiShown = false; button.textContent = t('aiButton'); note.innerHTML = '';
+      el('explanation-source').textContent = t('explanationSource');
+      loadExplanation();
+      return;
+    }
+    button.disabled = true; button.textContent = t('aiWorking'); note.innerHTML = '';
+    api('POST', '/api/products/' + view.id + '/forecast/explanation/ai?lang=' + state.lang).then(function (res) {
+      button.disabled = false; button.textContent = t('aiButton');
+      if (sessionLost(res)) return;
+      if (!res.ok) { note.innerHTML = alertHtml('error', esc(problemText(res))); if (res.status === 429) { state.ai.remaining = 0; el('ai-left').textContent = t('aiLeft')(0); } return; }
+      state.ai.remaining = res.data.remaining; el('ai-left').textContent = t('aiLeft')(res.data.remaining);
+      el('explanation').textContent = res.data.text;                // always as text
+      if (res.data.source === 'ai') {
+        view.aiShown = true; button.textContent = t('aiOriginal');
+        el('explanation-source').textContent = t('aiSource')(res.data.providerLabel);
+      } else {
+        note.innerHTML = alertHtml('warn', esc(t('aiNote_' + res.data.note) || t('generic')));
+      }
+    });
   }
 
   function loadExplanation() {
@@ -610,7 +655,8 @@
       if (res.status === 403) { showForbidden(); return; }
       if (res.status === 503) { showNotConfigured(); return; }
       if (!res.ok) { setContent(alertHtml('error', esc(t('generic')))); return; }
-      state.user = res.data.login; paintChrome(); route();
+      state.user = res.data.login; paintChrome();
+      api('GET', '/api/ai').then(function (ai) { state.ai = ai.ok ? ai.data : null; route(); });
     }).catch(function () { setContent(alertHtml('error', esc(t('generic')))); });
   }
 

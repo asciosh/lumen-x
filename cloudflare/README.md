@@ -4,7 +4,7 @@ A second implementation of Lumen-X that runs on the **free** Cloudflare plan, wi
 and a sign-in with GitHub. The full stack in the rest of the repo (.NET + Python + PostgreSQL) stays as it is.
 
 **Status: private beta.** Done: the forecasting engine, the Worker (sign-in with GitHub, database, CSV import, forecast, reorder,
-plain-language explanations, questions about the data) and the dashboard (English and Italian): products, CSV upload with the list of
+plain-language explanations, questions about the data, an optional AI rewrite of the explanation) and the dashboard (English and Italian): products, CSV upload with the list of
 rejected rows, the sales day by day with a date filter, forecast with chart (hover a day to read its value), backtest, forecast day by
 day, explanation, reorder suggestion, questions with example chips, downloads of the sales and of the forecast as CSV, a one-click
 example product, a privacy notice and a "delete all my data" button. It is invite only, so there is no public address.
@@ -53,6 +53,8 @@ All answers are JSON; errors have the same shape as the .NET backend (`title`, `
 | `GET /api/products/:id/forecast` | the latest forecast |
 | `GET /api/products/:id/forecast/explanation?lang=it\|en` | the explanation of the latest forecast, written by the code (no AI) |
 | `GET /api/products/:id/reorder?leadTimeDays=7&reviewDays=7&serviceLevel=95&onHand=` | the reorder suggestion (safety stock) |
+| `POST /api/products/:id/forecast/explanation/ai?lang=it\|en` | "Rewrite with AI": the same explanation rewritten by an AI provider from the numbers only; falls back to the text written by the code, with a note |
+| `GET /api/ai` | whether the AI is on, with which providers, and how many rewrites the user has left today |
 | `POST /api/products/:id/ask` | `{ "question": "...", "language": "it" }`: a question about the data (the language is optional), answered by rules |
 | `DELETE /api/me/data` | deletes every product of the user, with its sales and forecasts |
 
@@ -67,7 +69,7 @@ All answers are JSON; errors have the same shape as the .NET backend (`title`, `
 | Backtest | 3 consecutive windows, pooled errors | the same windows, the same rules |
 | Interval | 80% band: forecast ± 1.2816 × backtest RMSE | the same |
 | CSV import, reorder suggestion | yes | yes, same rules and same messages |
-| Explanations | rewritten by Gemini if a key is set, otherwise written by the code | written by the code (no AI): the same text as the full stack without Gemini |
+| Explanations | rewritten by Gemini if a key is set, otherwise written by the code | written by the code (the same text as the full stack without Gemini); optionally rewritten by a free AI provider (Workers AI, Gemini, Groq, OpenRouter) |
 | Questions about the data | 8 kinds of questions, answered by rules | the same 8 kinds, the same answers |
 
 **Accuracy.** On the real Bread series of the demo (1684 days, 3 windows of 28 days, the 4 missing Christmas days filled in),
@@ -91,19 +93,55 @@ never reach the repo): `SESSION_SECRET` (random text, at least 32 characters), `
 (from a GitHub OAuth app whose callback URL is `https://<your worker address>/auth/callback`) and `ALLOWED_GITHUB_USERS`
 (for example `alice, bob`). The database schema is in `migrations/0001_init.sql`; paste it in the D1 console.
 
+## AI rewrite (optional)
+
+A button "Rewrite with AI" next to the explanation asks an AI provider to write the explanation in nicer prose. Nothing is automatic.
+
+- **Only numbers go out.** The provider receives the summary figures computed by the code (totals, averages, errors, dates, the method) as
+  JSON. Never the sales rows and **never the product name**: the AI is told to call the product `[[PRODUCT]]` and the real name is put back
+  here, after the answer. (A product name is text typed by a user: keeping it out also means it cannot be used to steer the AI.)
+- **The figures are checked.** Every number in the AI text must be among the facts (same rule as the .NET app, `NumberGuard`): a text with
+  invented figures is discarded and the user gets the text written by the code, with a note. The check protects the numbers, not the claims.
+- **A small router, not a pool of accounts.** The providers are tried in order (`workers-ai`, `gemini`, `groq`, `openrouter`, or the order
+  in `LLM_ORDER`); one that fails is paused (10 minutes after a rate limit, 1 hour for a wrong key or model, 2 minutes after other errors; the
+  pause is kept in the database) and the next one is used. Each provider has a budget of 200 calls a day. At most three providers are tried for
+  one request. It uses **one key per provider, yours**: it does not rotate several accounts of the same provider to multiply a free quota
+  (that is usually against the terms and makes everything fragile).
+- **Limits.** 10 rewrites per user per day (UTC); "Delete all my data" does not reset the count. A provider that did answer counts, even if
+  its text was discarded; a provider that did not answer does not.
+- **Off by default.** A provider is used only if its settings exist. With none, the button does not appear.
+
+Data policies of the free tiers, as stated by comparisons dated October 2026 (check the provider's own terms before you rely on them):
+Cloudflare Workers AI and Groq say they do not train on API data; Google's free Gemini tier may use the content to improve its products
+(the sources say not for the EEA, Switzerland and the UK); Mistral's free mode may train unless you opt out; for OpenRouter's free models it
+depends on who serves the model. Since only anonymous numbers are sent, this matters less, but the privacy notice of the dashboard names
+the providers that are switched on.
+
+### Setup
+
+1. In the D1 console, run `migrations/0002_ai.sql` (two small tables: the daily counters and the state of the providers).
+2. For Workers AI (no key), add to `wrangler.jsonc`: `"ai": { "binding": "AI" }`, and set the variable `WORKERS_AI_MODEL` to a model id from the
+   Workers AI catalog (for example a small "instruct" model; the catalog changes, so pick one that is listed today).
+3. For the others, add the secrets `GEMINI_API_KEY` and `GEMINI_MODEL`, `GROQ_API_KEY` and `GROQ_MODEL`, `OPENROUTER_API_KEY` and
+   `OPENROUTER_MODEL` (a provider needs both its key and its model). Secrets: Worker, Settings, Variables and secrets, type *Secret*.
+
+`npm run e2e` runs the whole thing in the real Workers runtime with a stand-in provider (it strips the Workers AI binding, which only works
+against the real Cloudflare). The unit tests use fake providers; **a call to a real provider has not been tested from here.**
+
 ## Privacy
 
 The dashboard shows a privacy notice before and after the sign-in. In short: the app stores the products, daily sales and forecasts of
-each account and the numeric GitHub id (not the email); there is no analytics; no AI service receives the data; the owner of the
-installation runs the database and could technically read it; every product can be deleted, and the button "Delete all my data" removes
-everything of the account. If you change where the data lives (for example the D1 location), update the text in `public/app.js`.
+each account, the numeric GitHub id (not the email) and a small daily counter of AI rewrites; there is no analytics; AI providers receive
+only anonymous summary numbers, and only when the user presses "Rewrite with AI"; the owner of the installation runs the database and could
+technically read it; every product can be deleted, and the button "Delete all my data" removes everything of the account. If you change
+where the data lives (for example the D1 location) or the AI providers, check the text in `public/app.js`.
 
 ## Run it
 
 ```bash
 cd cloudflare
 npm install
-npm test          # 380 tests (vitest): engine, sessions, GitHub sign-in, API on a real SQLite database, dashboard files
+npm test          # 434 tests (vitest): engine, sessions, GitHub sign-in, API on a real SQLite database, dashboard files
 npm run typecheck # tsc
 npm run e2e       # the Worker in the real Workers runtime (workerd), locally, with the real Bread series
 ```
@@ -125,8 +163,9 @@ src/engine/   csv.ts (import rules), series.ts (daily series, gaps filled), mode
               explain.ts (facts and the written explanation, Italian and English),
               chat/ (the questions about the data: question text, intent, period, answers)
 src/worker/   index.ts (entry point), login.ts (GitHub sign-in), session.ts (signed cookie), auth.ts (who is calling),
-              allowlist.ts, api.ts (routes), db.ts (queries), limits.ts, http.ts
-migrations/   0001_init.sql (the D1 schema)
+              allowlist.ts, api.ts (routes), db.ts (queries), limits.ts, http.ts,
+              llm/ (the optional AI rewrite: prompt, providers, router)
+migrations/   0001_init.sql (the D1 schema), 0002_ai.sql (the AI counters)
 public/       the dashboard: index.html, app.js (no framework), export.js (the CSV files), app.css and fonts shared with the demo, sample-sales.csv
 test/         one test file per module, a real SQLite database for the API, the Python reference numbers
 scripts/      e2e-local.mjs

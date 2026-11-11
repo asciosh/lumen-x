@@ -125,8 +125,9 @@ Tests: `pytest` in `services/forecasting`, `dotnet test backend/tests/LumenX.Api
 
 A second implementation in [`cloudflare/`](cloudflare/) runs on the **free** Cloudflare plan, with no credit card: a Worker, a D1 database and a
 sign-in with GitHub, so each invited person logs in and sees only his own products. It does the same things as the full stack (CSV upload,
-forecast with backtest, plain-language explanations, questions about the data, reorder suggestions, English and Italian) with two
-differences: it has no LightGBM (the average of ETS and LightGBM is about 10% better on the Bread series) and no Gemini. It is invite only, so
+forecast with backtest, plain-language explanations, questions about the data, reorder suggestions, English and Italian) with one
+difference in the model: it has no LightGBM (the average of ETS and LightGBM is about 10% better on the Bread series). The explanation can
+optionally be rewritten by a free AI provider (Workers AI, Gemini, Groq, OpenRouter) that only ever receives anonymous summary numbers. It is invite only, so
 there is no public address; see [`cloudflare/README.md`](cloudflare/README.md) for how it works, how it was tested and the setup.
 
 ## Roadmap

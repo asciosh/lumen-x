@@ -1,11 +1,13 @@
 import { answer } from "../engine/chat/answer";
 import { detectLanguage, normalize } from "../engine/chat/question";
 import { parseSalesCsv } from "../engine/csv";
-import { buildFacts, explain, normalizeLanguage, type Language } from "../engine/explain";
+import { buildFacts, explain, normalizeLanguage, type ExplanationFacts, type Language } from "../engine/explain";
+import { rewriteExplanation } from "./llm/gateway";
+import { enabledProviders, type FetchFn, type LlmEnv } from "./llm/providers";
 import { runForecast } from "../engine/forecast";
 import { calculateReorder } from "../engine/reorder";
 import { SeriesError, type MethodRequest } from "../engine/types";
-import { Store, type Db, type ProductDto } from "./db";
+import { Store, type Db, type ProductDto, type StoredForecast } from "./db";
 import { badRequest, conflict, invalid, json, methodNotAllowed, notFound, problem, tooLarge } from "./http";
 import { LIMITS } from "./limits";
 
@@ -16,6 +18,9 @@ export interface ApiContext {
   /** The GitHub username, for display. */
   login: string;
   now: () => Date;
+  /** The AI settings (secrets of the Worker) and the way to reach the providers. Without them, the AI is off. */
+  llm?: LlmEnv;
+  fetch?: FetchFn;
 }
 
 const METHODS: readonly MethodRequest[] = ["auto", "naive", "ets"];
@@ -40,6 +45,9 @@ export async function handle(request: Request, ctx: ApiContext): Promise<Respons
   if (url.pathname === "/api/me") {
     return method === "GET" ? json({ login: ctx.login }) : methodNotAllowed(["GET"]);
   }
+  if (url.pathname === "/api/ai") {
+    return method === "GET" ? aiStatus(ctx, store) : methodNotAllowed(["GET"]);
+  }
   if (url.pathname === "/api/me/data") {
     // "Delete all my data": every product of this user, with its sales and forecasts.
     if (method !== "DELETE") return methodNotAllowed(["DELETE"]);
@@ -47,7 +55,7 @@ export async function handle(request: Request, ctx: ApiContext): Promise<Respons
     return new Response(null, { status: 204 });
   }
 
-  const match = /^\/api\/products(?:\/(\d+)(?:\/(sales\/import|sales|forecast\/explanation|forecast|reorder|ask))?)?$/.exec(url.pathname);
+  const match = /^\/api\/products(?:\/(\d+)(?:\/(sales\/import|sales|forecast\/explanation\/ai|forecast\/explanation|forecast|reorder|ask))?)?$/.exec(url.pathname);
   if (match === null) {
     return notFound();
   }
@@ -83,6 +91,8 @@ export async function handle(request: Request, ctx: ApiContext): Promise<Respons
       return methodNotAllowed(["GET", "POST"]);
     case "forecast/explanation":
       return method === "GET" ? explanation(url, store, product) : methodNotAllowed(["GET"]);
+    case "forecast/explanation/ai":
+      return method === "POST" ? rewriteWithAi(url, ctx, store, product) : methodNotAllowed(["POST"]);
     case "reorder":
       return method === "GET" ? reorder(url, store, product) : methodNotAllowed(["GET"]);
     case "ask":
@@ -263,22 +273,68 @@ async function reorder(url: URL, store: Store, product: ProductDto): Promise<Res
   return outcome.ok ? json({ forecastRunId: run.id, ...outcome.suggestion }) : invalid(outcome.error);
 }
 
-/** The explanation of the latest forecast, written by the code (no AI): ?lang=it|en (default it). */
-async function explanation(url: URL, store: Store, product: ProductDto): Promise<Response> {
+type ExplanationInput = { ok: false; error: Response } | { ok: true; language: Language; run: StoredForecast; facts: ExplanationFacts };
+
+/** Loads what an explanation needs: the language, the latest forecast and the facts (or the error to answer with). */
+async function explanationInput(url: URL, store: Store, product: ProductDto): Promise<ExplanationInput> {
   const language = normalizeLanguage(url.searchParams.get("lang"));
-  if (language === null) {
-    return invalid("'lang' must be 'it' or 'en'.");
-  }
+  if (language === null) return { ok: false, error: invalid("'lang' must be 'it' or 'en'.") };
   const run = await store.latestForecast(product.id);
-  if (run === null) {
-    return notFound("No forecast has been computed for this product yet.");
-  }
+  if (run === null) return { ok: false, error: notFound("No forecast has been computed for this product yet.") };
   const sales = await store.listSales(product.id, null, null);
   if (sales.length === 0 || run.forecast.length === 0) {
-    return invalid("Sales or forecast points are missing: the explanation cannot be built.");
+    return { ok: false, error: invalid("Sales or forecast points are missing: the explanation cannot be built.") };
   }
-  const facts = buildFacts(product.name, sales, run);
+  return { ok: true, language, run, facts: buildFacts(product.name, sales, run) };
+}
+
+/** The explanation of the latest forecast, written by the code (no AI): ?lang=it|en (default it). */
+async function explanation(url: URL, store: Store, product: ProductDto): Promise<Response> {
+  const input = await explanationInput(url, store, product);
+  if (!input.ok) return input.error;
+  const { language, run, facts } = input;
   return json({ forecastRunId: run.id, language, text: explain(facts, language), source: "template", note: null, facts });
+}
+
+const today = (ctx: ApiContext) => ctx.now().toISOString().slice(0, 10);
+
+/** Is the AI on, with which providers, and how many rewrites the user has left today. */
+async function aiStatus(ctx: ApiContext, store: Store): Promise<Response> {
+  const providers = enabledProviders(ctx.llm ?? {}, ctx.fetch ?? fetch);
+  const used = await store.aiUsedToday(ctx.owner, today(ctx));
+  return json({
+    enabled: providers.length > 0,
+    providers: providers.map((p) => ({ id: p.id, label: p.label })),
+    dailyLimit: LIMITS.aiRewritesPerUserPerDay,
+    usedToday: used,
+    remaining: Math.max(0, LIMITS.aiRewritesPerUserPerDay - used),
+  });
+}
+
+/**
+ * "Rewrite with AI": the same explanation, rewritten by an AI provider from the numbers only (never the product name, never the sales rows).
+ * If no provider works, or the AI writes figures that are not in the facts, the answer is the text written by the code, with a note.
+ */
+async function rewriteWithAi(url: URL, ctx: ApiContext, store: Store, product: ProductDto): Promise<Response> {
+  const input = await explanationInput(url, store, product);
+  if (!input.ok) return input.error;
+  const { language, run, facts } = input;
+
+  const day = today(ctx);
+  const used = await store.aiUsedToday(ctx.owner, day);
+  if (used >= LIMITS.aiRewritesPerUserPerDay) {
+    return problem(429, "Too many requests", `You have used your ${LIMITS.aiRewritesPerUserPerDay} AI rewrites for today. The count restarts at 00:00 UTC.`);
+  }
+
+  const outcome = await rewriteExplanation(facts, language, { env: ctx.llm ?? {}, store, now: ctx.now, fetch: ctx.fetch ?? fetch });
+  if (outcome.completions > 0) {
+    await store.addAiUse(ctx.owner, day);
+  }
+  const remaining = Math.max(0, LIMITS.aiRewritesPerUserPerDay - used - (outcome.completions > 0 ? 1 : 0));
+  if (outcome.kind === "ok") {
+    return json({ forecastRunId: run.id, language, text: outcome.text, source: "ai", provider: outcome.provider, providerLabel: outcome.label, note: null, remaining });
+  }
+  return json({ forecastRunId: run.id, language, text: explain(facts, language), source: "template", provider: null, providerLabel: null, note: outcome.note, remaining });
 }
 
 const MIN_QUESTION_LENGTH = 3;

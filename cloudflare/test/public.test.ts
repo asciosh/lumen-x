@@ -69,8 +69,10 @@ describe("the dashboard files", () => {
     expect(a.length).toBe(b.length);
     expect(a.length).toBeGreaterThanOrEqual(5);
     const text = a.join(" ");
-    for (const piece of ["What is stored", "Where", "No AI service", "Cookies", "Deleting"]) expect(text).toContain(piece);
+    for (const piece of ["What is stored", "Where", "AI: only if you press", "Cookies", "Deleting"]) expect(text).toContain(piece);
     expect(text).toContain("could technically read it");
+    expect(text).toContain("never the product name");
+    expect(text).toContain("Up to 10 rewrites a day");
   });
 
   it("the example CSV is valid and enough for a forecast", () => {

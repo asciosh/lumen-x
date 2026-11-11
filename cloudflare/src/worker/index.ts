@@ -1,9 +1,10 @@
 import { handle } from "./api";
 import { authenticate } from "./auth";
 import type { Db } from "./db";
+import type { LlmEnv } from "./llm/providers";
 import { defaultLoginDeps, handleAuth, type LoginConfig } from "./login";
 
-export interface Env extends LoginConfig {
+export interface Env extends LoginConfig, LlmEnv {
   /** The D1 database (binding "DB" in wrangler.jsonc). */
   DB: Db;
   /** The static files of the dashboard (folder "public"). */
@@ -25,6 +26,6 @@ export default {
     if (!auth.ok) {
       return auth.response;
     }
-    return handle(request, { db: env.DB, owner: auth.owner, login: auth.login, now: () => new Date() });
+    return handle(request, { db: env.DB, owner: auth.owner, login: auth.login, now: () => new Date(), llm: env, fetch: (input, init) => fetch(input, init) });
   },
 };
