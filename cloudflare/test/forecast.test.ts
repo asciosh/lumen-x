@@ -103,12 +103,31 @@ describe("on the real Bread series", () => {
     });
   });
 
-  it("a full request is cheap enough for the free Workers plan (about 10 ms of CPU)", () => {
-    runForecast(BREAD, 28); // warm-up
-    const start = performance.now();
-    for (let i = 0; i < 10; i++) runForecast(BREAD, 28);
-    const perRequest = (performance.now() - start) / 10;
-    expect(perRequest).toBeLessThan(8);
+  /**
+   * The free Workers plan allows about 10 ms of CPU per request; a full forecast takes about 1.5 ms on a quiet machine. This test is there to
+   * catch a change that makes it several times slower. It must NOT depend on how fast or how busy the machine is (a Codespace running
+   * Docker services, or a shared CI runner, is 3-5 times slower and now and then stalls for tens of milliseconds, which made an absolute
+   * threshold on the average fail by chance). So it compares with a fixed reference workload measured in the same process at the same
+   * time, and uses the median, which one stalled run cannot move.
+   */
+  it("a full request stays cheap: a small multiple of a fixed reference workload, whatever the speed of the machine", () => {
+    const median = (values: number[]) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)]!;
+    const time = (work: () => unknown) => {
+      const start = performance.now();
+      work();
+      return performance.now() - start;
+    };
+    const reference = () => {
+      let sum = 0;
+      for (let i = 1; i < 3_000_000; i++) sum += Math.sqrt(i) * 1.0000001;
+      return sum;
+    };
+    for (let i = 0; i < 3; i++) runForecast(BREAD, 28); // warm-up: the first calls pay for the compilation
+    const forecast = median(Array.from({ length: 15 }, () => time(() => runForecast(BREAD, 28))));
+    const unit = median(Array.from({ length: 9 }, () => time(reference)));
+    // Measured: about 0.2 to 0.3 (the forecast takes a quarter of the reference workload), on a quiet and on a loaded machine.
+    // 1.0 means "about 4 times slower than today", which would be about 6 ms of CPU: still inside the plan, but time to look.
+    expect(forecast / unit, `forecast ${forecast.toFixed(2)} ms, reference ${unit.toFixed(2)} ms`).toBeLessThan(1.0);
   });
 });
 
