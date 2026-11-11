@@ -5,9 +5,12 @@ and a sign-in with GitHub. The full stack in the rest of the repo (.NET + Python
 
 **Status: private beta.** Done: the forecasting engine, the Worker (sign-in with GitHub, database, CSV import, forecast, reorder,
 plain-language explanations, questions about the data, an optional AI rewrite of the explanation) and the dashboard (English and Italian): products, CSV upload with the list of
-rejected rows, the sales day by day with a date filter, forecast with chart (hover a day to read its value), backtest, forecast day by
-day, explanation, reorder suggestion, questions with example chips, downloads of the sales and of the forecast as CSV, a one-click
-example product, a privacy notice and a "delete all my data" button. It is invite only, so there is no public address.
+rejected rows, an automatic forecast after every upload, and a product page that starts with **three answers in plain words**: how much
+to order (highlighted: a number, with an optional "how many do you already have?"), how much will be sold, and how much to trust it
+("very reliable" ... "not reliable"). Under them the chart and the questions about the data. Everything technical (the method, the errors
+MAE and RMSE, the day-by-day tables, the full explanation and its optional AI rewrite, the downloads and the sales table) is folded under
+"Details for experts". A one-click example product, a privacy notice and a "delete all my data" button (inside the privacy notice) complete
+it. It is invite only, so there is no public address.
 
 ## Why a second implementation
 
@@ -54,6 +57,7 @@ All answers are JSON; errors have the same shape as the .NET backend (`title`, `
 | `GET /api/products/:id/forecast/explanation?lang=it\|en` | the explanation of the latest forecast, written by the code (no AI) |
 | `GET /api/products/:id/reorder?leadTimeDays=7&reviewDays=7&serviceLevel=95&onHand=` | the reorder suggestion (safety stock) |
 | `POST /api/products/:id/forecast/explanation/ai?lang=it\|en` | "Rewrite with AI": the same explanation rewritten by an AI provider from the numbers only; falls back to the text written by the code, with a note |
+| `GET /api/products/:id/summary?leadTimeDays=&reviewDays=&serviceLevel=&onHand=` | the three answers in one: what will be sold, how much to order (same parameters as `/reorder`), and a verdict on the trust (`high`, `medium`, `low`, `very_low`) |
 | `GET /api/ai` | whether the AI is on, with which providers, and how many rewrites the user has left today |
 | `POST /api/products/:id/ask` | `{ "question": "...", "language": "it" }`: a question about the data (the language is optional), answered by rules |
 | `DELETE /api/me/data` | deletes every product of the user, with its sales and forecasts |
@@ -92,6 +96,14 @@ The Worker needs four **secrets** (Worker → Settings → Variables and secrets
 never reach the repo): `SESSION_SECRET` (random text, at least 32 characters), `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
 (from a GitHub OAuth app whose callback URL is `https://<your worker address>/auth/callback`) and `ALLOWED_GITHUB_USERS`
 (for example `alice, bob`). The database schema is in `migrations/0001_init.sql`; paste it in the D1 console.
+
+## The trust verdict
+
+The product page says in words how much to trust the forecast. It is **indicative, not a guarantee**: the average daily error of the check on
+the past is compared with the size of the forecast (under 10% "very reliable", under 20% "fairly reliable", under 35% "not very reliable",
+above that "not reliable"). A forecast that does no better than repeating last week, or a series with 20% or more of the days at zero, is
+never better than "not very reliable"; with half of the days at zero it is "not reliable". The thresholds are in `src/engine/summary.ts`
+and are my own choice, tested at their edges, not a standard.
 
 ## AI rewrite (optional)
 
@@ -141,7 +153,7 @@ where the data lives (for example the D1 location) or the AI providers, check th
 ```bash
 cd cloudflare
 npm install
-npm test          # 434 tests (vitest): engine, sessions, GitHub sign-in, API on a real SQLite database, dashboard files
+npm test          # 456 tests (vitest): engine, sessions, GitHub sign-in, API on a real SQLite database, dashboard files
 npm run typecheck # tsc
 npm run e2e       # the Worker in the real Workers runtime (workerd), locally, with the real Bread series
 ```

@@ -6,7 +6,8 @@ import { rewriteExplanation } from "./llm/gateway";
 import { enabledProviders, type FetchFn, type LlmEnv } from "./llm/providers";
 import { runForecast } from "../engine/forecast";
 import { calculateReorder } from "../engine/reorder";
-import { SeriesError, type MethodRequest } from "../engine/types";
+import { buildSummary } from "../engine/summary";
+import { SeriesError, type MethodRequest, type SalePoint } from "../engine/types";
 import { Store, type Db, type ProductDto, type StoredForecast } from "./db";
 import { badRequest, conflict, invalid, json, methodNotAllowed, notFound, problem, tooLarge } from "./http";
 import { LIMITS } from "./limits";
@@ -55,7 +56,7 @@ export async function handle(request: Request, ctx: ApiContext): Promise<Respons
     return new Response(null, { status: 204 });
   }
 
-  const match = /^\/api\/products(?:\/(\d+)(?:\/(sales\/import|sales|forecast\/explanation\/ai|forecast\/explanation|forecast|reorder|ask))?)?$/.exec(url.pathname);
+  const match = /^\/api\/products(?:\/(\d+)(?:\/(sales\/import|sales|forecast\/explanation\/ai|forecast\/explanation|forecast|reorder|summary|ask))?)?$/.exec(url.pathname);
   if (match === null) {
     return notFound();
   }
@@ -95,6 +96,8 @@ export async function handle(request: Request, ctx: ApiContext): Promise<Respons
       return method === "POST" ? rewriteWithAi(url, ctx, store, product) : methodNotAllowed(["POST"]);
     case "reorder":
       return method === "GET" ? reorder(url, store, product) : methodNotAllowed(["GET"]);
+    case "summary":
+      return method === "GET" ? summary(url, store, product) : methodNotAllowed(["GET"]);
     case "ask":
       return method === "POST" ? ask(request, store, product) : methodNotAllowed(["POST"]);
     default:
@@ -248,29 +251,60 @@ function intParam(url: URL, name: string, fallback: number): number | null {
   return /^-?\d+$/.test(raw.trim()) ? Number(raw) : null;
 }
 
-async function reorder(url: URL, store: Store, product: ProductDto): Promise<Response> {
+type ReorderParams = { ok: false; error: Response } | { ok: true; lead: number; review: number; level: number; onHand: number | null };
+
+/** The parameters of a reorder calculation, from the query string (days for delivery, days between orders, service level, stock). */
+function reorderParams(url: URL): ReorderParams {
   const lead = intParam(url, "leadTimeDays", 7);
   const review = intParam(url, "reviewDays", 7);
   const level = intParam(url, "serviceLevel", 95);
   if (lead === null || review === null || level === null) {
-    return invalid("leadTimeDays, reviewDays and serviceLevel must be whole numbers.");
+    return { ok: false, error: invalid("leadTimeDays, reviewDays and serviceLevel must be whole numbers.") };
   }
-
   let onHand: number | null = null;
   const rawStock = url.searchParams.get("onHand");
   if (rawStock !== null && rawStock.trim().length > 0) {
     onHand = /^[+-]?(\d+\.?\d*|\.\d+)$/.test(rawStock.trim()) ? Number(rawStock) : Number.NaN;
   }
+  return { ok: true, lead, review, level, onHand };
+}
 
+const zeroPercentOf = (sales: readonly SalePoint[]): number => (sales.length === 0 ? 0 : (sales.filter((s) => s.quantity === 0).length * 100) / sales.length);
+
+async function reorder(url: URL, store: Store, product: ProductDto): Promise<Response> {
+  const params = reorderParams(url);
+  if (!params.ok) return params.error;
+  const context = await forecastContext(store, product);
+  if (!context.ok) return context.error;
+  const outcome = calculateReorder(context.run, params.lead, params.review, params.level, params.onHand, zeroPercentOf(context.sales));
+  return outcome.ok ? json({ forecastRunId: context.run.id, ...outcome.suggestion }) : invalid(outcome.error);
+}
+
+/**
+ * The three answers in one: how much will I sell, how much do I order (the same parameters as the reorder endpoint), how much can I trust it.
+ * A reorder that cannot be worked out (for example a forecast shorter than the period to cover) is not an error here: `order` is null and
+ * `orderError` says why.
+ */
+async function summary(url: URL, store: Store, product: ProductDto): Promise<Response> {
+  const params = reorderParams(url);
+  if (!params.ok) return params.error;
+  const context = await forecastContext(store, product);
+  if (!context.ok) return context.error;
+  const outcome = calculateReorder(context.run, params.lead, params.review, params.level, params.onHand, zeroPercentOf(context.sales));
+  return json({ forecastRunId: context.run.id, ...buildSummary(context.facts, outcome) });
+}
+
+type ForecastContext = { ok: false; error: Response } | { ok: true; run: StoredForecast; sales: SalePoint[]; facts: ExplanationFacts };
+
+/** The latest forecast of a product with its sales and the facts computed from them (or the error to answer with). */
+async function forecastContext(store: Store, product: ProductDto): Promise<ForecastContext> {
   const run = await store.latestForecast(product.id);
-  if (run === null) {
-    return notFound("No forecast has been computed for this product yet.");
+  if (run === null) return { ok: false, error: notFound("No forecast has been computed for this product yet.") };
+  const sales = await store.listSales(product.id, null, null);
+  if (sales.length === 0 || run.forecast.length === 0) {
+    return { ok: false, error: invalid("Sales or forecast points are missing: the explanation cannot be built.") };
   }
-  const stats = await store.zeroStats(product.id);
-  const zeroPercent = stats.days === 0 ? 0 : (stats.zeroDays * 100) / stats.days;
-
-  const outcome = calculateReorder(run, lead, review, level, onHand, zeroPercent);
-  return outcome.ok ? json({ forecastRunId: run.id, ...outcome.suggestion }) : invalid(outcome.error);
+  return { ok: true, run, sales, facts: buildFacts(product.name, sales, run) };
 }
 
 type ExplanationInput = { ok: false; error: Response } | { ok: true; language: Language; run: StoredForecast; facts: ExplanationFacts };
@@ -279,13 +313,9 @@ type ExplanationInput = { ok: false; error: Response } | { ok: true; language: L
 async function explanationInput(url: URL, store: Store, product: ProductDto): Promise<ExplanationInput> {
   const language = normalizeLanguage(url.searchParams.get("lang"));
   if (language === null) return { ok: false, error: invalid("'lang' must be 'it' or 'en'.") };
-  const run = await store.latestForecast(product.id);
-  if (run === null) return { ok: false, error: notFound("No forecast has been computed for this product yet.") };
-  const sales = await store.listSales(product.id, null, null);
-  if (sales.length === 0 || run.forecast.length === 0) {
-    return { ok: false, error: invalid("Sales or forecast points are missing: the explanation cannot be built.") };
-  }
-  return { ok: true, language, run, facts: buildFacts(product.name, sales, run) };
+  const context = await forecastContext(store, product);
+  if (!context.ok) return context;
+  return { ok: true, language, run: context.run, facts: context.facts };
 }
 
 /** The explanation of the latest forecast, written by the code (no AI): ?lang=it|en (default it). */

@@ -68,7 +68,31 @@
       aiNote_ai_not_configured: 'The AI is not available right now: this is the text written by the app.',
       aiNote_ai_unavailable: 'The AI providers did not answer: this is the text written by the app.',
       aiNote_ai_rejected: 'The AI wrote figures that are not in your data, so its text was discarded: this is the text written by the app.',
-      aiProviders: function (names) { return 'AI providers set up by the owner: ' + names + '.'; }
+      aiProviders: function (names) { return 'AI providers set up by the owner: ' + names + '.'; },
+      summaryTitle: 'At a glance', chartTitle: 'How sales will go',
+      orderTitle: 'How much to order', orderKickerOrder: 'Order about', orderKickerNeed: 'You need about', unitsWord: 'units',
+      orderSubNeed: function (d) { return 'between stock and orders, for the next ' + d + ' days'; },
+      orderSubOrder: function (total, d, have) { return 'You need ' + total + ' between stock and orders for the next ' + d + ' days, and you already have ' + have + '.'; },
+      onHandAsk: 'How many do you already have in stock?', updateButton: 'Update',
+      orderAssumptions: function (lead, review, level) { return 'Worked out for a delivery in ' + lead + ' days and an order every ' + review + ' days, with a ' + level + ' safety margin.'; },
+      orderSettings: 'Change delivery times and safety margin', leadDays: 'Days for the delivery', reviewDaysLabel: 'Days between one order and the next', safetyLabel: 'Safety margin',
+      sl90: 'Economic: you may run out about 1 time in 10', sl95: 'Normal: about 1 time in 20', sl98: 'Careful: about 1 time in 50', sl99: 'Very careful: about 1 time in 100',
+      slName90: 'economic', slName95: 'normal', slName98: 'careful', slName99: 'very careful',
+      orderNumbers: 'The numbers behind it',
+      orderTooShort: function (p) { return 'To work out the order the forecast must cover at least ' + p + ' days. Recompute it from "Details for experts".'; },
+      sellTitle: 'How much will I sell', sellKicker: function (d) { return 'In the next ' + d + ' days'; }, sellPerDay: function (a) { return 'that is ' + a + ' a day'; },
+      sellSame: function (n) { return 'In line with the last ' + n + ' days.'; },
+      sellMore: function (p, n) { return p + '% more than the last ' + n + ' days.'; }, sellLess: function (p, n) { return p + '% less than the last ' + n + ' days.'; },
+      sellDays: function (a, b) { return 'Best day: ' + a + '. Weakest: ' + b + '.'; },
+      trustTitle: 'How much can I trust it',
+      trust_high: 'Very reliable', trust_medium: 'Fairly reliable', trust_low: 'Not very reliable', trust_very_low: 'Not reliable',
+      trustError: function (units, pct) { return 'Tested on days it had not seen, it was off by about ' + units + ' units a day on average (' + pct + '% of the sales).'; },
+      trustNaive: 'It does no better than simply repeating last week.', trustZero: 'Many days have no sales at all, so the numbers are hard to predict.', trustCaution: 'Use the forecast with caution.',
+      expertTitle: 'Details for experts', expertHint: 'Methods, errors, day-by-day tables, the full explanation, downloads and your sales.',
+      uploadTitle: 'Upload your sales', uploadText: 'Choose a file with one row per day: the date and how many you sold. From Excel: Save as CSV.',
+      computeNow: 'Work out the forecast', needMoreDays: function (n) { return 'A forecast needs at least 42 days of sales: you have ' + n + '. Upload more.'; },
+      forecastUpdated: 'The forecast was updated.', productName: 'Product name', createGo: 'Create and continue',
+      startHere: 'Start here: try the example, or add your own product.'
     },
     it: {
       tagline: 'Previsione vendite', loading: 'Caricamento…',
@@ -134,7 +158,31 @@
       aiNote_ai_not_configured: 'L\'AI non è disponibile in questo momento: questo è il testo scritto dall\'app.',
       aiNote_ai_unavailable: 'I fornitori di AI non hanno risposto: questo è il testo scritto dall\'app.',
       aiNote_ai_rejected: 'L\'AI ha scritto cifre che non sono nei tuoi dati, quindi il suo testo è stato scartato: questo è il testo scritto dall\'app.',
-      aiProviders: function (names) { return 'Fornitori di AI configurati da chi gestisce l\'app: ' + names + '.'; }
+      aiProviders: function (names) { return 'Fornitori di AI configurati da chi gestisce l\'app: ' + names + '.'; },
+      summaryTitle: 'In breve', chartTitle: 'Come andranno le vendite',
+      orderTitle: 'Quanto ordinare', orderKickerOrder: 'Ordina circa', orderKickerNeed: 'Ti servono circa', unitsWord: 'unità',
+      orderSubNeed: function (d) { return 'tra magazzino e ordini, per i prossimi ' + d + ' giorni'; },
+      orderSubOrder: function (total, d, have) { return 'Ti servono ' + total + ' tra magazzino e ordini per i prossimi ' + d + ' giorni, e ne hai già ' + have + '.'; },
+      onHandAsk: 'Quante ne hai già in magazzino?', updateButton: 'Aggiorna',
+      orderAssumptions: function (lead, review, level) { return 'Calcolato per una consegna in ' + lead + ' giorni e un ordine ogni ' + review + ' giorni, con un margine di sicurezza ' + level + '.'; },
+      orderSettings: 'Cambia tempi di consegna e margine di sicurezza', leadDays: 'Giorni per la consegna', reviewDaysLabel: 'Giorni tra un ordine e l\'altro', safetyLabel: 'Margine di sicurezza',
+      sl90: 'Economico: puoi restare senza merce circa 1 volta su 10', sl95: 'Normale: circa 1 volta su 20', sl98: 'Prudente: circa 1 volta su 50', sl99: 'Molto prudente: circa 1 volta su 100',
+      slName90: 'economico', slName95: 'normale', slName98: 'prudente', slName99: 'molto prudente',
+      orderNumbers: 'I numeri del calcolo',
+      orderTooShort: function (p) { return 'Per calcolare l\'ordine la previsione deve coprire almeno ' + p + ' giorni. Ricalcolala da "Dettagli per esperti".'; },
+      sellTitle: 'Quanto venderò', sellKicker: function (d) { return 'Nei prossimi ' + d + ' giorni'; }, sellPerDay: function (a) { return 'cioè ' + a + ' al giorno'; },
+      sellSame: function (n) { return 'In linea con gli ultimi ' + n + ' giorni.'; },
+      sellMore: function (p, n) { return 'Il ' + p + '% in più rispetto agli ultimi ' + n + ' giorni.'; }, sellLess: function (p, n) { return 'Il ' + p + '% in meno rispetto agli ultimi ' + n + ' giorni.'; },
+      sellDays: function (a, b) { return 'Giorno più forte: ' + a + '. Più debole: ' + b + '.'; },
+      trustTitle: 'Quanto posso fidarmi',
+      trust_high: 'Molto affidabile', trust_medium: 'Abbastanza affidabile', trust_low: 'Poco affidabile', trust_very_low: 'Non affidabile',
+      trustError: function (units, pct) { return 'Provata su giorni che non conosceva, ha sbagliato in media di circa ' + units + ' unità al giorno (' + pct + '% delle vendite).'; },
+      trustNaive: 'Non fa meglio che ripetere la settimana scorsa.', trustZero: 'Molti giorni non hanno vendite, quindi i numeri sono difficili da prevedere.', trustCaution: 'Usa la previsione con cautela.',
+      expertTitle: 'Dettagli per esperti', expertHint: 'Metodi, errori, tabelle giorno per giorno, spiegazione completa, scarichi e le tue vendite.',
+      uploadTitle: 'Carica le tue vendite', uploadText: 'Scegli un file con una riga per ogni giorno: la data e quante unità hai venduto. Da Excel: Salva con nome, formato CSV.',
+      computeNow: 'Calcola la previsione', needMoreDays: function (n) { return 'Per una previsione servono almeno 42 giorni di vendite: ne hai ' + n + '. Carica altri dati.'; },
+      forecastUpdated: 'La previsione è stata aggiornata.', productName: 'Nome del prodotto', createGo: 'Crea e continua',
+      startHere: 'Parti da qui: prova l\'esempio, oppure aggiungi il tuo prodotto.'
     }
   };
 
@@ -271,11 +319,12 @@
     if (state.user) el('who').textContent = '@' + state.user;
   }
 
-  function privacyHtml() {
+  function privacyHtml(withDelete) {
     var lines = t('privacy').slice();
     if (state.ai && state.ai.enabled) lines.push(t('aiProviders')(state.ai.providers.map(function (p) { return p.label; }).join(', ')));
     return '<details class="fold"><summary><h3 style="margin:0">' + esc(t('privacyTitle')) + '</h3></summary><ul class="hint">' +
-      lines.map(function (line) { return '<li>' + esc(line) + '</li>'; }).join('') + '</ul></details>';
+      lines.map(function (line) { return '<li>' + esc(line) + '</li>'; }).join('') + '</ul>' +
+      (withDelete ? '<p><button class="btn btn-secondary danger" type="button" id="delete-all">' + esc(t('deleteAll')) + '</button></p>' : '') + '</details>';
   }
 
   function showSignedOut() {
@@ -310,20 +359,19 @@
       var list = res.data || [];
       var html = '<h1>' + esc(t('yourProducts')) + '</h1>' + (flashHtml || '');
       if (list.length === 0) {
-        html += '<p class="muted hint">' + esc(t('noProducts')) + '</p>';
+        html += '<p class="muted hint">' + esc(t('startHere')) + '</p>';
       } else {
         html += '<ul class="product-list">' + list.map(function (p) {
           return '<li><a href="#/p/' + p.id + '"><span>' + esc(p.name) + '</span><span class="meta">' + esc(p.sku || '') + '</span></a></li>';
         }).join('') + '</ul>';
       }
       var newCard = '<section class="card"><h2>' + esc(t('newProduct')) + '</h2><form id="new-product"><div class="row">' +
-        '<label>' + esc(t('name')) + '<input type="text" name="name" maxlength="100" required></label>' +
-        '<label>' + esc(t('sku')) + '<input type="text" name="sku" maxlength="50"></label>' +
-        '<button class="btn" type="submit">' + esc(t('create')) + '</button></div>' +
+        '<label>' + esc(t('productName')) + '<input type="text" name="name" maxlength="100" required></label>' +
+        '<button class="btn" type="submit">' + esc(t('createGo')) + '</button></div>' +
         '<p class="muted">' + esc(t('limitNote')(MAX_PRODUCTS)) + '</p><div id="new-product-msg"></div></form></section>';
       var exampleCard = '<section class="card"><h2>' + esc(t('exampleTitle')) + '</h2><p class="muted hint">' + esc(t('exampleText')) + '</p><p><button class="btn btn-secondary" type="button" id="example-product">' + esc(t('exampleButton')) + '</button></p><div id="example-msg"></div></section>';
       html += list.length === 0 ? exampleCard + newCard : newCard + exampleCard;   // nothing yet: the example comes first
-      html += '<section class="card">' + privacyHtml() + '<p><button class="btn btn-secondary danger" type="button" id="delete-all">' + esc(t('deleteAll')) + '</button></p></section>';
+      html += '<section class="card">' + privacyHtml(true) + '</section>';   // the delete button is inside the notice: not the first thing a newcomer sees
       setContent(html);
       el('example-product').addEventListener('click', createExample);
       el('delete-all').addEventListener('click', function () {
@@ -337,7 +385,7 @@
       el('new-product').addEventListener('submit', function (ev) {
         ev.preventDefault();
         var form = ev.target;
-        api('POST', '/api/products', { name: form.name.value, sku: form.sku.value }).then(function (r) {
+        api('POST', '/api/products', { name: form.name.value }).then(function (r) {
           if (sessionLost(r)) return;
           if (r.status === 201) { location.hash = '#/p/' + r.data.id; return; }
           el('new-product-msg').innerHTML = alertHtml('error', esc(problemText(r)));
@@ -362,58 +410,88 @@
     });
   }
 
+  var WEEKDAYS_IT = { Monday: 'lunedì', Tuesday: 'martedì', Wednesday: 'mercoledì', Thursday: 'giovedì', Friday: 'venerdì', Saturday: 'sabato', Sunday: 'domenica' };
+  function weekdayName(english) { return state.lang === 'it' ? (WEEKDAYS_IT[english] || english) : english; }
+  function percentText(v) { return num(Math.abs(v), Math.abs(v) >= 10 ? 0 : 1); }
+
+  // The import form, once: in the main card while there are no sales, in the expert details afterwards
+  function importFormHtml() {
+    return '<p class="muted hint">' + esc(t('importHelp')) + '</p>' +
+      '<details class="fold"><summary><h3 style="margin:0">' + esc(t('formatTitle')) + '</h3></summary><pre><code>' + esc(SAMPLE) + '</code></pre><p><a href="sample-sales.csv" download>' + esc(t('sampleLink')) + '</a></p></details>' +
+      '<form id="import-form"><div class="row"><label>CSV<input type="file" name="file" accept=".csv,text/csv,text/plain"></label>' +
+      '<button class="btn" type="submit" id="import-button">' + esc(t('importButton')) + '</button></div><div id="import-msg"></div></form>';
+  }
+
+  function summaryShellHtml() {
+    var levels = [90, 95, 98, 99].map(function (l) { return '<option value="' + l + '"' + (l === 95 ? ' selected' : '') + '>' + esc(t('sl' + l)) + '</option>'; }).join('');
+    return '<div class="summary-grid">' +
+      '<div class="block order"><h3>' + esc(t('orderTitle')) + '</h3><div id="order-result"><p class="muted">' + esc(t('loading')) + '</p></div>' +
+        '<form id="order-form" class="row"><label>' + esc(t('onHandAsk')) + '<input type="number" name="onhand" min="0" step="any"></label><button class="btn btn-secondary btn-small" type="submit">' + esc(t('updateButton')) + '</button></form>' +
+        '<details class="fold" id="order-settings"><summary><h3 style="margin:0">' + esc(t('orderSettings')) + '</h3></summary>' +
+          '<div class="row"><label>' + esc(t('leadDays')) + '<input type="number" id="order-lead" min="1" max="60" value="7"></label>' +
+          '<label>' + esc(t('reviewDaysLabel')) + '<input type="number" id="order-review" min="0" max="60" value="7"></label>' +
+          '<label>' + esc(t('safetyLabel')) + '<select id="order-level">' + levels + '</select></label>' +
+          '<button class="btn btn-secondary btn-small" type="button" id="order-apply">' + esc(t('calculate')) + '</button></div>' +
+          '<div id="order-numbers"></div></details></div>' +
+      '<div class="block sell"><h3>' + esc(t('sellTitle')) + '</h3><div id="sell-result"></div></div>' +
+      '<div class="block trust"><h3>' + esc(t('trustTitle')) + '</h3><div id="trust-result"></div></div></div>';
+  }
+
   function renderProduct(flashHtml) {
-    var p = view.product, sales = view.sales;
+    var p = view.product, sales = view.sales, hasForecast = !!view.forecast;
     var html = '<p class="crumb"><a href="#/">' + esc(t('allProducts')) + '</a></p>' +
       '<div class="title-row"><h1>' + esc(p.name) + '</h1>' + (p.sku ? '<p class="muted sku">' + esc(p.sku) + '</p>' : '') + '</div><div id="flash">' + flashHtml + '</div>';
 
-    // sales and import
-    html += '<section class="card"><h2>' + esc(t('salesTitle')) + '</h2>';
-    html += sales.length
-      ? '<p>' + esc(t('salesSummary')(num(sales.length, 0), fullDate(sales[0].date), fullDate(sales[sales.length - 1].date))) + '</p>'
-      : '<p class="muted">' + esc(t('noSales')) + '</p>';
-    if (sales.length) {
-      html += '<p><button class="btn btn-secondary btn-small" type="button" id="sales-download">' + esc(t('downloadSales')) + '</button></p>';
-      html += '<details class="fold" id="sales-fold"><summary><h3 style="margin:0">' + esc(t('salesDaily')) + '</h3></summary>' +
-        '<div class="row"><label>' + esc(t('from')) + '<input type="date" id="sales-from"></label><label>' + esc(t('to')) + '<input type="date" id="sales-to"></label>' +
-        '<button class="btn btn-secondary" type="button" id="sales-apply">' + esc(t('apply')) + '</button><button class="btn btn-secondary" type="button" id="sales-clear">' + esc(t('clear')) + '</button></div><div id="sales-table"></div></details>';
+    if (!sales.length) {
+      // nothing to show yet: the one thing to do is to load the sales
+      html += '<section class="card stage"><h2>' + esc(t('uploadTitle')) + '</h2><p class="muted hint">' + esc(t('uploadText')) + '</p>' + importFormHtml() + '</section>';
+    } else {
+      // 1) the answers
+      html += '<section class="card stage" id="summary-card"><h2>' + esc(t('summaryTitle')) + '</h2>';
+      if (hasForecast) html += summaryShellHtml();
+      else if (sales.length >= 42) html += '<p><button class="btn" type="button" id="compute-now">' + esc(t('computeNow')) + '</button></p><div id="forecast-msg"></div>';
+      else html += '<p class="muted">' + esc(t('needMoreDays')(sales.length)) + '</p>';
+      html += '</section>';
+      // 2) the chart
+      if (hasForecast) html += '<section class="card" id="chart-card"><h2>' + esc(t('chartTitle')) + '</h2><div id="chart-box"></div></section>';
     }
-    html += '<h3>' + esc(t('importTitle')) + '</h3><p class="muted hint">' + esc(t('importHelp')) + '</p>' +
-      '<details class="fold"><summary><h3 style="margin:0">' + esc(t('formatTitle')) + '</h3></summary><pre><code>' + esc(SAMPLE) + '</code></pre><p><a href="sample-sales.csv" download>' + esc(t('sampleLink')) + '</a></p></details>' +
-      '<form id="import-form"><div class="row"><label>CSV<input type="file" name="file" accept=".csv,text/csv,text/plain"></label>' +
-      '<button class="btn" type="submit" id="import-button">' + esc(t('importButton')) + '</button></div><div id="import-msg"></div></form></section>';
 
-    // forecast
-    html += '<section class="card stage"><h2>' + esc(t('forecastTitle')) + '</h2>' +
-      '<form id="forecast-form"><div class="row">' +
-      '<label>' + esc(t('horizon')) + '<input type="number" name="horizon" min="1" max="90" value="28"></label>' +
-      '<label>' + esc(t('method')) + '<select name="method"><option value="auto">' + esc(t('methodAuto')) + '</option><option value="ets">ETS</option><option value="naive">naive</option></select></label>' +
-      '<button class="btn" type="submit" id="forecast-button">' + esc(t('compute')) + '</button></div><div id="forecast-msg"></div></form>' +
-      '<div id="forecast-result"></div></section>';
-
-    // reorder
-    html += '<section class="card" id="reorder-card" hidden><h2>' + esc(t('reorderTitle')) + '</h2><p class="muted">' + esc(t('reorderNote')) + '</p>' +
-      '<form id="reorder-form"><div class="row">' +
-      '<label>' + esc(t('leadTime')) + '<input type="number" name="lead" min="1" max="60" value="7"></label>' +
-      '<label>' + esc(t('reviewDays')) + '<input type="number" name="review" min="0" max="60" value="7"></label>' +
-      '<label>' + esc(t('serviceLevel')) + '<select name="level"><option>90</option><option selected>95</option><option>98</option><option>99</option></select></label>' +
-      '<label>' + esc(t('onHand')) + '<input type="number" name="onhand" min="0" step="any"></label>' +
-      '<button class="btn" type="submit">' + esc(t('calculate')) + '</button></div></form><div id="reorder-result"></div></section>';
-
-    // questions about the data
+    // 3) questions about the data
     html += '<section class="card chat"><h2>' + esc(t('askTitle')) + '</h2><p class="muted">' + esc(t('askNote')) + '</p>' +
       '<form class="ask" id="ask-form"><label>' + esc(t('askLabel')) + '<input type="text" id="ask-input" maxlength="300" autocomplete="off" placeholder="' + esc(t('askPlaceholder')) + '"></label>' +
       '<button class="btn" type="submit" id="ask-button">' + esc(t('askButton')) + '</button></form>' +
       '<div class="chips" id="chips">' + EXAMPLES[state.lang].map(function (q, i) { return '<button type="button" class="chip" data-i="' + i + '">' + esc(q) + '</button>'; }).join('') + '</div>' +
       '<div id="ask-msg"></div><div id="turns"></div></section>';
 
+    // 4) everything technical, folded
+    if (sales.length) {
+      html += '<section class="card"><details class="fold expert" id="expert"><summary><h2 style="margin:0">' + esc(t('expertTitle')) + '</h2></summary><p class="muted hint">' + esc(t('expertHint')) + '</p>' +
+        '<h3>' + esc(t('forecastTitle')) + '</h3>' +
+        '<form id="forecast-form"><div class="row">' +
+        '<label>' + esc(t('horizon')) + '<input type="number" name="horizon" min="1" max="90" value="28"></label>' +
+        '<label>' + esc(t('method')) + '<select name="method"><option value="auto">' + esc(t('methodAuto')) + '</option><option value="ets">ETS</option><option value="naive">naive</option></select></label>' +
+        '<button class="btn" type="submit" id="forecast-button">' + esc(t('compute')) + '</button></div><div id="forecast-msg-expert"></div></form>' +
+        '<div id="forecast-result"></div>' +
+        '<h3>' + esc(t('salesTitle')) + '</h3>' +
+        '<p>' + esc(t('salesSummary')(num(sales.length, 0), fullDate(sales[0].date), fullDate(sales[sales.length - 1].date))) + '</p>' +
+        '<p><button class="btn btn-secondary btn-small" type="button" id="sales-download">' + esc(t('downloadSales')) + '</button></p>' +
+        '<details class="fold" id="sales-fold"><summary><h3 style="margin:0">' + esc(t('salesDaily')) + '</h3></summary>' +
+        '<div class="row"><label>' + esc(t('from')) + '<input type="date" id="sales-from"></label><label>' + esc(t('to')) + '<input type="date" id="sales-to"></label>' +
+        '<button class="btn btn-secondary" type="button" id="sales-apply">' + esc(t('apply')) + '</button><button class="btn btn-secondary" type="button" id="sales-clear">' + esc(t('clear')) + '</button></div><div id="sales-table"></div></details>' +
+        '<h3>' + esc(t('importTitle')) + '</h3>' + importFormHtml() + '</details></section>';
+    }
+
     html += '<p><button class="btn btn-secondary danger" type="button" id="delete-product">' + esc(t('deleteProduct')) + '</button></p>';
     setContent(html);
     view.turns = [];
 
-    el('import-form').addEventListener('submit', onImport);
-    el('forecast-form').addEventListener('submit', onForecast);
-    el('reorder-form').addEventListener('submit', function (ev) { ev.preventDefault(); loadReorder(); });
+    if (el('import-form')) el('import-form').addEventListener('submit', onImport);
+    if (el('forecast-form')) el('forecast-form').addEventListener('submit', onForecast);
+    if (el('compute-now')) el('compute-now').addEventListener('click', function () { computeForecast(28, 'auto', el('forecast-msg'), el('compute-now')); });
+    if (el('order-form')) {
+      el('order-form').addEventListener('submit', function (ev) { ev.preventDefault(); loadSummary(); });
+      el('order-apply').addEventListener('click', loadSummary);
+    }
     el('delete-product').addEventListener('click', onDelete);
     if (el('sales-fold')) {
       el('sales-apply').addEventListener('click', paintSalesTable);
@@ -423,7 +501,7 @@
     }
     el('ask-form').addEventListener('submit', function (ev) { ev.preventDefault(); askQuestion(el('ask-input').value); });
     el('chips').addEventListener('click', function (ev) { var b = ev.target.closest ? ev.target.closest('.chip') : null; if (b) askQuestion(EXAMPLES[state.lang][+b.getAttribute('data-i')]); });
-    paintForecast();
+    if (hasForecast) paintForecast();
   }
 
   // ---------- questions about the data ----------
@@ -499,14 +577,19 @@
     api('POST', '/api/products/' + view.id + '/sales/import', fd).then(function (res) {
       if (sessionLost(res)) return;
       button.disabled = false; button.textContent = t('importButton');
-      if (res.ok) {
-        var d = res.data, html = alertHtml('ok', esc(t('imported')(num(d.inserted, 0), num(d.updated, 0))) + (d.duplicatesInFile ? ' ' + esc(t('dupes')(d.duplicatesInFile)) : ''));
-        if (d.rejected) html += alertHtml('warn', esc(t('skipped')(d.rejected))) + errorsTable(d.errors, d.errorsTruncated);
-        showProduct(view.id, html);
-      } else {
+      if (!res.ok) {
         var extra = res.data && res.data.errors && res.data.errors.length ? errorsTable(res.data.errors, res.data.errorsTruncated) : '';
         msg.innerHTML = alertHtml('error', esc(problemText(res))) + extra;
+        return;
       }
+      var d = res.data, html = alertHtml('ok', esc(t('imported')(num(d.inserted, 0), num(d.updated, 0))) + (d.duplicatesInFile ? ' ' + esc(t('dupes')(d.duplicatesInFile)) : ''));
+      if (d.rejected) html += alertHtml('warn', esc(t('skipped')(d.rejected))) + errorsTable(d.errors, d.errorsTruncated);
+      // The forecast follows by itself: nobody should have to know that it has to be asked for.
+      api('POST', '/api/products/' + view.id + '/forecast', { horizon: 28, method: 'auto' }).then(function (fc) {
+        if (sessionLost(fc)) return;
+        html += fc.status === 201 ? alertHtml('ok', esc(t('forecastUpdated'))) : alertHtml('warn', esc(problemText(fc)));
+        showProduct(view.id, html);
+      });
     });
   }
 
@@ -517,56 +600,72 @@
       (truncated || errors.length > 10 ? '<p class="muted">' + esc(t('moreProblems')) + '</p>' : '');
   }
 
-  function onForecast(ev) {
-    ev.preventDefault();
-    var form = ev.target, button = el('forecast-button');
-    button.disabled = true; button.textContent = t('computing'); el('forecast-msg').innerHTML = '';
-    api('POST', '/api/products/' + view.id + '/forecast', { horizon: Number(form.horizon.value), method: form.method.value }).then(function (res) {
+  // Computes a forecast and shows it (shared by the button of the summary and the form of the expert details)
+  function computeForecast(horizon, method, msgBox, button) {
+    var label = button ? button.textContent : '';
+    if (button) { button.disabled = true; button.textContent = t('computing'); }
+    if (msgBox) msgBox.innerHTML = '';
+    api('POST', '/api/products/' + view.id + '/forecast', { horizon: horizon, method: method }).then(function (res) {
       if (sessionLost(res)) return;
-      button.disabled = false; button.textContent = t('compute');
-      if (res.status === 201) { view.forecast = res.data; paintForecast(); return; }
-      el('forecast-msg').innerHTML = alertHtml('error', esc(problemText(res)));
+      if (button) { button.disabled = false; button.textContent = label; }
+      if (res.status === 201) {
+        view.forecast = res.data;
+        if (el('chart-box')) paintForecast(); else showProduct(view.id);   // the first forecast needs the whole page
+        return;
+      }
+      if (msgBox) msgBox.innerHTML = alertHtml('error', esc(problemText(res)));
     });
   }
 
+  function onForecast(ev) {
+    ev.preventDefault();
+    var form = ev.target;
+    computeForecast(Number(form.horizon.value), form.method.value, el('forecast-msg-expert'), el('forecast-button'));
+  }
+
   function paintForecast() {
-    var f = view.forecast, box = el('forecast-result'), card = el('reorder-card');
-    if (!f) { box.innerHTML = '<p class="muted">' + esc(t('noForecast')) + '</p>'; card.hidden = true; return; }
-    var fc = f.forecast, total = fc.reduce(function (a, p) { return a + p.yhat; }, 0);
-    var html = '<p class="lead">' + t('lead')(fc.length, num(total, 0), num(total / fc.length, 0)) + '</p>';
-    html += '<div class="chart-wrap">' + chartSvg(view.sales, fc, 120) + '</div>';
-    html += '<div class="legend"><span><i class="sw sw-history"></i> ' + esc(t('history')) + '</span><span><i class="sw sw-yhat"></i> ' + esc(t('forecastWord')) + '</span><span><i class="sw sw-band"></i> ' + esc(t('range')) + '</span></div>';
-    html += '<p class="muted">' + esc(t('chartNote')(Math.min(120, view.sales.length))) + '</p>';
-    html += '<dl class="facts"><div><dt>' + esc(t('methodUsed')) + '</dt><dd><strong>' + esc(f.methodUsed) + '</strong></dd></div>' +
-      '<div><dt>' + esc(t('horizonLabel')) + '</dt><dd>' + esc(t('daysN')(f.horizon)) + '</dd></div>' +
-      '<div><dt>' + esc(t('checkedOn')) + '</dt><dd>' + esc(t('daysN')(f.holdoutDays)) + '</dd></div>' +
-      '<div><dt>' + esc(t('daysFilled')) + '</dt><dd>' + esc(num(f.filledMissingDays, 0)) + '</dd></div>' +
-      '<div><dt>' + esc(t('interval')) + '</dt><dd>' + esc(t('intervalText')(f.intervalLevel)) + '</dd></div>' +
-      '<div><dt>' + esc(t('computedOn')) + '</dt><dd>' + esc(fmtDateTime(f.createdAtUtc)) + '</dd></div></dl>';
-    if (f.filledMissingDays > 0) html += '<p class="muted">' + esc(t('filled')(f.filledMissingDays)) + '</p>';
-    html += '<p><button class="btn btn-secondary btn-small" type="button" id="forecast-download">' + esc(t('downloadForecast')) + '</button></p>';
-    html += '<details class="fold"><summary><h3 style="margin:0">' + esc(t('forecastDaily')) + '</h3></summary><div class="scroll"><table class="table"><thead><tr><th>' + esc(t('date')) + '</th><th class="num">' + esc(t('forecastWord')) + '</th><th class="num">' + esc(t('minCol')) + '</th><th class="num">' + esc(t('maxCol')) + '</th></tr></thead><tbody>' +
-      fc.map(function (p) { return '<tr><td>' + esc(fullDate(p.date)) + '</td><td class="num">' + qty(p.yhat) + '</td><td class="num">' + qty(p.lower) + '</td><td class="num">' + qty(p.upper) + '</td></tr>'; }).join('') +
-      '</tbody></table></div></details>';
-    html += '<h3>' + esc(t('explanationTitle')) + '</h3><div class="explanation" id="explanation">' + esc(t('loading')) + '</div><p class="muted source" id="explanation-source">' + esc(t('explanationSource')) + '</p>';
-    if (state.ai && state.ai.enabled) {
-      html += '<p><button class="btn btn-secondary btn-small" type="button" id="ai-rewrite">' + esc(t('aiButton')) + '</button> <span class="muted" id="ai-left">' + esc(t('aiLeft')(state.ai.remaining)) + '</span></p><div id="ai-note"></div>';
+    var f = view.forecast;
+    if (!f) return;
+    var fc = f.forecast;
+    // the chart
+    if (el('chart-box')) {
+      el('chart-box').innerHTML = '<div class="chart-wrap">' + chartSvg(view.sales, fc, 120) + '</div>' +
+        '<div class="legend"><span><i class="sw sw-history"></i> ' + esc(t('history')) + '</span><span><i class="sw sw-yhat"></i> ' + esc(t('forecastWord')) + '</span><span><i class="sw sw-band"></i> ' + esc(t('range')) + '</span></div>' +
+        '<p class="muted">' + esc(t('chartNote')(Math.min(120, view.sales.length))) + '</p>';
     }
-    var names = Object.keys(f.backtest || {});
-    if (names.length) {
-      html += '<h3>' + esc(t('reliable')) + '</h3><p class="muted">' + esc(t('reliableNote')) + '</p><table class="table narrow"><thead><tr><th></th><th class="num">MAE</th><th class="num">RMSE</th></tr></thead><tbody>';
-      names.forEach(function (k) {
-        var m = f.backtest[k];
-        html += '<tr class="' + (k === f.methodUsed ? 'is-used' : '') + '"><td>' + esc(k) + '</td><td class="num">' + num(m.mae, 2) + '</td><td class="num">' + num(m.rmse, 2) + '</td></tr>';
-      });
-      html += '</tbody></table>';
+    // the expert details
+    var box = el('forecast-result');
+    if (box) {
+      var html = '<dl class="facts"><div><dt>' + esc(t('methodUsed')) + '</dt><dd><strong>' + esc(f.methodUsed) + '</strong></dd></div>' +
+        '<div><dt>' + esc(t('horizonLabel')) + '</dt><dd>' + esc(t('daysN')(f.horizon)) + '</dd></div>' +
+        '<div><dt>' + esc(t('checkedOn')) + '</dt><dd>' + esc(t('daysN')(f.holdoutDays)) + '</dd></div>' +
+        '<div><dt>' + esc(t('daysFilled')) + '</dt><dd>' + esc(num(f.filledMissingDays, 0)) + '</dd></div>' +
+        '<div><dt>' + esc(t('interval')) + '</dt><dd>' + esc(t('intervalText')(f.intervalLevel)) + '</dd></div>' +
+        '<div><dt>' + esc(t('computedOn')) + '</dt><dd>' + esc(fmtDateTime(f.createdAtUtc)) + '</dd></div></dl>';
+      if (f.filledMissingDays > 0) html += '<p class="muted">' + esc(t('filled')(f.filledMissingDays)) + '</p>';
+      html += '<p><button class="btn btn-secondary btn-small" type="button" id="forecast-download">' + esc(t('downloadForecast')) + '</button></p>';
+      html += '<details class="fold"><summary><h3 style="margin:0">' + esc(t('forecastDaily')) + '</h3></summary><div class="scroll"><table class="table"><thead><tr><th>' + esc(t('date')) + '</th><th class="num">' + esc(t('forecastWord')) + '</th><th class="num">' + esc(t('minCol')) + '</th><th class="num">' + esc(t('maxCol')) + '</th></tr></thead><tbody>' +
+        fc.map(function (p) { return '<tr><td>' + esc(fullDate(p.date)) + '</td><td class="num">' + qty(p.yhat) + '</td><td class="num">' + qty(p.lower) + '</td><td class="num">' + qty(p.upper) + '</td></tr>'; }).join('') +
+        '</tbody></table></div></details>';
+      html += '<h3>' + esc(t('explanationTitle')) + '</h3><div class="explanation" id="explanation">' + esc(t('loading')) + '</div><p class="muted source" id="explanation-source">' + esc(t('explanationSource')) + '</p>';
+      if (state.ai && state.ai.enabled) {
+        html += '<p><button class="btn btn-secondary btn-small" type="button" id="ai-rewrite">' + esc(t('aiButton')) + '</button> <span class="muted" id="ai-left">' + esc(t('aiLeft')(state.ai.remaining)) + '</span></p><div id="ai-note"></div>';
+      }
+      var names = Object.keys(f.backtest || {});
+      if (names.length) {
+        html += '<h3>' + esc(t('reliable')) + '</h3><p class="muted">' + esc(t('reliableNote')) + '</p><table class="table narrow"><thead><tr><th></th><th class="num">MAE</th><th class="num">RMSE</th></tr></thead><tbody>';
+        names.forEach(function (k) {
+          var m = f.backtest[k];
+          html += '<tr class="' + (k === f.methodUsed ? 'is-used' : '') + '"><td>' + esc(k) + '</td><td class="num">' + num(m.mae, 2) + '</td><td class="num">' + num(m.rmse, 2) + '</td></tr>';
+        });
+        html += '</tbody></table>';
+      }
+      box.innerHTML = html;
+      if (el('ai-rewrite')) el('ai-rewrite').addEventListener('click', onAiRewrite);
+      el('forecast-download').addEventListener('click', function () { download(LumenExport.fileName(view.product.name, 'forecast'), LumenExport.forecastCsv(f.forecast)); });
+      loadExplanation();
     }
-    box.innerHTML = html;
-    if (el('ai-rewrite')) el('ai-rewrite').addEventListener('click', onAiRewrite);
-    el('forecast-download').addEventListener('click', function () { download(LumenExport.fileName(view.product.name, 'forecast'), LumenExport.forecastCsv(f.forecast)); });
-    card.hidden = false;
-    loadExplanation();
-    loadReorder();
+    loadSummary();
   }
 
   // "Rewrite with AI" / "Show the text written by the app": the second press goes back to the original
@@ -605,24 +704,63 @@
     });
   }
 
-  function loadReorder() {
-    var form = el('reorder-form'), out = el('reorder-result');
-    var q = 'leadTimeDays=' + encodeURIComponent(form.lead.value) + '&reviewDays=' + encodeURIComponent(form.review.value) + '&serviceLevel=' + encodeURIComponent(form.level.value);
-    if (form.onhand.value.trim() !== '') q += '&onHand=' + encodeURIComponent(form.onhand.value);
-    api('GET', '/api/products/' + view.id + '/reorder?' + q).then(function (res) {
+  function safetyName(level) { return t('slName' + level) || (level + '%'); }
+
+  // The three answers: how much to order, how much I will sell, how much I can trust it. One request to the server.
+  function loadSummary() {
+    var id = view.id;
+    if (!el('order-result')) return;
+    var q = 'leadTimeDays=' + encodeURIComponent(el('order-lead').value) + '&reviewDays=' + encodeURIComponent(el('order-review').value) + '&serviceLevel=' + encodeURIComponent(el('order-level').value);
+    var onhand = el('order-form').onhand.value.trim();
+    if (onhand !== '') q += '&onHand=' + encodeURIComponent(onhand);
+    api('GET', '/api/products/' + id + '/summary?' + q).then(function (res) {
+      if (view.id !== id || !el('order-result')) return;   // the page changed meanwhile
       if (sessionLost(res)) return;
-      if (!res.ok) { out.innerHTML = alertHtml('error', esc(problemText(res))); return; }
-      var d = res.data;
-      var html = '<table class="table narrow"><tbody>' +
-        '<tr><td>' + esc(t('rPeriod')) + '</td><td class="num">' + esc(t('daysN')(d.periodDays)) + '</td></tr>' +
-        '<tr><td>' + esc(t('rDemand')) + '</td><td class="num">' + qty(d.demandInPeriod) + '</td></tr>' +
-        '<tr><td>' + esc(t('rSafety')(d.serviceLevelPercent)) + '</td><td class="num">' + qty(d.safetyStock) + '</td></tr>' +
-        '<tr><td>' + esc(t('rLevel')) + '</td><td class="num"><strong>' + qty(d.orderUpToLevel) + '</strong></td></tr>' +
-        (d.suggestedOrder === null ? '' : '<tr><td>' + esc(t('rOrder')) + '</td><td class="num"><strong>' + num(d.suggestedOrder, 0) + '</strong></td></tr>') +
-        '</tbody></table>';
-      if (d.warnings && d.warnings.indexOf('intermittent') >= 0) html += alertHtml('warn', esc(t('intermittent')));
-      out.innerHTML = html;
+      if (!res.ok) { el('order-result').innerHTML = alertHtml('error', esc(problemText(res))); return; }
+      paintOrder(res.data); paintSell(res.data); paintTrust(res.data);
     });
+  }
+
+  function paintOrder(d) {
+    var box = el('order-result'), o = d.order;
+    if (!o) {
+      var lead = Number(el('order-lead').value) + Number(el('order-review').value);
+      box.innerHTML = alertHtml('warn', esc(/horizon/i.test(d.orderError || '') ? t('orderTooShort')(lead) : d.orderError));
+      el('order-numbers').innerHTML = '';
+      return;
+    }
+    var ordering = o.suggestedOrder !== null;
+    var html = '<p class="kicker">' + esc(ordering ? t('orderKickerOrder') : t('orderKickerNeed')) + '</p>' +
+      '<p class="bignum">' + num(ordering ? o.suggestedOrder : o.orderUpToLevel, 0) + ' <span>' + esc(t('unitsWord')) + '</span></p>' +
+      '<p class="muted">' + esc(ordering ? t('orderSubOrder')(num(o.orderUpToLevel, 0), o.periodDays, num(o.onHand, 0)) : t('orderSubNeed')(o.periodDays)) + '</p>' +
+      '<p class="muted small">' + esc(t('orderAssumptions')(o.leadTimeDays, o.reviewDays, safetyName(o.serviceLevelPercent))) + '</p>';
+    box.innerHTML = html;
+    el('order-numbers').innerHTML = '<h3>' + esc(t('orderNumbers')) + '</h3><table class="table narrow"><tbody>' +
+      '<tr><td>' + esc(t('rPeriod')) + '</td><td class="num">' + esc(t('daysN')(o.periodDays)) + '</td></tr>' +
+      '<tr><td>' + esc(t('rDemand')) + '</td><td class="num">' + qty(o.demandInPeriod) + '</td></tr>' +
+      '<tr><td>' + esc(t('rSafety')(o.serviceLevelPercent)) + '</td><td class="num">' + qty(o.safetyStock) + '</td></tr>' +
+      '<tr><td>' + esc(t('rLevel')) + '</td><td class="num"><strong>' + qty(o.orderUpToLevel) + '</strong></td></tr></tbody></table>';
+  }
+
+  function paintSell(d) {
+    var s = d.sales, html = '<p class="kicker">' + esc(t('sellKicker')(s.days)) + '</p>' +
+      '<p class="bignum">' + num(s.total, 0) + ' <span>' + esc(t('unitsWord')) + '</span></p><p class="muted">' + esc(t('sellPerDay')(num(s.avgPerDay, 0))) + '</p>';
+    if (s.changePercent !== null) {
+      var c = s.changePercent;
+      html += '<p>' + esc(Math.abs(c) < 2 ? t('sellSame')(s.referenceDays) : (c > 0 ? t('sellMore') : t('sellLess'))(percentText(c), s.referenceDays)) + '</p>';
+    }
+    if (s.strongestWeekday && s.weakestWeekday) html += '<p class="muted">' + esc(t('sellDays')(weekdayName(s.strongestWeekday), weekdayName(s.weakestWeekday))) + '</p>';
+    el('sell-result').innerHTML = html;
+  }
+
+  function paintTrust(d) {
+    var tr = d.trust;
+    var html = '<p><span class="badge ' + esc(tr.level) + '">' + esc(t('trust_' + tr.level)) + '</span></p>';
+    if (tr.errorPercent !== null) html += '<p>' + esc(t('trustError')(qty(tr.errorUnits), percentText(tr.errorPercent))) + '</p>';
+    if (tr.beatsNaive === false) html += '<p class="muted">' + esc(t('trustNaive')) + '</p>';
+    if (tr.intermittent) html += '<p class="muted">' + esc(t('trustZero')) + '</p>';
+    if (tr.level === 'low' || tr.level === 'very_low') html += '<p class="muted">' + esc(t('trustCaution')) + '</p>';
+    el('trust-result').innerHTML = html;
   }
 
   function onDelete() {

@@ -596,3 +596,70 @@ describe("delete all my data", () => {
     expect((await alice("GET", "/api/products")).body).toHaveLength(1);
   });
 });
+
+describe("summary", () => {
+  async function productWithForecast(horizon = 28, csv = noisyCsv(200)) {
+    const id = await newProduct(alice);
+    await alice("POST", `/api/products/${id}/sales/import`, csvForm(csv));
+    await alice("POST", `/api/products/${id}/forecast`, { horizon });
+    return id;
+  }
+
+  it("gives the three answers: what will be sold, how much to order, how much to trust it", async () => {
+    const id = await productWithForecast();
+    const r = await alice("GET", `/api/products/${id}/summary`);
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ forecastRunId: 1, orderError: null });
+    expect(r.body.sales).toMatchObject({ days: 28, start: "2025-07-20", end: "2025-08-16" });
+    const forecast = (await alice("GET", `/api/products/${id}/forecast`)).body.forecast as { yhat: number }[];
+    expect(r.body.sales.total).toBeCloseTo(forecast.reduce((s, p) => s + p.yhat, 0), 6);
+    expect(["high", "medium", "low", "very_low"]).toContain(r.body.trust.level);
+    expect(r.body.order).toMatchObject({ periodDays: 14, leadTimeDays: 7, reviewDays: 7, serviceLevelPercent: 95, onHand: null, suggestedOrder: null });
+  });
+
+  it("the order is the same as the one of the reorder endpoint, for the same parameters", async () => {
+    const id = await productWithForecast();
+    const query = "leadTimeDays=3&reviewDays=4&serviceLevel=99&onHand=500";
+    const summary = (await alice("GET", `/api/products/${id}/summary?${query}`)).body.order;
+    const reorder = (await alice("GET", `/api/products/${id}/reorder?${query}`)).body;
+    for (const key of ["periodDays", "demandInPeriod", "safetyStock", "orderUpToLevel", "onHand", "suggestedOrder", "serviceLevelPercent"]) {
+      expect(summary[key], key).toBe(reorder[key]);
+    }
+  });
+
+  it("a forecast shorter than the period is not an error: no order, and a reason", async () => {
+    const id = await productWithForecast(10);
+    const r = await alice("GET", `/api/products/${id}/summary`);
+    expect(r.status).toBe(200);
+    expect(r.body.order).toBeNull();
+    expect(r.body.orderError).toContain("exceeds the forecast horizon (10 days)");
+    expect(r.body.sales.days).toBe(10);
+  });
+
+  it("a stock that makes no sense gives a reason too, while the numbers that are not whole are refused", async () => {
+    const id = await productWithForecast();
+    expect((await alice("GET", `/api/products/${id}/summary?onHand=-3`)).body.orderError).toBe("Current stock must be a number greater than or equal to zero.");
+    expect((await alice("GET", `/api/products/${id}/summary?onHand=abc`)).body.orderError).toBe("Current stock must be a number greater than or equal to zero.");
+    const bad = await alice("GET", `/api/products/${id}/summary?serviceLevel=abc`);
+    expect(bad.status).toBe(422);
+    expect(bad.body.detail).toBe("leadTimeDays, reviewDays and serviceLevel must be whole numbers.");
+  });
+
+  it("a series with many days at zero is never more than 'low'", async () => {
+    const lines = ["date,quantity"];
+    for (let i = 0; i < 100; i++) lines.push(`${new Date(Date.UTC(2025, 0, 1 + i)).toISOString().slice(0, 10)},${i % 3 === 0 ? 0 : 5 + (i % 7)}`);
+    const id = await productWithForecast(28, lines.join("\n"));
+    const trust = (await alice("GET", `/api/products/${id}/summary`)).body.trust;
+    expect(trust.intermittent).toBe(true);
+    expect(["low", "very_low"]).toContain(trust.level);
+  });
+
+  it("needs a forecast, belongs to its owner and is only a GET", async () => {
+    const empty = await newProduct(alice, "Empty");
+    expect((await alice("GET", `/api/products/${empty}/summary`)).status).toBe(404);
+    const id = await productWithForecast();
+    expect((await bob("GET", `/api/products/${id}/summary`)).status).toBe(404);
+    expect((await alice("POST", `/api/products/${id}/summary`)).status).toBe(405);
+  });
+});
+

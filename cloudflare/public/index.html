@@ -27,6 +27,25 @@
   details.fold { margin: 0.5rem 0 1rem; }
   .danger { color: var(--err); border-color: var(--err); }
   .hint { max-width: 70ch; }
+  .summary-grid { display: grid; gap: 1rem; grid-template-columns: 1fr; margin-top: 0.75rem; }
+  @media (min-width: 860px) { .summary-grid { grid-template-columns: 1.35fr 1fr; } .block.order { grid-row: span 2; } }
+  .block { border: 1px solid var(--line); border-radius: var(--radius-s); padding: 1rem 1.15rem; background: var(--ink-2); }
+  .stage .block h3, .block h3 { margin: 0 0 0.5rem; padding-top: 0; border-top: 0; font-size: 0.95rem; font-weight: 650; color: var(--muted); }
+  .block details.fold h3 { margin: 0; }
+  #order-form { margin: 0.9rem 0 0.4rem; }
+  #order-form label { flex: 0 0 auto; }
+  .block.order { border-color: var(--amber); background: rgba(252, 187, 71, 0.06); }
+  .block p { margin: 0.35rem 0; }
+  .kicker { color: var(--muted); font-size: 0.95rem; margin-bottom: 0 !important; }
+  .bignum { font-family: var(--font-display, inherit); font-size: clamp(1.9rem, 5vw, 2.7rem); font-weight: 700; color: var(--amber); line-height: 1.1; margin: 0.1rem 0 0.3rem !important; }
+  .bignum span { font-size: 0.45em; font-weight: 600; color: var(--amber-soft); }
+  .small { font-size: 0.88rem; }
+  .badge { display: inline-block; padding: 0.2rem 0.75rem; border-radius: 999px; font-size: 0.92rem; font-weight: 650; border: 1px solid transparent; }
+  .badge.high { color: #8be0a6; background: rgba(139, 224, 166, 0.12); border-color: rgba(139, 224, 166, 0.35); }
+  .badge.medium { color: #d6e283; background: rgba(214, 226, 131, 0.12); border-color: rgba(214, 226, 131, 0.35); }
+  .badge.low { color: var(--amber); background: rgba(252, 187, 71, 0.12); border-color: rgba(252, 187, 71, 0.4); }
+  .badge.very_low { color: #ff9a8a; background: rgba(255, 154, 138, 0.12); border-color: rgba(255, 154, 138, 0.4); }
+  details.expert > summary h2 { font-size: 1.15rem; }
   .chart .hit { fill: transparent; stroke: none; }
   .chart .hit:hover { fill: rgba(252, 187, 71, 0.35); }
 </style>

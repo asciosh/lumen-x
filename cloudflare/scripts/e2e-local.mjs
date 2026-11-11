@@ -211,6 +211,11 @@ try {
   check(r.status === 201 && r.data.methodUsed === "ets" && r.data.forecast.length === 28, `forecast in ${Date.now() - t0} ms (method ${r.data?.methodUsed})`);
   r = await call(alice.cookie, "GET", `/api/products/${id}/reorder?serviceLevel=95`);
   check(r.status === 200 && r.data.orderUpToLevel > 0, "reorder suggestion");
+  r = await call(alice.cookie, "GET", `/api/products/${id}/summary?onHand=1000`);
+  check(
+    r.status === 200 && r.data.sales.days === 28 && r.data.order.periodDays === 14 && r.data.order.suggestedOrder > 0 && ["high", "medium", "low", "very_low"].includes(r.data.trust.level) && r.data.orderError === null,
+    `summary: ${r.data?.sales?.days} days, order ${r.data?.order?.suggestedOrder}, trust ${r.data?.trust?.level}`,
+  );
 
   // ---- "Rewrite with AI": the real Worker, the real database, a stand-in provider ----
   const rewrite = (cookie, lang = "en") => call(cookie, "POST", `/api/products/${id}/forecast/explanation/ai?lang=${lang}`);

@@ -13,5 +13,6 @@ export {
   type ReorderSuggestion,
 } from "./reorder";
 export * from "./explain";
+export { buildSummary, trustVerdict, type Summary, type Trust, type TrustLevel } from "./summary";
 export { answer, examples, type AskAnswer, type AskContext } from "./chat/answer";
 export { type DataIntent } from "./chat/intent";
