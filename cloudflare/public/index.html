@@ -27,9 +27,14 @@
   details.fold { margin: 0.5rem 0 1rem; }
   .danger { color: var(--err); border-color: var(--err); }
   .hint { max-width: 70ch; }
-  .summary-grid { display: grid; gap: 1rem; grid-template-columns: 1fr; margin-top: 0.75rem; }
-  @media (min-width: 860px) { .summary-grid { grid-template-columns: 1.35fr 1fr; } .block.order { grid-row: span 2; } }
-  .block { border: 1px solid var(--line); border-radius: var(--radius-s); padding: 1rem 1.15rem; background: var(--ink-2); }
+  /* minmax(0, ...): without it a long menu or sentence widens the column beyond the screen of a phone */
+  .summary-grid { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); margin-top: 0.75rem; }
+  @media (min-width: 860px) { .summary-grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); } .block.order { grid-row: span 2; } }
+  .block { min-width: 0; border: 1px solid var(--line); border-radius: var(--radius-s); padding: 1rem 1.15rem; background: var(--ink-2); }
+  .block select, .block input, .row > label { max-width: 100%; min-width: 0; }
+  select { max-width: 100%; text-overflow: ellipsis; }
+  .btn { white-space: normal; text-align: center; line-height: 1.25; }
+  .table td.num, .table th.num { white-space: nowrap; }
   .stage .block h3, .block h3 { margin: 0 0 0.5rem; padding-top: 0; border-top: 0; font-size: 0.95rem; font-weight: 650; color: var(--muted); }
   .block details.fold h3 { margin: 0; }
   #order-form { margin: 0.9rem 0 0.4rem; }
@@ -63,7 +68,8 @@
   .preview-card { border: 1px solid var(--line); border-radius: var(--radius-s); padding: 1rem 1.2rem; margin-top: 1rem; background: var(--ink-2); }
   .preview-card h3 { margin: 1rem 0 0.3rem; }
   fieldset.choice { border: 1px solid var(--line); border-radius: var(--radius-s); margin: 1rem 0; padding: 0.6rem 1rem 0.8rem; }
-  fieldset.choice legend { padding: 0 0.4rem; font-weight: 650; }
+  fieldset.choice legend { float: left; width: 100%; padding: 0; margin: 0 0 0.6rem; font-weight: 650; }
+  fieldset.choice legend ~ * { clear: both; }
   label.radio { display: flex; flex-direction: row; align-items: flex-start; gap: 0.6rem; color: var(--cream); font-size: 0.95rem; margin: 0.4rem 0; }
   .chart .hit { fill: transparent; stroke: none; }
   .chart .hit:hover { fill: rgba(252, 187, 71, 0.35); }

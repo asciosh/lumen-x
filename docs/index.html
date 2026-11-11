@@ -32,9 +32,14 @@
   .err { color: var(--err); background: var(--err-bg); border-left: 3px solid var(--err); padding: 0.7rem 1rem; border-radius: var(--radius-s); }
   .source { margin-top: 0.2rem; }
   #h-name { margin-bottom: 0.5rem; }
-  .summary-grid { display: grid; gap: 1rem; grid-template-columns: 1fr; margin-top: 0.75rem; }
-  @media (min-width: 860px) { .summary-grid { grid-template-columns: 1.35fr 1fr; } .block.order { grid-row: span 2; } }
-  .block { border: 1px solid var(--line); border-radius: var(--radius-s); padding: 1rem 1.15rem; background: var(--ink-2); }
+  /* minmax(0, ...): without it a long menu or sentence widens the column beyond the screen of a phone */
+  .summary-grid { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); margin-top: 0.75rem; }
+  @media (min-width: 860px) { .summary-grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); } .block.order { grid-row: span 2; } }
+  .block { min-width: 0; border: 1px solid var(--line); border-radius: var(--radius-s); padding: 1rem 1.15rem; background: var(--ink-2); }
+  .block select, .block input, .row > label { max-width: 100%; min-width: 0; }
+  select { max-width: 100%; text-overflow: ellipsis; }
+  .btn { white-space: normal; text-align: center; line-height: 1.25; }
+  .table td.num, .table th.num { white-space: nowrap; }
   .stage .block h3, .block h3 { margin: 0 0 0.5rem; padding-top: 0; border-top: 0; font-size: 0.95rem; font-weight: 650; color: var(--muted); }
   .block details.fold h3, .stage details.fold > summary h3 { margin: 0; padding-top: 0; border-top: 0; }
   .block.order { border-color: var(--amber); background: rgba(252, 187, 71, 0.06); }
@@ -104,7 +109,7 @@
       orderAssumptions: function (lead, review, level) { return 'Calcolato per una consegna in ' + lead + ' giorni e un ordine ogni ' + review + ' giorni, con un margine di sicurezza ' + level + '.'; },
       orderSettings: 'Cambia il margine di sicurezza', safetyLabel: 'Margine di sicurezza',
       orderDemoNote: 'Nella demo i tempi sono fissi: 7 giorni per la consegna e un ordine ogni 7 giorni. Nell\'app completa puoi cambiarli.',
-      sl90: 'Economico: puoi restare senza merce circa 1 volta su 10', sl95: 'Normale: circa 1 volta su 20', sl98: 'Prudente: circa 1 volta su 50', sl99: 'Molto prudente: circa 1 volta su 100',
+      slShort90: 'Economico', slShort95: 'Normale', slShort98: 'Prudente', slShort99: 'Molto prudente', sl90: 'Economico: senza merce 1 volta su 10', sl95: 'Normale: senza merce 1 volta su 20', sl98: 'Prudente: senza merce 1 volta su 50', sl99: 'Molto prudente: senza merce 1 volta su 100',
       slName90: 'economico', slName95: 'normale', slName98: 'prudente', slName99: 'molto prudente',
       sellTitle: 'Quanto venderò', sellKicker: function (d) { return 'Nei prossimi ' + d + ' giorni'; }, sellPerDay: function (a) { return 'cioè ' + a + ' al giorno'; },
       sellSame: function (n) { return 'In linea con gli ultimi ' + n + ' giorni.'; },
@@ -140,7 +145,7 @@
       orderAssumptions: function (lead, review, level) { return 'Worked out for a delivery in ' + lead + ' days and an order every ' + review + ' days, with a ' + level + ' safety margin.'; },
       orderSettings: 'Change the safety margin', safetyLabel: 'Safety margin',
       orderDemoNote: 'In the demo the times are fixed: 7 days for the delivery and an order every 7 days. In the full app you can change them.',
-      sl90: 'Economic: you may run out about 1 time in 10', sl95: 'Normal: about 1 time in 20', sl98: 'Careful: about 1 time in 50', sl99: 'Very careful: about 1 time in 100',
+      slShort90: 'Economic', slShort95: 'Normal', slShort98: 'Careful', slShort99: 'Very careful', sl90: 'Economic: out of stock 1 time in 10', sl95: 'Normal: out of stock 1 time in 20', sl98: 'Careful: out of stock 1 time in 50', sl99: 'Very careful: out of stock 1 time in 100',
       slName90: 'economic', slName95: 'normal', slName98: 'careful', slName99: 'very careful',
       sellTitle: 'How much will I sell', sellKicker: function (d) { return 'In the next ' + d + ' days'; }, sellPerDay: function (a) { return 'that is ' + a + ' a day'; },
       sellSame: function (n) { return 'In line with the last ' + n + ' days.'; },
@@ -249,11 +254,11 @@
     var variants = (state.reorder && state.reorder.variants) || [];
     var html = '<section class="card stage"><h2>' + esc(t('summaryTitle')) + '</h2><div class="summary-grid">';
     if (variants.length) {
-      var options = variants.map(function (v) { return '<option value="' + esc(v.serviceLevelPercent) + '"' + (v.serviceLevelPercent === state.level ? ' selected' : '') + '>' + esc(t('sl' + v.serviceLevelPercent) || v.serviceLevelPercent + '%') + '</option>'; }).join('');
+      var options = variants.map(function (v) { return '<option value="' + esc(v.serviceLevelPercent) + '"' + (v.serviceLevelPercent === state.level ? ' selected' : '') + '>' + esc(t('slShort' + v.serviceLevelPercent) || v.serviceLevelPercent + '%') + '</option>'; }).join('');
       html += '<div class="block order"><h3>' + esc(t('orderTitle')) + '</h3><div id="order-result"></div>' +
         '<form id="order-form" class="row"><label>' + esc(t('onHandAsk')) + '<input type="number" id="onhand" min="0" step="any"></label><button class="btn btn-secondary btn-small" type="submit">' + esc(t('updateButton')) + '</button></form>' +
         '<details class="fold"><summary><h3 style="margin:0">' + esc(t('orderSettings')) + '</h3></summary><div class="row"><label>' + esc(t('safetyLabel')) + '<select id="level">' + options + '</select></label></div>' +
-        '<p class="muted small">' + esc(t('orderDemoNote')) + '</p></details></div>';
+        '<p class="muted small" id="level-hint"></p><p class="muted small">' + esc(t('orderDemoNote')) + '</p></details></div>';
     }
     html += '<div class="block sell"><h3>' + esc(t('sellTitle')) + '</h3><div id="sell-result">' + sellHtml(facts) + '</div></div>' +
             '<div class="block trust"><h3>' + esc(t('trustTitle')) + '</h3><div id="trust-result">' + trustHtml(facts) + '</div></div></div></section>';
@@ -375,6 +380,8 @@
       '<p class="bignum">' + num(amount, 0) + ' <span>' + esc(t('unitsWord')) + '</span></p>' +
       '<p class="muted">' + esc(ordering ? t('orderSubOrder')(num(v.orderUpToLevel, 0), v.periodDays, num(have, 0)) : t('orderSubNeed')(v.periodDays)) + '</p>' +
       '<p class="muted small">' + esc(t('orderAssumptions')(v.leadTimeDays, v.reviewDays, safetyName(v.serviceLevelPercent))) + '</p>';
+    var hint = el('level-hint');
+    if (hint) hint.textContent = t('sl' + v.serviceLevelPercent) || '';
     var numbers = el('reorder-box');
     if (numbers) numbers.innerHTML = '<table class="table narrow"><tbody>' +
       '<tr><td>' + esc(t('rPeriod')) + '</td><td class="num">' + esc(t('daysN')(v.periodDays)) + '</td></tr>' +

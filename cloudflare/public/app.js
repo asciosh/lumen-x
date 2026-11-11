@@ -8,7 +8,7 @@
       tagline: 'Sales forecasting', loading: 'Loading…',
       signIn: 'Sign in with GitHub', signOut: 'Sign out',
       signedOutTitle: 'Sign in',
-      demoLink: 'No invitation? See the public demo (example data, no sign-in).',
+      demoLink: 'No invitation? See the public demo (example data, no sign-in).', demoButton: 'See the public demo',
       signedOutText: 'Lumen-X is in private beta. Sign in with your GitHub account: only the people invited by the owner can enter.',
       forbidden: 'This account is not allowed to use the app. Ask the owner to add it.',
       notConfigured: 'The login is not configured yet.',
@@ -43,7 +43,7 @@
       footer: 'Lumen-X · Cloudflare edition · private beta',
       explanationTitle: 'Explanation', explanationSource: 'Written by the app from the numbers above (no AI).',
       askTitle: 'Ask your data', askNote: 'Questions about this product\'s sales and forecast, answered by the app with fixed rules (no AI): it only uses your numbers.',
-      askLabel: 'Your question', askPlaceholder: 'For example: How much did I sell in the last 30 days?', askButton: 'Ask', asking: 'Thinking…',
+      askLabel: 'Your question', askPlaceholder: 'Type your question…', askButton: 'Ask', asking: 'Thinking…',
       sampleLink: 'Download an example file (240 days)',
       privacyTitle: 'Privacy',
       privacy: ['What is stored: the products you create, their daily sales and forecasts, the numeric id of your GitHub or Google account (to know whose they are) and how many AI rewrites you did today (a counter kept for a few days). Not your email: if you sign in with Google, the address is only checked against the list of invited people and kept in your session cookie, never in the database. No analytics or tracking.',
@@ -76,7 +76,7 @@
       onHandAsk: 'How many do you already have in stock?', updateButton: 'Update',
       orderAssumptions: function (lead, review, level) { return 'Worked out for a delivery in ' + lead + ' days and an order every ' + review + ' days, with a ' + level + ' safety margin.'; },
       orderSettings: 'Change delivery times and safety margin', leadDays: 'Days for the delivery', reviewDaysLabel: 'Days between one order and the next', safetyLabel: 'Safety margin',
-      sl90: 'Economic: you may run out about 1 time in 10', sl95: 'Normal: about 1 time in 20', sl98: 'Careful: about 1 time in 50', sl99: 'Very careful: about 1 time in 100',
+      slShort90: 'Economic', slShort95: 'Normal', slShort98: 'Careful', slShort99: 'Very careful', sl90: 'Economic: out of stock 1 time in 10', sl95: 'Normal: out of stock 1 time in 20', sl98: 'Careful: out of stock 1 time in 50', sl99: 'Very careful: out of stock 1 time in 100',
       slName90: 'economic', slName95: 'normal', slName98: 'careful', slName99: 'very careful',
       orderNumbers: 'The numbers behind it',
       orderTooShort: function (p) { return 'To work out the order the forecast must cover at least ' + p + ' days. Recompute it from "Details for experts".'; },
@@ -131,7 +131,7 @@
       tagline: 'Previsione vendite', loading: 'Caricamento…',
       signIn: 'Accedi con GitHub', signOut: 'Esci',
       signedOutTitle: 'Accedi',
-      demoLink: 'Non hai un invito? Guarda la demo pubblica (dati d\'esempio, senza accedere).',
+      demoLink: 'Non hai un invito? Guarda la demo pubblica (dati d\'esempio, senza accedere).', demoButton: 'Guarda la demo pubblica',
       signedOutText: 'Lumen-X è in beta privata. Accedi con il tuo account GitHub: possono entrare solo le persone invitate dal proprietario.',
       forbidden: 'Questo account non può usare l\'app. Chiedi al proprietario di aggiungerlo.',
       notConfigured: 'Il login non è ancora configurato.',
@@ -166,7 +166,7 @@
       footer: 'Lumen-X · edizione Cloudflare · beta privata',
       explanationTitle: 'Spiegazione', explanationSource: 'Scritta dall\'app a partire dai numeri qui sopra (senza AI).',
       askTitle: 'Chiedi ai tuoi dati', askNote: 'Domande sulle vendite e sulla previsione di questo prodotto, a cui l\'app risponde con regole fisse (senza AI): usa solo i tuoi numeri.',
-      askLabel: 'La tua domanda', askPlaceholder: 'Per esempio: Quanto ho venduto negli ultimi 30 giorni?', askButton: 'Chiedi', asking: 'Sto pensando…',
+      askLabel: 'La tua domanda', askPlaceholder: 'Scrivi la tua domanda…', askButton: 'Chiedi', asking: 'Sto pensando…',
       sampleLink: 'Scarica un file d\'esempio (240 giorni)',
       privacyTitle: 'Privacy',
       privacy: ['Cosa viene salvato: i prodotti che crei, le loro vendite giornaliere e le previsioni, l\'id numerico del tuo account GitHub o Google (per sapere di chi sono) e quante riscritture con AI hai fatto oggi (un contatore tenuto per qualche giorno). Non la tua email: se accedi con Google, l\'indirizzo serve solo a controllare l\'elenco degli invitati e resta nel cookie di sessione, mai nel database. Nessuna analisi o tracciamento.',
@@ -199,7 +199,7 @@
       onHandAsk: 'Quante ne hai già in magazzino?', updateButton: 'Aggiorna',
       orderAssumptions: function (lead, review, level) { return 'Calcolato per una consegna in ' + lead + ' giorni e un ordine ogni ' + review + ' giorni, con un margine di sicurezza ' + level + '.'; },
       orderSettings: 'Cambia tempi di consegna e margine di sicurezza', leadDays: 'Giorni per la consegna', reviewDaysLabel: 'Giorni tra un ordine e l\'altro', safetyLabel: 'Margine di sicurezza',
-      sl90: 'Economico: puoi restare senza merce circa 1 volta su 10', sl95: 'Normale: circa 1 volta su 20', sl98: 'Prudente: circa 1 volta su 50', sl99: 'Molto prudente: circa 1 volta su 100',
+      slShort90: 'Economico', slShort95: 'Normale', slShort98: 'Prudente', slShort99: 'Molto prudente', sl90: 'Economico: senza merce 1 volta su 10', sl95: 'Normale: senza merce 1 volta su 20', sl98: 'Prudente: senza merce 1 volta su 50', sl99: 'Molto prudente: senza merce 1 volta su 100',
       slName90: 'economico', slName95: 'normale', slName98: 'prudente', slName99: 'molto prudente',
       orderNumbers: 'I numeri del calcolo',
       orderTooShort: function (p) { return 'Per calcolare l\'ordine la previsione deve coprire almeno ' + p + ' giorni. Ricalcolala da "Dettagli per esperti".'; },
@@ -412,7 +412,7 @@
         if (!buttons) buttons = alertHtml('error', esc(t('noLoginMethod')));
         setContent('<section class="card stage"><h1 class="pitch">' + esc(t('pitchTitle')) + '</h1><p class="pitch-text">' + esc(t('pitchText')) + '</p>' +
           '<ol class="steps"><li>' + esc(t('pitch1')) + '</li><li>' + esc(t('pitch2')) + '</li><li>' + esc(t('pitch3')) + '</li></ol>' +
-          '<p><a class="btn btn-secondary" href="' + DEMO_URL + '" rel="noopener">' + esc(t('demoLink')) + '</a></p></section>' +
+          '<p><a class="btn btn-secondary" href="' + DEMO_URL + '" rel="noopener">' + esc(t('demoButton')) + '</a></p></section>' +
           '<section class="card"><h2>' + esc(t('signedOutTitle')) + '</h2><p class="muted hint">' + esc(t('privateBeta')) + '</p><p>' + buttons + '</p>' + privacyHtml() + '</section>');
       });
   }
@@ -547,7 +547,7 @@
   }
 
   function summaryShellHtml() {
-    var levels = [90, 95, 98, 99].map(function (l) { return '<option value="' + l + '"' + (l === 95 ? ' selected' : '') + '>' + esc(t('sl' + l)) + '</option>'; }).join('');
+    var levels = [90, 95, 98, 99].map(function (l) { return '<option value="' + l + '"' + (l === 95 ? ' selected' : '') + '>' + esc(t('slShort' + l)) + '</option>'; }).join('');
     return '<div class="summary-grid">' +
       '<div class="block order"><h3>' + esc(t('orderTitle')) + '</h3><div id="order-result"><p class="muted">' + esc(t('loading')) + '</p></div>' +
         '<form id="order-form" class="row"><label>' + esc(t('onHandAsk')) + '<input type="number" name="onhand" min="0" step="any"></label><button class="btn btn-secondary btn-small" type="submit">' + esc(t('updateButton')) + '</button></form>' +
@@ -556,6 +556,7 @@
           '<label>' + esc(t('reviewDaysLabel')) + '<input type="number" id="order-review" min="0" max="60" value="7"></label>' +
           '<label>' + esc(t('safetyLabel')) + '<select id="order-level">' + levels + '</select></label>' +
           '<button class="btn btn-secondary btn-small" type="button" id="order-apply">' + esc(t('calculate')) + '</button></div>' +
+          '<p class="muted small" id="order-level-hint">' + esc(t('sl95')) + '</p>' +
           '<div id="order-numbers"></div></details></div>' +
       '<div class="block sell"><h3>' + esc(t('sellTitle')) + '</h3><div id="sell-result"></div></div>' +
       '<div class="block trust"><h3>' + esc(t('trustTitle')) + '</h3><div id="trust-result"></div></div></div>';
@@ -615,6 +616,7 @@
     if (el('order-form')) {
       el('order-form').addEventListener('submit', function (ev) { ev.preventDefault(); loadSummary(); });
       el('order-apply').addEventListener('click', loadSummary);
+      el('order-level').addEventListener('change', function () { el('order-level-hint').textContent = t('sl' + el('order-level').value); });
     }
     el('delete-product').addEventListener('click', onDelete);
     if (el('sales-fold')) {
